@@ -1,0 +1,7 @@
+{
+  "name": "ipick-drivers-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
