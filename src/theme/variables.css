@@ -1,2 +1,79 @@
-/* For information on how to create your own theme, please see:
-http://ionicframework.com/docs/theming/ */
+.transparent-toolbar {
+  --background: transparent;
+  --ion-color-base: transparent;
+  --ion-toolbar-background: transparent;
+  backdrop-filter: blur(10px); /* Optional: adds a frosted-glass effect */
+  box-shadow: none; /* Optional: removes shadow */
+}
+
+:root {
+  --ion-color-primary: #008000;
+  --ion-color-secondary: #fd100c;
+  --ion-color-tertiary: #ff9e2a;
+}
+
+.input-field {
+  --background: var(--ion-color-light);
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  --border-radius: 8px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  border: 1.5px solid #008000;
+  border-radius: 50px;
+  margin: 15px 20px;
+}
+
+.floating-label-dark {
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  --background: var(--ion-color-light);
+  --border-radius: 8px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+/* Example of a custom button style */
+.custom-button {
+  --background: #008000;
+  --color: white;
+  --border-radius: 50px;
+  --padding: 12px 24px;
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+  margin: 15px 20px;
+}
+
+.custom-button:hover {
+  --background: #008000;
+}
+
+/* Example of a custom card style */
+.custom-card {
+  --background: var(--ion-color-light);
+  --color: var(--ion-color-dark);
+  --border-radius: 12px;
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --padding: 16px;
+  margin: 10px;
+  transition: transform 0.3s ease;
+}
+
+.custom-card:hover {
+  transform: translateY(-5px);
+}
+
+.logo-image {
+  width: 200px; /* Adjust as needed */
+  height: auto; /* Maintain aspect ratio */
+  margin: 100px auto 10px auto; /* 70px top, 50px bottom, centered horizontally */
+  display: block; /* Ensure centering works */
+}
+
+.ion-text-center {
+  text-align: center;
+  color: #008000;
+  display: block;
+  margin: 30px auto 0 auto; /* 40px top margin, centered horizontally */
+  font-size: large;
+}
