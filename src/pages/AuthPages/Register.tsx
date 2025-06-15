@@ -1,9 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   IonButton,
   IonButtons,
   IonContent,
-  IonFooter,
   IonHeader,
   IonInput,
   IonItem,
@@ -13,14 +12,21 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import { useHistory } from "react-router-dom";
-import BackButton from "../components/BackButton";
-import Loading from "../components/Loading";
-import "../theme/variables.css";
+import BackButton from "../../components/BackButton";
+import Loading from "../../components/Loading";
+import OtpModal from "../../components/OtpModal";
+import "@theme/variables.css";
 import bcrypt from "bcryptjs";
-import { buildDriverPayload } from "../utils/driverPayloadBuilder";
+import { buildDriverPayload } from "../../utils/driverPayloadBuilder";
 
 const Register: React.FC = () => {
   const history = useHistory();
+  const modalRef = useRef<HTMLIonModalElement>(
+    null!
+  ) as React.RefObject<HTMLIonModalElement>;
+  const otpRef = useRef<HTMLIonInputElement>(
+    null!
+  ) as React.RefObject<HTMLIonInputElement>;
 
   const firstNameRef = useRef("");
   const surNameRef = useRef("");
@@ -45,32 +51,39 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isDisabled && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setIsDisabled(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isDisabled, countdown]);
 
   const capitalizeWords = (str: string) =>
     str.replace(/\b\w/g, (char) => char.toUpperCase());
-
-  const hashPassword = async (rawPassword: string): Promise<string> => {
-    const salt = await bcrypt.genSalt(10);
-    return await bcrypt.hash(rawPassword, salt);
-  };
 
   const checkDuplicateMobile = async (mobile: string): Promise<boolean> => {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/Drivers/${mobile}`
       );
-
       if (res.ok) {
         // If the mobile number exists, the API returns 200 with data
         const data = await res.json();
         return !!data; // true = duplicate
       }
-
-      // If 404, mobile number not found — not a duplicate
-      if (res.status === 404) {
-        return false;
-      }
-
       // Other unexpected statuses
       console.error("Unexpected response when checking mobile:", res.status);
       return false;
@@ -81,6 +94,60 @@ const Register: React.FC = () => {
   };
 
   const handleRegister = async () => {
+    const mobile = mobileNumberRef?.current?.slice(-10);
+    const pass = passwordRef?.current;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      if (!mobile || !pass) {
+        setError("Missing mobile number or password.");
+        setLoading(false);
+        return;
+      }
+
+      const hashedPassword = await bcrypt.hash(pass, 10);
+
+      const payload = buildDriverPayload({
+        firstName: firstNameRef?.current,
+        surName: surNameRef?.current,
+        email: emailRef?.current,
+        lastTenDigits: mobile,
+        address: addressRef?.current,
+        city: cityRef?.current,
+        province: provinceRef?.current,
+        zipCode: zipCodeRef?.current,
+        hashedPassword,
+      });
+
+      const endpoint = `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/Drivers`;
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        let errorMsg = "Registration failed.";
+        try {
+          const err = await response.json();
+          errorMsg = err?.message || errorMsg;
+        } catch {}
+        setError(errorMsg);
+        return;
+      }
+
+      history.goBack();
+    } catch (err) {
+      setError("Network error, please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestOtp = async () => {
     const mobile = mobileNumberRef.current.slice(-10);
     const pass = passwordRef.current;
     const confirmPass = confirmPasswordRef.current;
@@ -116,42 +183,80 @@ const Register: React.FC = () => {
         return;
       }
 
-      const hashedPassword = await hashPassword(pass);
-
-      const payload = buildDriverPayload({
-        firstName: firstNameRef.current,
-        surName: surNameRef.current,
-        email: emailRef.current,
-        lastTenDigits: mobile,
-        address: addressRef.current,
-        city: cityRef.current,
-        province: provinceRef.current,
-        zipCode: zipCodeRef.current,
-        hashedPassword,
-      });
-
       const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/Drivers`,
+        `${import.meta.env.VITE_API_ENDPOINT}/otp/requestOtp/${mobile}`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      if (!response.ok) {
-        let errorMsg = "Registration failed.";
-        try {
-          const err = await response.json();
-          errorMsg = err.message || errorMsg;
-        } catch {}
-        setError(errorMsg);
-        return;
+      if (response.status === 201) {
+        modalRef.current?.present();
+        setIsDisabled(true);
+        setCountdown(60);
+      } else {
+        setError("Failed to send OTP. Please try again.");
       }
-
-      history.push("/login");
     } catch (err) {
-      setError("Network error, please try again later.");
+      console.error("OTP request error:", err);
+      setError("An error occurred while requesting OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    const mobile = mobileNumberRef.current.slice(-10);
+    const otp = otpRef.current?.value?.toString().trim();
+
+    if (!otp || otp.length < 6) {
+      setError("Please enter a valid OTP.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}/otp/validate/${mobile}/${otp}`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 201) {
+        const data = await response.json();
+
+        if (
+          data?.messages &&
+          Array.isArray(data.messages) &&
+          data.messages.length > 0 &&
+          typeof data.messages[0].msg === "string"
+        ) {
+          console.log("OTP Verified:", data.messages[0].msg);
+          modalRef.current?.dismiss(); // ✅ dismiss modal after success
+          handleRegister();
+        } else {
+          setError(
+            "Verification succeeded but response format was unexpected."
+          );
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Verification failed:", errorData);
+        setError("Failed to verify OTP. Please try again.");
+      }
+    } catch (err) {
+      console.error("OTP verification error:", err);
+      setError("Incorrect OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -159,7 +264,7 @@ const Register: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader>
+      <IonHeader color="light">
         <IonToolbar>
           <IonButtons slot="start">
             <BackButton />
@@ -344,7 +449,7 @@ const Register: React.FC = () => {
           />
         </IonItem>
         {/* Loading Spinner */}
-        <Loading isOpen={loading} message="Signing up..." />
+        <Loading isOpen={loading} message="Waiting..." />
         <IonToast
           isOpen={!!error}
           message={error}
@@ -353,18 +458,23 @@ const Register: React.FC = () => {
           position="top"
           onDidDismiss={() => setError("")}
         />
-      </IonContent>
-      <IonFooter className="ion-no-border ion-padding">
         <IonButton
           className="custom-button"
           expand="full"
           shape="round"
           size="large"
-          onClick={handleRegister}
+          onClick={handleRequestOtp}
+          disabled={isDisabled}
         >
-          Sign Up
+          {isDisabled ? `Retry in ${countdown}s` : "Sign Up"}
         </IonButton>
-      </IonFooter>
+        <OtpModal
+          modalRef={modalRef}
+          otpRef={otpRef}
+          onVerify={handleVerify}
+          onResend={handleRequestOtp}
+        />
+      </IonContent>
     </IonPage>
   );
 };

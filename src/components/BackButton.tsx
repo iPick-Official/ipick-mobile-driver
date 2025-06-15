@@ -22,18 +22,6 @@ const BackButton: React.FC<BackButtonProps> = ({ onClick }) => {
 
   return (
     <IonButton
-      style={{
-        backgroundColor: "#008000",
-        borderRadius: "50%",
-        color: "#fff",
-        minWidth: "40px",
-        minHeight: "40px",
-        padding: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        margin: "10px 15px",
-      }}
       onClick={handleClick}
       fill="clear"
       size="default"
@@ -42,7 +30,7 @@ const BackButton: React.FC<BackButtonProps> = ({ onClick }) => {
       <IonIcon
         slot="start"
         icon={chevronBackOutline}
-        style={{ color: "#fff" }}
+        style={{ color: "#008000", fontSize: "2rem" }}
       />
     </IonButton>
   );

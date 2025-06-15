@@ -8,8 +8,8 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import { useParams } from "react-router";
-import { useAuth } from "../contexts/AuthContext";
-import "../theme/variables.css";
+import { useAuth } from "../../contexts/AuthContext";
+import "@theme/variables.css";
 
 const Home: React.FC = () => {
   const { name } = useParams<{ name: string }>();
