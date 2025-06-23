@@ -308,9 +308,7 @@ const TransportReq: React.FC = () => {
       handleFetchVehicleReq();
     } catch (e: any) {
       console.error("Update error:", e);
-      setError(
-        e.message || "Please change information to update your account!"
-      );
+      setError("Please change information to update your account!");
     } finally {
       setLoading(false);
     }

@@ -231,7 +231,7 @@ const PersonlaReq: React.FC = () => {
       handleFetchPersonReq();
     } catch (e: any) {
       console.error("Update error:", e);
-      setError(e.message || "Something went wrong.");
+      setError("Please change information to update your account!");
     } finally {
       setLoading(false);
     }
@@ -261,7 +261,6 @@ const PersonlaReq: React.FC = () => {
       originalUserRef.current = data; // keep full data for fallbacks
 
       const personalReq = data.personalRequirements || {};
-      console.log("Data", personalReq);
 
       // Fill form state (simple strings)
       setNationality(personalReq.nationality || "");

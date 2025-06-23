@@ -7,6 +7,8 @@ import {
   IonItem,
   IonImg,
   IonToast,
+  IonHeader,
+  IonToolbar,
 } from "@ionic/react";
 import { useHistory } from "react-router-dom";
 import Loading from "../../components/Loading";
@@ -96,6 +98,9 @@ const UpdatePassword: React.FC = () => {
 
   return (
     <IonPage>
+      <IonHeader collapse="fade" className="ion-no-border">
+        <IonToolbar />
+      </IonHeader>
       <IonContent className="ion-padding" fullscreen>
         <div className="ion-text-center" style={{ marginTop: "40px" }}>
           <IonImg src="/assets/logo-word.png" className="logo-image" />

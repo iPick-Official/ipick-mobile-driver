@@ -9,22 +9,22 @@ interface LoadingProps {
 }
 
 const Loading: React.FC<LoadingProps> = ({ isOpen, message }) => {
-return (
+  return (
     <IonLoading
-        color="green"
-        cssClass="loading-spinner"
-        mode="ios"
-        animated={true}
-        duration={0}
-        keyboardClose={true}
-        showBackdrop={true}
-        isOpen={isOpen}
-        message={message || "Please wait..."}
-        spinner="crescent"
-        translucent={true}
-        backdropDismiss={false}
+      color="green"
+      cssClass="loading-spinner"
+      mode="ios"
+      animated={true}
+      duration={0}
+      keyboardClose={true}
+      showBackdrop={true}
+      isOpen={isOpen}
+      message={message || "Please wait..."}
+      spinner="crescent"
+      translucent={true}
+      backdropDismiss={false}
     />
-);
+  );
 };
 
 export default Loading;

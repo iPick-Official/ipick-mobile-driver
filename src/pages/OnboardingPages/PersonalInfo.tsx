@@ -117,7 +117,6 @@ const PersonalInfo: React.FC = () => {
       const result = isJson ? await response.json() : updatedPayload;
       originalUserRef.current = result; // Update local reference
       alert("Your profile has been updated successfully.");
-      console.log("Update success:", result);
     } catch (err: any) {
       console.error("Update error:", err);
       setError(err.message || "Something went wrong.");

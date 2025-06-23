@@ -87,7 +87,6 @@ const Login: React.FC = () => {
         throw new Error("Unexpected server response");
       }
       const data = await response.json();
-      console.log("Login response data:", data);
       const user = data.user;
       if (!data.access_token || !user || user.type !== "driver") {
         setError("Incorrect credentials!");
@@ -228,7 +227,6 @@ const Login: React.FC = () => {
           data.messages.length > 0 &&
           typeof data.messages[0].msg === "string"
         ) {
-          console.log("OTP Verified:", data.messages[0].msg);
           modalRef.current?.dismiss(); // ✅ dismiss modal after success
           history.push("/new-password");
         } else {

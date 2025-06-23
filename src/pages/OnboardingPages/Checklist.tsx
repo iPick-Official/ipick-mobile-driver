@@ -1,5 +1,12 @@
 import React from "react";
-import { IonButton, IonContent, IonHeader, IonImg, IonPage, IonToolbar } from "@ionic/react";
+import {
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonImg,
+  IonPage,
+  IonToolbar,
+} from "@ionic/react";
 import "@theme/variables.css";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -7,11 +14,6 @@ import { useAuth } from "../../contexts/AuthContext";
 const Checklist: React.FC = () => {
   const history = useHistory();
   const { logout } = useAuth();
-
-  const handleLogin = () => {
-    // Implement login logic here
-    console.log("Sign In clicked");
-  };
 
   return (
     <IonPage>
