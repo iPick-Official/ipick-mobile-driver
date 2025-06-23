@@ -1,5 +1,5 @@
 import React from "react";
-import { IonButton, IonContent, IonImg, IonPage } from "@ionic/react";
+import { IonButton, IonContent, IonHeader, IonImg, IonPage, IonToolbar } from "@ionic/react";
 import "@theme/variables.css";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -15,6 +15,9 @@ const Checklist: React.FC = () => {
 
   return (
     <IonPage>
+      <IonHeader collapse="fade" className="ion-no-border">
+        <IonToolbar />
+      </IonHeader>
       <IonContent className="ion-padding" fullscreen>
         <div className="ion-text-center" style={{ marginTop: "40px" }}>
           <IonImg src="/assets/logo-word.png" className="logo-image" />
@@ -37,7 +40,7 @@ const Checklist: React.FC = () => {
           expand="full"
           shape="round"
           size="large"
-          onClick={() => history.push("/")}
+          onClick={() => history.push("/personal-info")}
         >
           Personal Information
         </IonButton>
@@ -46,7 +49,7 @@ const Checklist: React.FC = () => {
           expand="full"
           shape="round"
           size="large"
-          onClick={handleLogin}
+          onClick={() => history.push("/personal-req")}
         >
           Personal Requirements
         </IonButton>
@@ -55,7 +58,7 @@ const Checklist: React.FC = () => {
           expand="full"
           shape="round"
           size="large"
-          onClick={handleLogin}
+          onClick={() => history.push("/transport-req")}
         >
           Transport Requirements
         </IonButton>

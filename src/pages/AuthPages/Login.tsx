@@ -10,6 +10,8 @@ import {
   IonText,
   IonLabel,
   IonFooter,
+  IonHeader,
+  IonToolbar,
 } from "@ionic/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useHistory } from "react-router-dom";
@@ -31,8 +33,6 @@ const Login: React.FC = () => {
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
   const [countdown, setCountdown] = useState(0);
-
-  // Refs to access real-time values
   const mobileRef = useRef<HTMLIonInputElement>(null);
   const passwordRef = useRef<HTMLIonInputElement>(null);
 
@@ -56,21 +56,17 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     const normalizedMobile = String(mobileRef.current?.value ?? "").trim();
     const normalizedPassword = String(passwordRef.current?.value ?? "").trim();
-
     const lastTenDigits = normalizedMobile.slice(-10);
     if (!/^\d{10}$/.test(lastTenDigits)) {
       setError("Enter a valid 11-digit mobile number");
       return;
     }
-
     const loginPayload = {
       mobnum: lastTenDigits,
       password: normalizedPassword,
     };
-
     setLoading(true);
     setError("");
-
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT}/auth/login`,
@@ -83,44 +79,34 @@ const Login: React.FC = () => {
           body: JSON.stringify(loginPayload),
         }
       );
-
       if (response.status === 401) {
         setError("Incorrect credentials!");
         return;
       }
-
       if (!response.ok) {
         throw new Error("Unexpected server response");
       }
-
       const data = await response.json();
       console.log("Login response data:", data);
-
       const user = data.user;
-
       if (!data.access_token || !user || user.type !== "driver") {
         setError("Incorrect credentials!");
         return;
       }
-
       if (data.logged) {
         alert("You have been logged out of all other devices.");
       }
-
-      // Save to local storage
+      localStorage.setItem("id", user._id);
       localStorage.setItem("userId", user.id);
       localStorage.setItem("name", user.name);
       localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("isLogged", "true");
       localStorage.setItem("userType", user.type);
-      localStorage.setItem("status", user.status); // <-- from user object
-      localStorage.setItem("accountStatus", data.accountStatus); // <-- top-level key
-
-      // Trigger login in context
+      localStorage.setItem("status", user.status);
+      localStorage.setItem("authToken", user.authToken);
+      localStorage.setItem("accountStatus", data.accountStatus);
       login();
-
-      // Redirect based on user status
       const userStatus = user.status?.toLowerCase();
       if (userStatus === "approved") {
         history.replace("/home");
@@ -155,7 +141,6 @@ const Login: React.FC = () => {
     setError("");
 
     try {
-      // STEP 1: Request OTP
       const otpResponse = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
@@ -170,10 +155,7 @@ const Login: React.FC = () => {
       );
 
       if (otpResponse.status === 201) {
-        // Store mobile number for later use
         localStorage.setItem("otpMobile", lastTenDigits);
-
-        // STEP 2: Fetch driver info
         const driverInfoResponse = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT_DRIVER
@@ -185,7 +167,6 @@ const Login: React.FC = () => {
             },
           }
         );
-
         if (driverInfoResponse.ok) {
           const driverData = await driverInfoResponse.json();
 
@@ -201,11 +182,7 @@ const Login: React.FC = () => {
             driverInfoResponse.status
           );
         }
-
-        // Show OTP modal
         modalRef.current?.present();
-
-        // Disable button for 60 seconds
         setIsDisabled(true);
         setCountdown(60);
       } else if (otpResponse.status === 404) {
@@ -226,15 +203,12 @@ const Login: React.FC = () => {
       .trim()
       .slice(-10);
     const otp = otpRef.current?.value?.toString().trim();
-
     if (!otp || otp.length < 6) {
       setError("Please enter a valid OTP.");
       return;
     }
-
     setLoadingOtp(true);
     setError("");
-
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT}/otp/validate/${mobile}/${otp}`,
@@ -248,7 +222,6 @@ const Login: React.FC = () => {
       );
       if (response.status === 201) {
         const data = await response.json();
-
         if (
           data?.messages &&
           Array.isArray(data.messages) &&
@@ -278,9 +251,12 @@ const Login: React.FC = () => {
 
   return (
     <IonPage>
+      <IonHeader collapse="fade" className="ion-no-border">
+        <IonToolbar />
+      </IonHeader>
       <IonContent className="ion-padding" fullscreen>
         {/* Logo */}
-        <div className="ion-text-center" style={{ marginTop: "40px" }}>
+        <div className="ion-text-center">
           <IonImg src="/assets/logo-word.png" className="logo-image" />
         </div>
 
@@ -354,12 +330,7 @@ const Login: React.FC = () => {
           </IonButton>
         </div>
 
-        <OtpModal
-          modalRef={modalRef}
-          otpRef={otpRef}
-          onVerify={handleVerify}
-          onResend={handleRequestOtp}
-        />
+        <OtpModal modalRef={modalRef} otpRef={otpRef} onVerify={handleVerify} />
 
         {/* Loading Spinner */}
         <Loading isOpen={loading} message="Logging in..." />

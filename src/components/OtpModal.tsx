@@ -45,6 +45,12 @@ const OtpModal: React.FC<OtpModalProps> = ({
               type="tel"
               maxlength={6}
               className="floating-label-dark"
+              onIonFocus={(e) => {
+                e.target?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }}
             />
           </IonItem>
         </IonCol>

@@ -3,10 +3,14 @@ import {
   IonButton,
   IonButtons,
   IonContent,
+  IonFooter,
   IonHeader,
   IonInput,
   IonItem,
+  IonLabel,
   IonPage,
+  IonSelect,
+  IonSelectOption,
   IonTitle,
   IonToast,
   IonToolbar,
@@ -28,6 +32,7 @@ const Register: React.FC = () => {
     null!
   ) as React.RefObject<HTMLIonInputElement>;
 
+  const carTypeRef = useRef("");
   const firstNameRef = useRef("");
   const surNameRef = useRef("");
   const emailRef = useRef("");
@@ -39,6 +44,7 @@ const Register: React.FC = () => {
   const passwordRef = useRef("");
   const confirmPasswordRef = useRef("");
 
+  const [carType, setCarType] = useState("");
   const [firstName, setFirstName] = useState("");
   const [surName, setSurName] = useState("");
   const [email, setEmail] = useState("");
@@ -110,6 +116,7 @@ const Register: React.FC = () => {
       const hashedPassword = await bcrypt.hash(pass, 10);
 
       const payload = buildDriverPayload({
+        carType: carTypeRef?.current,
         firstName: firstNameRef?.current,
         surName: surNameRef?.current,
         email: emailRef?.current,
@@ -138,7 +145,7 @@ const Register: React.FC = () => {
         setError(errorMsg);
         return;
       }
-
+      alert("Please sign-in to continue onboarding!")
       history.goBack();
     } catch (err) {
       setError("Network error, please try again later.");
@@ -157,7 +164,8 @@ const Register: React.FC = () => {
       !surNameRef.current ||
       !emailRef.current ||
       !mobile ||
-      !pass
+      !pass ||
+      !carTypeRef.current
     ) {
       setError("Please fill in all required fields.");
       return;
@@ -264,7 +272,7 @@ const Register: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader color="light">
+      <IonHeader translucent={true} className="ion-no-border">
         <IonToolbar>
           <IonButtons slot="start">
             <BackButton />
@@ -273,7 +281,32 @@ const Register: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
+      <IonContent fullscreen={true}>
+        <IonHeader collapse="condense" translucent={true}>
+          <IonToolbar>
+            <IonTitle size="large" className="ion-text-center">
+              Fill out this form
+            </IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonItem lines="none" className="input-field">
+          <IonLabel>Vehicle Type</IonLabel>
+          <IonSelect
+            interface="action-sheet"
+            justify="start"
+            slot="end"
+            placeholder="Select Vehicle Type"
+            value={carType}
+            onIonChange={(e) => {
+              const selectedValue = e.detail.value;
+              setCarType(selectedValue);
+              carTypeRef.current = selectedValue;
+            }}
+          >
+            <IonSelectOption value="4-seater">4 Seaters</IonSelectOption>
+            <IonSelectOption value="6-seater">6 Seaters</IonSelectOption>
+          </IonSelect>
+        </IonItem>
         <IonItem lines="none" className="input-field">
           <IonInput
             color="dark"
@@ -288,6 +321,7 @@ const Register: React.FC = () => {
               setFirstName(value);
               firstNameRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -305,6 +339,7 @@ const Register: React.FC = () => {
               setSurName(value);
               surNameRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -323,6 +358,7 @@ const Register: React.FC = () => {
               setMobileNumber(value);
               mobileNumberRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
             maxlength={11}
           />
@@ -341,6 +377,7 @@ const Register: React.FC = () => {
               setEmail(value);
               emailRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -359,6 +396,7 @@ const Register: React.FC = () => {
               setAddress(value);
               addressRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -376,6 +414,7 @@ const Register: React.FC = () => {
               setCity(value);
               cityRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -394,6 +433,7 @@ const Register: React.FC = () => {
               setProvince(value);
               provinceRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -412,6 +452,7 @@ const Register: React.FC = () => {
               setZipCode(value);
               zipCodeRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -428,6 +469,7 @@ const Register: React.FC = () => {
               setPassword(value);
               passwordRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -445,6 +487,7 @@ const Register: React.FC = () => {
               setConfirmPassword(value);
               confirmPasswordRef.current = value;
             }}
+            keyboard-attach
             className="floating-label-dark"
           />
         </IonItem>
@@ -458,23 +501,22 @@ const Register: React.FC = () => {
           position="top"
           onDidDismiss={() => setError("")}
         />
-        <IonButton
-          className="custom-button"
-          expand="full"
-          shape="round"
-          size="large"
-          onClick={handleRequestOtp}
-          disabled={isDisabled}
-        >
-          {isDisabled ? `Retry in ${countdown}s` : "Sign Up"}
-        </IonButton>
-        <OtpModal
-          modalRef={modalRef}
-          otpRef={otpRef}
-          onVerify={handleVerify}
-          onResend={handleRequestOtp}
-        />
+        <OtpModal modalRef={modalRef} otpRef={otpRef} onVerify={handleVerify} />
       </IonContent>
+      <IonFooter translucent={true} className="ion-no-border ion-padding">
+        <IonToolbar>
+          <IonButton
+            className="custom-button"
+            expand="full"
+            shape="round"
+            size="large"
+            onClick={handleRequestOtp}
+            disabled={isDisabled}
+          >
+            {isDisabled ? `Retry in ${countdown}s` : "Sign Up"}
+          </IonButton>
+        </IonToolbar>
+      </IonFooter>
     </IonPage>
   );
 };

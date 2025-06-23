@@ -7,6 +7,9 @@ import {
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { Redirect, Route, RouteProps } from "react-router-dom";
+import { useEffect } from "react";
+import { StatusBar, Style } from "@capacitor/status-bar";
+import { isPlatform } from "@ionic/react";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -15,9 +18,10 @@ import "@ionic/react/css/structure.css";
 import "@ionic/react/css/typography.css";
 
 import "./theme/variables.css";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Menu from "./components/Menu";
 import Home from "./pages/DriverPages/Home";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+
 import Login from "./pages/AuthPages/Login";
 import Register from "./pages/AuthPages/Register";
 import UpdatePassword from "./pages/AuthPages/UpdatePassword";
@@ -46,17 +50,24 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   if (!isAuthenticated) {
     return <Redirect to="/login" />;
   }
-
   return <Route {...rest} render={(props) => <Component {...props} />} />;
 };
 
 const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const driverStatus = localStorage.getItem("status");
+
+  useEffect(() => {
+    if (isPlatform("capacitor")) {
+      StatusBar.setOverlaysWebView({ overlay: true }).catch(console.error);
+      StatusBar.setStyle({ style: Style.Light }).catch(console.error);
+    }
+  }, []);
 
   return (
     <IonReactRouter>
       <IonSplitPane contentId="main">
-        {isAuthenticated && <Menu />}
+        {isAuthenticated && driverStatus === "approved" && <Menu />}
         <IonRouterOutlet id="main">
           {/* Public Routes */}
           <Route path="/login" exact>

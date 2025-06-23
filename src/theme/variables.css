@@ -24,6 +24,13 @@
   margin: 15px 20px;
 }
 
+.checkbox-field {
+  --border-radius: 8px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  margin: 15px 20px;
+}
+
 .floating-label-dark {
   --color: var(--ion-color-dark);
   --placeholder-color: var(--ion-color-medium);
@@ -66,7 +73,7 @@
 .logo-image {
   width: 200px; /* Adjust as needed */
   height: auto; /* Maintain aspect ratio */
-  margin: 100px auto 10px auto; /* 70px top, 50px bottom, centered horizontally */
+  margin: 50px auto 10px auto;
   display: block; /* Ensure centering works */
 }
 
@@ -92,7 +99,11 @@ ion-modal {
 }
 
 .otp-row {
-  margin: 20px 0;
+  margin: 10px 0;
   display: flex;
   align-items: center;
+}
+
+ion-content {
+  --padding-bottom: 50%;
 }

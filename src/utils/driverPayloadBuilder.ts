@@ -94,6 +94,7 @@ const generateAlphaNumeric = (): string => {
 };
 
 interface BuildDriverPayloadParams {
+  carType: string;
   firstName: string;
   surName: string;
   email: string;
@@ -106,6 +107,7 @@ interface BuildDriverPayloadParams {
 }
 
 export function buildDriverPayload({
+  carType,
   firstName,
   surName,
   email,
@@ -130,7 +132,7 @@ export function buildDriverPayload({
     type: "driver",
     status: "pending",
     referralCode: "",
-    carType: "",
+    carType,
     zone: "",
     driversId: generateAlphaNumeric(),
     personalRequirements: {
