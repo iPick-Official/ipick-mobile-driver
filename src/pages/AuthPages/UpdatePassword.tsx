@@ -44,7 +44,14 @@ const UpdatePassword: React.FC = () => {
       return;
     }
 
-    const storedDriver = localStorage.getItem("driverData"); // assume full object is stored
+    if (newPassword === "ipick@2025") {
+      setError(
+        "You cannot set the default password. Please choose a different password."
+      );
+      return;
+    }
+
+    const storedDriver = localStorage.getItem("driverData");
     if (!storedDriver) {
       setError("Driver data missing. Please log in again.");
       return;
@@ -57,7 +64,6 @@ const UpdatePassword: React.FC = () => {
       const driverPayload = JSON.parse(storedDriver);
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // 🔄 Replace only the password field
       const updatedDriver = {
         ...driverPayload,
         password: hashedPassword,
@@ -105,7 +111,6 @@ const UpdatePassword: React.FC = () => {
         <div className="ion-text-center" style={{ marginTop: "40px" }}>
           <IonImg src="/assets/logo-word.png" className="logo-image" />
         </div>
-
         <div
           style={{
             color: "#008000",

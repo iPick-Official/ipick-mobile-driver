@@ -54,19 +54,23 @@ const Login: React.FC = () => {
   }, [isDisabled, countdown]);
 
   const handleLogin = async () => {
-    const normalizedMobile = String(mobileRef.current?.value ?? "").trim();
-    const normalizedPassword = String(passwordRef.current?.value ?? "").trim();
-    const lastTenDigits = normalizedMobile.slice(-10);
+    const mobile = String(mobileRef.current?.value ?? "").trim();
+    const password = String(passwordRef.current?.value ?? "").trim();
+    const lastTenDigits = mobile.slice(-10);
+
     if (!/^\d{10}$/.test(lastTenDigits)) {
       setError("Enter a valid 11-digit mobile number");
       return;
     }
+
     const loginPayload = {
       mobnum: lastTenDigits,
-      password: normalizedPassword,
+      password,
     };
+
     setLoading(true);
     setError("");
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT}/auth/login`,
@@ -79,39 +83,55 @@ const Login: React.FC = () => {
           body: JSON.stringify(loginPayload),
         }
       );
+
       if (response.status === 401) {
         setError("Incorrect credentials!");
         return;
       }
+
       if (!response.ok) {
         throw new Error("Unexpected server response");
       }
-      const data = await response.json();
-      const user = data.user;
-      if (!data.access_token || !user || user.type !== "driver") {
+
+      const { user, access_token, logged, accountStatus } =
+        await response.json();
+
+      if (!access_token || !user || user.type !== "driver") {
         setError("Incorrect credentials!");
         return;
       }
-      if (data.logged) {
+
+      // Warn on default password usage
+      if (password === "ipick@2025") {
+        alert(
+          "You are using the default password. Please change it immediately for security reasons."
+        );
+        setTimeout(handleRequestOtp, 100);
+        return;
+      }
+
+      if (logged) {
         alert("You have been logged out of all other devices.");
       }
+
+      // Save user info to localStorage
+      const profilePictureUrl =
+        user.personalRequirements?.profilePicture?.url || "";
       localStorage.setItem("id", user._id);
       localStorage.setItem("userId", user.id);
       localStorage.setItem("name", user.name);
-      localStorage.setItem("accessToken", data.access_token);
+      localStorage.setItem("accessToken", access_token);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("isLogged", "true");
       localStorage.setItem("userType", user.type);
       localStorage.setItem("status", user.status);
-      localStorage.setItem("authToken", user.authToken);
-      localStorage.setItem("accountStatus", data.accountStatus);
-      login();
+      localStorage.setItem("accountStatus", accountStatus);
+      localStorage.setItem("profilePicture", profilePictureUrl);
+
+      login(); // Assuming this sets context or app-wide auth state
+
       const userStatus = user.status?.toLowerCase();
-      if (userStatus === "approved") {
-        history.replace("/home");
-      } else {
-        history.replace("/checklist");
-      }
+      history.replace(userStatus === "approved" ? "/home" : "/checklist");
     } catch (err) {
       console.error("Login error:", err);
       setError("An error occurred while logging in.");
@@ -126,13 +146,6 @@ const Login: React.FC = () => {
 
     if (!/^\d{10}$/.test(lastTenDigits)) {
       setError("Enter a valid 11-digit mobile number");
-      return;
-    }
-
-    const confirmReset = window.confirm(
-      `Are you sure you want to reset the password for this mobile number: ${lastTenDigits}?`
-    );
-    if (!confirmReset) {
       return;
     }
 
@@ -250,15 +263,16 @@ const Login: React.FC = () => {
   return (
     <IonPage>
       <IonHeader collapse="fade" className="ion-no-border">
-        <IonToolbar />
+        <IonToolbar>
+          <IonLabel slot="end" style={{ margin: "10px", fontSize: "12px" }}>
+            v{import.meta.env.VITE_CURRENT_VERSION}
+          </IonLabel>
+        </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding" fullscreen>
-        {/* Logo */}
         <div className="ion-text-center">
           <IonImg src="/assets/logo-word.png" className="logo-image" />
         </div>
-
-        {/* App Name */}
         <div
           style={{
             color: "#008000",

@@ -17,7 +17,8 @@ ion-menu.md ion-note {
   margin-bottom: 30px;
 }
 
-ion-menu.md ion-list-header, ion-menu.md ion-note {
+ion-menu.md ion-list-header,
+ion-menu.md ion-note {
   padding-left: 10px;
 }
 
@@ -110,4 +111,54 @@ ion-note {
 
 ion-item.selected {
   --color: var(--ion-color-primary);
-} 
+}
+
+.profile-item {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid #ffffff88;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  flex-shrink: 0;
+  margin: 10px 20px 10px 10px;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  justify-content: center; /* Vertically center content */
+  align-items: flex-start; /* Align to the left */
+  width: 100%;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #292929;
+  margin-bottom: 4px;
+}
+
+.profile-plate {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+  display: block;
+}
+
+.profile-text {
+  margin: 0 15px;
+  border-radius: 20px;
+}

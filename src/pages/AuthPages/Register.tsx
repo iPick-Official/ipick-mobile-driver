@@ -83,16 +83,22 @@ const Register: React.FC = () => {
   const checkDuplicateMobile = async (mobile: string): Promise<boolean> => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/Drivers/${mobile}`
+        `${import.meta.env.VITE_API_ENDPOINT}/auth/dupCheck`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ mobnum: mobile }),
+        }
       );
+      const data = await res.json();
       if (res.ok) {
-        // If the mobile number exists, the API returns 200 with data
-        const data = await res.json();
-        return !!data; // true = duplicate
+        return data?.error === "Mobile Number";
+      } else {
+        console.error("Unexpected response when checking mobile:", data);
+        return false;
       }
-      // Other unexpected statuses
-      console.error("Unexpected response when checking mobile:", res.status);
-      return false;
     } catch (err) {
       console.error("Error checking duplicate mobile number:", err);
       return false;
@@ -114,7 +120,6 @@ const Register: React.FC = () => {
       }
 
       const hashedPassword = await bcrypt.hash(pass, 10);
-
       const payload = buildDriverPayload({
         carType: carTypeRef?.current,
         firstName: firstNameRef?.current,
@@ -129,7 +134,6 @@ const Register: React.FC = () => {
       });
 
       const endpoint = `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/Drivers`;
-
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,7 +149,7 @@ const Register: React.FC = () => {
         setError(errorMsg);
         return;
       }
-      alert("Please sign-in to continue onboarding!")
+      alert("Please sign-in to continue onboarding!");
       history.goBack();
     } catch (err) {
       setError("Network error, please try again later.");
@@ -281,7 +285,7 @@ const Register: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen={true}>
+      <IonContent fullscreen={true} className="auth-ion-content ion-padding">
         <IonHeader collapse="condense" translucent={true}>
           <IonToolbar>
             <IonTitle size="large" className="ion-text-center">

@@ -17,12 +17,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
-  const id = localStorage.getItem("id");
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType");
   const accessToken = localStorage.getItem("accessToken");
   const isLogged = localStorage.getItem("isLogged") === "true";
-  const localAuthToken = localStorage.getItem("authToken");
 
   useEffect(() => {
     setIsAuthenticated(isLogged);
@@ -73,21 +71,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
       }
 
       disconnectSocket();
-
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("user");
-      localStorage.removeItem("isLogged");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userType");
-      localStorage.removeItem("authToken");
-
+      localStorage.clear();
       setIsAuthenticated(false);
     } catch (err) {
       console.error("Logout error:", err);

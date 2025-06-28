@@ -593,8 +593,8 @@ const TransportReq: React.FC = () => {
               }}
               className="floating-label-dark"
               style={{
-                borderLeft: "solid 1px #008000",
-                borderRight: "solid 1px #008000",
+                borderLeft: "solid 1px rgba(0, 128, 0, 0.37)",
+                borderRight: "solid 1px rgba(0, 128, 0, 0.37)",
               }}
             />
             <IonInput

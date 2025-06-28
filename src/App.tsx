@@ -6,10 +6,7 @@ import {
   setupIonicReact,
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import { Redirect, Route, RouteProps } from "react-router-dom";
-import { useEffect } from "react";
-import { StatusBar, Style } from "@capacitor/status-bar";
-import { isPlatform } from "@ionic/react";
+import { Redirect, Route, RouteProps, useLocation } from "react-router-dom";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -21,6 +18,7 @@ import "./theme/variables.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Menu from "./components/Menu";
 import Home from "./pages/DriverPages/Home";
+import MyProfile from "./pages/DriverPages/MyProfile";
 
 import Login from "./pages/AuthPages/Login";
 import Register from "./pages/AuthPages/Register";
@@ -30,6 +28,11 @@ import Checklist from "./pages/OnboardingPages/Checklist";
 import PersonalInfo from "./pages/OnboardingPages/PersonalInfo";
 import PersonlaReq from "./pages/OnboardingPages/PersonalReq";
 import TransportReq from "./pages/OnboardingPages/TransportReq";
+import Earnings from "./pages/DriverPages/Earnings";
+import Wallet from "./pages/DriverPages/Wallet";
+import Messages from "./pages/DriverPages/Messages";
+import HelpCenter from "./pages/DriverPages/HelpCenter";
+import Settings from "./pages/DriverPages/Settings";
 
 setupIonicReact();
 
@@ -53,49 +56,66 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   return <Route {...rest} render={(props) => <Component {...props} />} />;
 };
 
-const AppContent: React.FC = () => {
+const AppContentInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const location = useLocation(); // ✅ Now inside routing context
   const driverStatus = localStorage.getItem("status");
 
-  useEffect(() => {
-    if (isPlatform("capacitor")) {
-      StatusBar.setOverlaysWebView({ overlay: true }).catch(console.error);
-      StatusBar.setStyle({ style: Style.Light }).catch(console.error);
-    }
-  }, []);
+  const shouldShowMenu =
+    isAuthenticated &&
+    driverStatus === "approved" &&
+    location.pathname === "/home";
 
   return (
-    <IonReactRouter>
-      <IonSplitPane contentId="main">
-        {isAuthenticated && driverStatus === "approved" && <Menu />}
-        <IonRouterOutlet id="main">
-          {/* Public Routes */}
-          <Route path="/login" exact>
-            <Login />
-          </Route>
-          <Route path="/register" exact>
-            <Register />
-          </Route>
-          <Route path="/new-password" exact>
-            <UpdatePassword />
-          </Route>
+    <IonSplitPane contentId="main">
+      {shouldShowMenu && <Menu />}
+      <IonRouterOutlet id="main">
+        {/* Public Routes */}
+        <Route path="/login" exact>
+          <Login />
+        </Route>
+        <Route path="/register" exact>
+          <Register />
+        </Route>
+        <Route path="/new-password" exact>
+          <UpdatePassword />
+        </Route>
 
-          {/* Protected Routes */}
-          <PrivateRoute path="/checklist" exact component={Checklist} />
-          <PrivateRoute path="/home" exact component={Home} />
-          <PrivateRoute path="/personal-info" exact component={PersonalInfo} />
-          <PrivateRoute path="/personal-req" exact component={PersonlaReq} />
-          <PrivateRoute path="/transport-req" exact component={TransportReq} />
+        {/* Protected Routes */}
+        <PrivateRoute path="/home" exact component={Home} />
+        <PrivateRoute path="/my-profile" exact component={MyProfile} />
+        <PrivateRoute path="/earnings" exact component={Earnings} />
+        <PrivateRoute path="/wallet" exact component={Wallet} />
+        <PrivateRoute path="/messages" exact component={Messages} />
+        <PrivateRoute path="/help-center" exact component={HelpCenter} />
+        <PrivateRoute path="/settings" exact component={Settings} />
+        <PrivateRoute path="/checklist" exact component={Checklist} />
+        <PrivateRoute path="/personal-info" exact component={PersonalInfo} />
+        <PrivateRoute path="/personal-req" exact component={PersonlaReq} />
+        <PrivateRoute path="/transport-req" exact component={TransportReq} />
 
-          {/* Root Redirect */}
-          <Route path="/" exact>
-            <Redirect to={isAuthenticated ? "/checklist" : "/login"} />
-          </Route>
-        </IonRouterOutlet>
-      </IonSplitPane>
-    </IonReactRouter>
+        {/* Root Redirect */}
+        <Route path="/" exact>
+          {!isAuthenticated ? (
+            <Redirect to="/login" />
+          ) : driverStatus === "pending" ? (
+            <Redirect to="/checklist" />
+          ) : driverStatus === "approved" ? (
+            <Redirect to="/home" />
+          ) : (
+            <Redirect to="/login" />
+          )}
+        </Route>
+      </IonRouterOutlet>
+    </IonSplitPane>
   );
 };
+
+const AppContent: React.FC = () => (
+  <IonReactRouter>
+    <AppContentInner />
+  </IonReactRouter>
+);
 
 const App: React.FC = () => {
   return (

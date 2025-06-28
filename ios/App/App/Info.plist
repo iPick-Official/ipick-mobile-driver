@@ -22,6 +22,27 @@
 		<string>$(CURRENT_PROJECT_VERSION)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true />
+		<key>NSCameraUsageDescription</key>
+		<string>We use your camera to allow you to take a photo of your profile picture or required
+			documents during registration.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>We access your photo library so you can upload a profile picture or documents from
+			your device during registration.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>We save a copy of your profile picture or uploaded documents to your photo library
+			for your records.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>We use your location to show nearby drivers and set accurate pickup points while you
+			use the app.</string>
+
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>We use your location to track trips and provide accurate pickup/drop-off
+			information, even if the app is running in the background.</string>
+
+		<key>NSMicrophoneUsageDescription</key>
+		<string>We need access to your microphone to record audio.</string>
+
+
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>UIMainStoryboardFile</key>
@@ -30,36 +51,22 @@
 		<array>
 			<string>armv7</string>
 		</array>
+		<key>UIStatusBarHidden</key>
+		<true />
+		<key>UIStatusBarStyle</key>
+		<string />
 		<key>UISupportedInterfaceOrientations</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UISupportedInterfaceOrientations~ipad</key>
 		<array>
-			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationPortraitUpsideDown</string>
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		</array>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<true />
-		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>We use your location to provide better services even when the app is not in the
-			foreground.</string>
-
-		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>We use your location to provide relevant content while you're using the app.</string>
-
-		<key>NSCameraUsageDescription</key>
-		<string>This app requires camera access to capture photos or videos.</string>
-
-		<key>NSPhotoLibraryAddUsageDescription</key>
-		<string>This app needs access to add photos to your photo library.</string>
-
-		<key>NSPhotoLibraryUsageDescription</key>
-		<string>This app needs access to your photo library to select photos.</string>
-
 	</dict>
 </plist>

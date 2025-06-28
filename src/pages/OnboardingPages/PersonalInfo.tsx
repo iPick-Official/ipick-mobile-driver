@@ -175,11 +175,11 @@ const PersonalInfo: React.FC = () => {
           <IonButtons slot="start">
             <BackButton />
           </IonButtons>
-          <IonTitle>My Account</IonTitle>
+          <IonTitle>Edit Account</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding" fullscreen>
+      <IonContent className="ion-padding auth-ion-content" fullscreen>
         <IonHeader collapse="condense" translucent={true}>
           <IonToolbar>
             <IonTitle size="large" className="ion-text-center">

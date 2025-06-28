@@ -95,7 +95,7 @@ const OtpModal: React.FC<OtpModalProps> = ({
         if (input) input.value = "";
       });
       updateOtpRefValue();
-      otpRef.current?.setFocus(); // ← Focus the hidden input
+      otpRef.current?.setFocus();
     };
 
     modal.addEventListener("ionModalDidPresent", handler);
@@ -110,44 +110,28 @@ const OtpModal: React.FC<OtpModalProps> = ({
       canDismiss={canDismiss}
     >
       <IonRow className="otp-row block ion-padding ion-justify-content-center">
-        <IonCol size="12" className="ion-text-center ion-margin-bottom">
+        <div className="otp-box-row" onPaste={handlePaste}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <IonInput
+              key={index}
+              ref={(el) => {
+                inputsRef.current[index] = el;
+              }}
+              type="tel"
+              inputMode="numeric"
+              maxlength={1}
+              onIonInput={(e) => {
+                const input = e.target as HTMLIonInputElement;
+                handleChange(input.value?.toString() || "", index);
+              }}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              className="otp-box"
+            />
+          ))}
+        </div>
+        <IonItem lines="none" className="ion-text-center ion-margin-bottom">
           <IonText>Enter the 6-digit code sent to your mobile number</IonText>
-        </IonCol>
-
-        <IonCol size="12">
-          <div className="otp-box-row" onPaste={handlePaste}>
-            {Array.from({ length: 6 }).map((_, index) => (
-              <IonInput
-                key={index}
-                ref={(el) => {
-                  inputsRef.current[index] = el;
-                }}
-                type="tel"
-                inputMode="numeric"
-                maxlength={1}
-                onIonInput={(e) => {
-                  const input = e.target as HTMLIonInputElement;
-                  handleChange(input.value?.toString() || "", index);
-                }}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                className="otp-box"
-              />
-            ))}
-          </div>
-        </IonCol>
-
-        {/* <IonCol size="12" className="ion-text-center ion-margin-top">
-          <IonButton
-            onClick={onVerify}
-            color="primary"
-            shape="round"
-            size="large"
-            fill="solid"
-          >
-            <IonIcon icon={arrowForward} slot="icon-only" />
-          </IonButton>
-        </IonCol> */}
-
+        </IonItem>
         <IonCol size="12" className="ion-text-center ion-margin-top">
           <IonImg
             src="./assets/otp-icon.svg"
@@ -170,15 +154,12 @@ const OtpModal: React.FC<OtpModalProps> = ({
           onIonInput={(e) => {
             const input = e.target as HTMLIonInputElement;
             const value = input.value?.toString().trim() || "";
-
             if (value.length === 6 && /^[0-9]{6}$/.test(value)) {
-              // Distribute digits to visible boxes
               value.split("").forEach((digit, i) => {
                 const box = inputsRef.current[i];
                 if (box) box.value = digit;
               });
-
-              onVerify(); // 🔥 Auto-submit
+              onVerify();
             }
           }}
           style={{

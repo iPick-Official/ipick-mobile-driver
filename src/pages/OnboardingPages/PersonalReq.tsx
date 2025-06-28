@@ -342,19 +342,99 @@ const PersonlaReq: React.FC = () => {
     setActiveTab(e.detail.value);
   };
 
+  const handleCompress = (img: HTMLImageElement): string => {
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 800;
+
+    let width = img.width;
+    let height = img.height;
+
+    console.log(`Original image dimensions: ${width}x${height}`);
+
+    // Maintain aspect ratio
+    if (width > height) {
+      if (width > MAX_WIDTH) {
+        height = Math.round((height * MAX_WIDTH) / width);
+        width = MAX_WIDTH;
+      }
+    } else {
+      if (height > MAX_HEIGHT) {
+        width = Math.round((width * MAX_HEIGHT) / height);
+        height = MAX_HEIGHT;
+      }
+    }
+
+    console.log(`Resized image dimensions: ${width}x${height}`);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.error("Failed to get canvas context");
+      return "";
+    }
+
+    ctx.drawImage(img, 0, 0, width, height);
+
+    let quality = 0.7;
+    let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+    console.log(
+      `Initial compressed size at quality ${quality}: ${(
+        dataUrl.length / 1024
+      ).toFixed(2)} KB`
+    );
+
+    while (dataUrl.length / 1024 > 300 && quality > 0.1) {
+      quality -= 0.05;
+      dataUrl = canvas.toDataURL("image/jpeg", quality);
+      console.log(
+        `Compressed size at quality ${quality.toFixed(2)}: ${(
+          dataUrl.length / 1024
+        ).toFixed(2)} KB`
+      );
+    }
+
+    console.log(
+      `Final compressed image size: ${(dataUrl.length / 1024).toFixed(2)} KB`
+    );
+
+    return dataUrl;
+  };
+
   const handleFileClick = (ref: React.RefObject<{ click: () => void }>) => {
     ref.current?.click();
   };
 
   const handleProfileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setProfilePic(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) {
+      console.warn("No file selected");
+      return;
     }
+
+    console.log(
+      `Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`
+    );
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (!e.target?.result) {
+        console.error("Failed to read image data from FileReader");
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        const compressedDataUrl = handleCompress(img);
+        setProfilePic(compressedDataUrl);
+      };
+      img.src = e.target.result as string;
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleFileChange = (
