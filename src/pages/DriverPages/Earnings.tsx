@@ -9,7 +9,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonListHeader,
+  IonModal,
   IonPage,
   IonSkeletonText,
   IonText,
@@ -17,14 +17,12 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import {
-  calendar,
   calendarClearOutline,
-  calendarNumber,
   calendarNumberOutline,
   calendarOutline,
-  calendarSharp,
   searchOutline,
   timeOutline,
+  closeOutline,
 } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import BackButton from "../../components/BackButton";
@@ -37,6 +35,10 @@ const Earnings: React.FC = () => {
     new Date().toISOString().split("T")[0]
   );
 
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
+  const [bookingDetails, setBookingDetails] = useState<any | null>(null);
+
   useEffect(() => {
     const loadHistory = async () => {
       setLoading(true);
@@ -48,13 +50,11 @@ const Earnings: React.FC = () => {
     loadHistory();
   }, []);
 
-  // Convert selectedDate string to Date
   const selected = new Date(selectedDate);
   const selectedYear = selected.getFullYear();
   const selectedMonth = selected.getMonth();
   const selectedDay = selected.getDate();
 
-  // Helper: get start of week (Sunday)
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
     d.setDate(d.getDate() - d.getDay());
@@ -62,10 +62,9 @@ const Earnings: React.FC = () => {
     return d;
   };
 
-  // Filtered earnings by time scope
   const todayIncome = rideHistory
     .filter((ride) => {
-      const d = new Date(ride.createdAt);
+      const d = new Date(ride.updatedAt);
       return (
         d.getFullYear() === selectedYear &&
         d.getMonth() === selectedMonth &&
@@ -76,7 +75,7 @@ const Earnings: React.FC = () => {
 
   const weekIncome = rideHistory
     .filter((ride) => {
-      const d = new Date(ride.createdAt);
+      const d = new Date(ride.updatedAt);
       const weekStart = getWeekStart(selected);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 7);
@@ -86,27 +85,53 @@ const Earnings: React.FC = () => {
 
   const monthIncome = rideHistory
     .filter((ride) => {
-      const d = new Date(ride.createdAt);
+      const d = new Date(ride.updatedAt);
       return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
     })
     .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
 
   const yearIncome = rideHistory
     .filter((ride) => {
-      const d = new Date(ride.createdAt);
+      const d = new Date(ride.updatedAt);
       return d.getFullYear() === selectedYear;
     })
     .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
 
-  // Filter trip list by selected date (daily detail)
   const filteredTrips = rideHistory.filter((ride) => {
-    const d = new Date(ride.createdAt);
+    const d = new Date(ride.updatedAt);
     return (
       d.getFullYear() === selectedYear &&
       d.getMonth() === selectedMonth &&
       d.getDate() === selectedDay
     );
   });
+
+  const openReceipt = async (trip: any) => {
+    setSelectedTrip(trip);
+    const detail = await fetchBookingDetails(trip._id);
+    setBookingDetails(detail?.[0] ?? null);
+    setShowModal(true);
+  };
+
+  async function fetchBookingDetails(id: string) {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BOOKING_ENDPOINT}/SearchBookingDetails`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed");
+      return await res.json();
+    } catch {
+      console.error("Error fetching booking details");
+      return null;
+    }
+  }
 
   return (
     <IonPage>
@@ -153,22 +178,22 @@ const Earnings: React.FC = () => {
                   {
                     label: "This day",
                     value: `₱${todayIncome.toFixed(2)}`,
-                    icon: timeOutline,
+                    icon: "assets/icons/income-daily.gif",
                   },
                   {
                     label: "This Week",
                     value: `₱${weekIncome.toFixed(2)}`,
-                    icon: calendarClearOutline,
+                    icon: "assets/icons/income-weekly.gif",
                   },
                   {
                     label: "This Month",
                     value: `₱${monthIncome.toFixed(2)}`,
-                    icon: calendarNumberOutline,
+                    icon: "assets/icons/income-monthly.gif",
                   },
                   {
                     label: "This Year",
                     value: `₱${yearIncome.toFixed(2)}`,
-                    icon: calendarOutline,
+                    icon: "assets/icons/income-anually.gif",
                   },
                 ].map((item, index) => (
                   <IonCard
@@ -177,16 +202,23 @@ const Earnings: React.FC = () => {
                     style={{
                       minWidth: "140px",
                       background:
-                        "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                        "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
                     }}
                   >
                     <IonCardContent>
-                      <IonIcon
-                        icon={item.icon}
-                        style={{ fontSize: "24px", color: "#ffffff" }}
+                      <img
+                        src={item.icon}
+                        alt="Earnings"
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          marginBottom: "4px",
+                        }}
                       />
-                      <h6>{item.label}</h6>
-                      <strong>{item.value}</strong>
+                      <IonText color="light">
+                        <h6>{item.label}</h6>
+                        <strong>{item.value}</strong>
+                      </IonText>
                     </IonCardContent>
                   </IonCard>
                 ))}
@@ -194,24 +226,17 @@ const Earnings: React.FC = () => {
 
           {/* Date Picker */}
           <IonItem lines="none" className="input-field">
-            {loading ? (
-              <IonSkeletonText
-                animated
-                style={{ width: "100%", height: "48px", borderRadius: "6px" }}
-              />
-            ) : (
-              <IonInput
-                color="dark"
-                inputMode="numeric"
-                placeholder="Select Date"
-                label="Filter Transactions By Date"
-                labelPlacement="floating"
-                type="date"
-                value={selectedDate}
-                onIonChange={(e) => setSelectedDate(e.detail.value || "")}
-                className="floating-label-dark"
-              />
-            )}
+            <IonInput
+              color="dark"
+              inputMode="numeric"
+              placeholder="Select Date"
+              label="Filter Trips By Date"
+              labelPlacement="floating"
+              type="date"
+              value={selectedDate}
+              onIonChange={(e) => setSelectedDate(e.detail.value || "")}
+              className="floating-label-dark"
+            />
           </IonItem>
         </IonToolbar>
       </IonHeader>
@@ -219,12 +244,20 @@ const Earnings: React.FC = () => {
       <IonContent className="ion-padding" fullscreen>
         <IonList>
           {loading ? (
-            <IonItem
-              lines="none"
-              className="ion-no-border ion-text-center ion-padding"
-            >
-              <IonLabel>Processing...</IonLabel>
-            </IonItem>
+            Array.from({ length: 3 }).map((_, i) => (
+              <IonItem key={i}>
+                <IonLabel>
+                  <IonSkeletonText animated style={{ width: "0%" }} />
+                  <IonSkeletonText animated style={{ width: "60%" }} />
+                  <IonSkeletonText animated style={{ width: "80%" }} />
+                  <IonSkeletonText animated style={{ width: "80%" }} />
+                </IonLabel>
+                <IonSkeletonText
+                  animated
+                  style={{ width: "60px", height: "20px" }}
+                />
+              </IonItem>
+            ))
           ) : filteredTrips.length === 0 ? (
             <div
               className="ion-no-border ion-text-center ion-padding"
@@ -246,11 +279,19 @@ const Earnings: React.FC = () => {
             </div>
           ) : (
             filteredTrips.map((trip, idx) => (
-              <IonItem lines="full" key={trip._id || idx}>
+              <IonItem
+                button
+                key={trip._id || idx}
+                onClick={() => {
+                  setSelectedTrip(trip);
+                  setShowModal(true);
+                  openReceipt(trip);
+                }}
+              >
                 <IonLabel>
                   <h6>Trip Earnings</h6>
                   <p>
-                    {new Date(trip.createdAt).toLocaleString()}
+                    {new Date(trip.updatedAt).toLocaleString()}
                     <br />
                     <small>
                       From: {trip.origin?.name || "Unknown"} <br />
@@ -265,6 +306,118 @@ const Earnings: React.FC = () => {
             ))
           )}
         </IonList>
+
+        {/* Modal for trip receipt */}
+        <IonModal
+          trigger="open-modal"
+          isOpen={showModal}
+          onDidDismiss={() => setShowModal(false)}
+          initialBreakpoint={0.75}
+          breakpoints={[0.25, 0.75, 1]}
+        >
+          <IonHeader
+            className="no-ion-border transparent-header"
+            collapse="fade"
+          >
+            <IonToolbar>
+              <IonTitle>Receipt</IonTitle>
+              <IonButtons slot="end">
+                <IonIcon
+                  icon={closeOutline}
+                  slot="icon-only"
+                  onClick={() => setShowModal(false)}
+                />
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            {selectedTrip && bookingDetails && (
+              <IonCard
+                style={{
+                  fontFamily: "monospace",
+                  maxWidth: 480,
+                  margin: "auto",
+                }}
+              >
+                <IonList lines="full">
+                  {/* Booking-specific fields */}
+                  {[
+                    {
+                      label: "Reference #",
+                      value: bookingDetails.ReferenceNumber,
+                    },
+                    { label: "Driver", value: bookingDetails.Driver },
+                    { label: "Passenger", value: bookingDetails.Passenger },
+                    { label: "Car Type", value: bookingDetails.Cartype },
+                    { label: "Payment", value: bookingDetails.PaymentType },
+                  ].map((f, idx) => (
+                    <IonItem key={idx}>
+                      <IonLabel>{f.label}</IonLabel>
+                      <IonText slot="end">{f.value}</IonText>
+                    </IonItem>
+                  ))}
+
+                  {/* Computation & fare breakdown */}
+                  {[
+                    {
+                      label: "Pickup",
+                      value: bookingDetails.Origin || "Unknown",
+                    },
+                    {
+                      label: "Drop off",
+                      value: bookingDetails.Destination || "Unknown",
+                    },
+                    {
+                      label: "Distance (km)",
+                      value:
+                        bookingDetails.Computations.fareDistanceInKM.toFixed(2),
+                    },
+                    {
+                      label: "Duration (mins)",
+                      value:
+                        bookingDetails.Computations.fareDurationInMins.toFixed(
+                          2
+                        ),
+                    },
+                    {
+                      label: "Base Fare",
+                      value: `₱${bookingDetails.Computations.baseFare.toFixed(
+                        2
+                      )}`,
+                    },
+                    {
+                      label: "Service Fee",
+                      value: `₱${bookingDetails.Computations.serviceFee.toFixed(
+                        2
+                      )}`,
+                    },
+                  ].map((f, idx) => (
+                    <IonItem key={idx}>
+                      <IonLabel>{f.label}</IonLabel>
+                      <IonText slot="end">{f.value}</IonText>
+                    </IonItem>
+                  ))}
+
+                  {/* Total */}
+                  <IonItem
+                    lines="none"
+                    className="ion-no-padding"
+                    style={{ marginTop: "20px" }}
+                  >
+                    <IonLabel style={{ fontWeight: 700 }}>Total Fare</IonLabel>
+                    <IonText
+                      slot="end"
+                      color="primary"
+                      style={{ fontWeight: 700 }}
+                    >
+                      ₱{bookingDetails.TotalFare.toFixed(2)}
+                    </IonText>
+                  </IonItem>
+                </IonList>
+              </IonCard>
+            )}
+          </IonContent>
+        </IonModal>
       </IonContent>
     </IonPage>
   );

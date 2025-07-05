@@ -1,6 +1,6 @@
 import React from "react";
 import { IonButton, IonIcon } from "@ionic/react";
-import { chevronBackOutline, colorFill } from "ionicons/icons";
+import { arrowBack, arrowBackOutline, arrowBackSharp, chevronBackOutline, colorFill } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 
 type BackButtonProps = {
@@ -29,7 +29,7 @@ const BackButton: React.FC<BackButtonProps> = ({ onClick }) => {
     >
       <IonIcon
         slot="start"
-        icon={chevronBackOutline}
+        icon={arrowBackOutline}
         style={{ color: "#008000", fontSize: "2rem" }}
       />
     </IonButton>

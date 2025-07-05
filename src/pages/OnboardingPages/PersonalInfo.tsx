@@ -19,6 +19,7 @@ import {
 import "@theme/variables.css";
 import BackButton from "../../components/BackButton";
 import Loading from "../../components/Loading";
+import { capitalizeWords } from "../../utils/textUtils";
 
 const PersonalInfo: React.FC = () => {
   const originalUserRef = useRef<any>(null);
@@ -44,9 +45,7 @@ const PersonalInfo: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const userId = localStorage.getItem("id");
-
-  const capitalizeWords = (str: string) =>
-    str.replace(/\b\w/g, (char) => char.toUpperCase());
+  const status = localStorage.getItem("status") === "approved";
 
   const handleUpdate = async () => {
     if (!userId || !originalUserRef.current) {
@@ -54,31 +53,26 @@ const PersonalInfo: React.FC = () => {
       return;
     }
 
+    const firstName =
+      firstNameRef.current.trim() || originalUserRef.current.firstName;
+    const surName =
+      surNameRef.current.trim() || originalUserRef.current.surName;
+
     const updatedPayload = {
       ...originalUserRef.current,
-      firstName: capitalizeWords(
-        firstNameRef.current.trim() || originalUserRef.current.firstName
-      ),
-      surName: capitalizeWords(
-        surNameRef.current.trim() || originalUserRef.current.surName
-      ),
+      name: `${firstName} ${surName}`.trim() || originalUserRef.current.name,
+      firstName,
+      surName,
       email: emailRef.current.trim() || originalUserRef.current.email,
-      address: capitalizeWords(
-        addressRef.current.trim() || originalUserRef.current.address
-      ),
-      city: capitalizeWords(
-        cityRef.current.trim() || originalUserRef.current.city
-      ),
-      province: capitalizeWords(
-        provinceRef.current.trim() || originalUserRef.current.province
-      ),
+      address: addressRef.current.trim() || originalUserRef.current.address,
+      city: cityRef.current.trim() || originalUserRef.current.city,
+      province: provinceRef.current.trim() || originalUserRef.current.province,
       zipCode: zipCodeRef.current.trim() || originalUserRef.current.zipCode,
       mobileNumber:
         mobileNumberRef.current.trim() || originalUserRef.current.mobileNumber,
       carType: carTypeRef.current.trim() || originalUserRef.current.carType,
     };
 
-    // Check for changes
     const hasChanges = Object.keys(updatedPayload).some((key) => {
       const oldVal = originalUserRef.current[key]?.toString().trim();
       const newVal = updatedPayload[key]?.toString().trim();
@@ -362,6 +356,7 @@ const PersonalInfo: React.FC = () => {
             shape="round"
             size="large"
             onClick={handleUpdate}
+            disabled={status}
           >
             Submit
           </IonButton>

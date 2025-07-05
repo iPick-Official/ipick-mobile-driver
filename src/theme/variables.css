@@ -10,6 +10,7 @@
   --ion-color-primary: #008000;
   --ion-color-secondary: #fd100c;
   --ion-color-tertiary: #ff9e2a;
+  --ion-color-success: #0074c8;
 }
 
 .input-field {
@@ -210,3 +211,10 @@ ion-modal::part(content) {
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+
+.transparent-header {
+  --background: transparent;
+  --ion-background-color: transparent;
+  box-shadow: none;
+}
+

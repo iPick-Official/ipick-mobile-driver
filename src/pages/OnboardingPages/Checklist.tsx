@@ -13,22 +13,11 @@ import {
 import "@theme/variables.css";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { fetchActiveJobs } from "../../services/ApiService";
 
 const Checklist: React.FC = () => {
   const history = useHistory();
   const { logout } = useAuth();
   const userName = localStorage.getItem("name");
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchActiveJobs(logout);
-    }, 10000);
-
-    fetchActiveJobs(logout); // initial call
-
-    return () => clearInterval(intervalId);
-  }, []);
 
   return (
     <IonPage>

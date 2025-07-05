@@ -80,6 +80,10 @@ const Settings: React.FC = () => {
       label: "Safety Center",
       url: "https://e911.gov.ph/emergency-hotline-numbers/",
     },
+    {
+      label: "Account Deletion",
+      url: "https://docs.google.com/forms/d/1AH302t6VRm1R6268U9nYdeaIknpY7zuKuaMXu8BQ6AQ/edit",
+    },
   ];
 
   return (

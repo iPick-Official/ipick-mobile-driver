@@ -97,3 +97,114 @@ export const fetchRideHistory = async () => {
     return [];
   }
 };
+
+export const fetchDriverWallet = async () => {
+  const userId = localStorage.getItem("id");
+
+  if (!userId) return null;
+
+  try {
+    // await new Promise((resolve) => setTimeout(resolve, 2000));
+    const response = await fetch(
+      `${import.meta.env.VITE_API_BOOKING_ENDPOINT}/GetUserWallet`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: userId,
+          type: "driver",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // will include _id and walletBalance
+  } catch (error) {
+    console.error("Error fetching driver wallet:", error);
+    return null;
+  }
+};
+
+export const fetchDriverTransactions = async () => {
+  const userId = localStorage.getItem("id");
+
+  if (!userId) return null;
+
+  try {
+    // await new Promise((resolve) => setTimeout(resolve, 2000));
+    const response = await fetch(
+      `${import.meta.env.VITE_API_BOOKING_ENDPOINT}/GetUserTransactions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: userId,
+          type: "driver",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // will include _id and walletBalance
+  } catch (error) {
+    console.error("Error fetching driver wallet:", error);
+    return null;
+  }
+};
+
+export const fetchMyRatings = async () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const token = localStorage.getItem("accessToken");
+
+  // If user info or token is missing, return default rating
+  if (!user?.type || !user?.id || !token) {
+    console.error("Missing user info or token");
+    return 5.0;
+  }
+
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/${user.type}/rating/${
+        user.id
+      }`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Failed to fetch rating, defaulting to 5.0");
+      return 5.0;
+    }
+
+    const text = await response.text();
+    const parsed = Number(text);
+
+    if (!isNaN(parsed)) {
+      return parsed;
+    } else {
+      console.error("Response is not a number, defaulting to 5.0");
+      return 5.0;
+    }
+  } catch (error) {
+    console.error("Error fetching rating:", error);
+    return 5.0; // fallback
+  }
+};

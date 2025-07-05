@@ -2,7 +2,6 @@ import {
   IonAvatar,
   IonContent,
   IonFooter,
-  IonIcon,
   IonImg,
   IonItem,
   IonLabel,
@@ -16,30 +15,23 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { UploadService } from "../services/uploadService";
-import {
-  logOutOutline,
-  cashOutline,
-  walletOutline,
-  timeOutline,
-  chatboxEllipsesOutline,
-  helpCircleOutline,
-  medicalOutline,
-  settingsOutline,
-  personOutline,
-} from "ionicons/icons";
 
 const appPages = [
-  { title: "My Account", url: "/my-profile", icon: personOutline },
-  { title: "Earnings", url: "/earnings", icon: cashOutline },
-  { title: "Wallet", url: "/wallet", icon: walletOutline },
-  { title: "Messages", url: "/messages", icon: chatboxEllipsesOutline },
-  { title: "Help Center", url: "/help-center", icon: helpCircleOutline },
+  { title: "My Account", url: "/my-profile", icon: "assets/icons/png/driver.svg" },
+  { title: "Earnings", url: "/earnings", icon: "assets/icons/png/peso.svg" },
+  { title: "Wallet", url: "/wallet", icon: "assets/icons/png/e-wallet.svg" },
+  { title: "Messages", url: "/messages", icon: "assets/icons/png/chat.svg" },
+  {
+    title: "Help Center",
+    url: "/help-center",
+    icon: "assets/icons/png/help.svg",
+  },
   {
     title: "Settings",
     url: "/settings",
-    icon: settingsOutline,
+    icon: "assets/icons/png/settings.svg",
   },
-  { title: "Sign Out", icon: logOutOutline, action: "logout" },
+  { title: "Sign Out", icon: "assets/icons/png/logout.svg", action: "logout" },
 ];
 
 const uploadService = new UploadService(
@@ -52,6 +44,8 @@ const uploadService = new UploadService(
 const Menu: React.FC = () => {
   const location = useLocation();
   const { logout } = useAuth();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const plateNumber = user?.transportRequirements?.plateNumber || "";
   const rawProfile = localStorage.getItem("profilePicture");
   const profile = rawProfile ?? undefined;
   const [profilePic, setProfilePic] = useState("");
@@ -85,6 +79,7 @@ const Menu: React.FC = () => {
               <span className="profile-name">
                 {localStorage.getItem("name") ?? "Driver"}
               </span>
+              <span className="profile-plate">{plateNumber ?? "ABC1234"}</span>
             </div>
           </IonItem>
 
@@ -105,7 +100,11 @@ const Menu: React.FC = () => {
                 lines="none"
                 detail={false}
               >
-                <IonIcon slot="start" icon={icon} />
+                <IonImg
+                  slot="start"
+                  src={icon}
+                  style={{ width: 25, height: 25 }}
+                />
                 <IonLabel>{title}</IonLabel>
               </IonItem>
             </IonMenuToggle>

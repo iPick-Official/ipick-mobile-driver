@@ -134,7 +134,7 @@ const OtpModal: React.FC<OtpModalProps> = ({
         </IonItem>
         <IonCol size="12" className="ion-text-center ion-margin-top">
           <IonImg
-            src="./assets/otp-icon.svg"
+            src="./assets/icons/png/passcode.svg"
             style={{
               width: "auto",
               maxWidth: "150px",

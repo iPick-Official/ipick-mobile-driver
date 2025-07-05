@@ -6,10 +6,10 @@ PODS:
   - CapacitorCamera (7.0.1):
     - Capacitor
   - CapacitorCordova (7.4.0)
-  - CapacitorFilesystem (7.1.1):
+  - CapacitorFilesystem (7.1.2):
     - Capacitor
     - IONFilesystemLib (~> 1.0)
-  - CapacitorGeolocation (7.1.2):
+  - CapacitorGeolocation (7.1.3):
     - Capacitor
     - IONGeolocationLib (~> 1.0)
   - CapacitorGoogleMaps (7.0.2):
@@ -88,8 +88,8 @@ SPEC CHECKSUMS:
   CapacitorApp: febecbb9582cb353aed037e18ec765141f880fe9
   CapacitorCamera: 6e73f1fc6c629a672658705a02409b60854bc0f1
   CapacitorCordova: 723e017d8a80ab2ede9959fbe37556c35ac860d5
-  CapacitorFilesystem: 39173fe5a0e77851119998d0d8c61c70551a412a
-  CapacitorGeolocation: b005744861676af9abd19a0682f0b1af32cc2c99
+  CapacitorFilesystem: 337eeaf16a9fa5a44d2329df411523fa3a9a6ee9
+  CapacitorGeolocation: 5e8f3f1bbf3bd914edb0a6a121f2dc55f7ea5c4e
   CapacitorGoogleMaps: 22dcbe5bc4beedaf30621901f6be90b32d1ea631
   CapacitorHaptics: 1f1e17041f435d8ead9ff2a34edd592c6aa6a8d6
   CapacitorKeyboard: 09fd91dcde4f8a37313e7f11bde553ad1ed52036

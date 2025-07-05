@@ -7,8 +7,8 @@ import {
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { Redirect, Route, RouteProps, useLocation } from "react-router-dom";
+import React from "react";
 
-/* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
 import "@ionic/react/css/normalize.css";
 import "@ionic/react/css/structure.css";
@@ -18,6 +18,7 @@ import "./theme/variables.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Menu from "./components/Menu";
 import Home from "./pages/DriverPages/Home";
+import DriverTrip from "./pages/DriverPages/DriverTrip";
 import MyProfile from "./pages/DriverPages/MyProfile";
 
 import Login from "./pages/AuthPages/Login";
@@ -31,8 +32,11 @@ import TransportReq from "./pages/OnboardingPages/TransportReq";
 import Earnings from "./pages/DriverPages/Earnings";
 import Wallet from "./pages/DriverPages/Wallet";
 import Messages from "./pages/DriverPages/Messages";
+import MessageDetail from "./pages/DriverPages/MessageDetail";
 import HelpCenter from "./pages/DriverPages/HelpCenter";
 import Settings from "./pages/DriverPages/Settings";
+
+import { fetchActiveJobs } from "./services/apiService";
 
 setupIonicReact();
 
@@ -60,6 +64,15 @@ const AppContentInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation(); // ✅ Now inside routing context
   const driverStatus = localStorage.getItem("status");
+  const { logout } = useAuth();
+
+  React.useEffect(() => {
+    const fetchAll = async () => {
+      fetchActiveJobs(logout);
+    };
+
+    fetchAll();
+  }, []);
 
   const shouldShowMenu =
     isAuthenticated &&
@@ -83,6 +96,7 @@ const AppContentInner: React.FC = () => {
 
         {/* Protected Routes */}
         <PrivateRoute path="/home" exact component={Home} />
+        <PrivateRoute path="/driver-trip" exact component={DriverTrip} />
         <PrivateRoute path="/my-profile" exact component={MyProfile} />
         <PrivateRoute path="/earnings" exact component={Earnings} />
         <PrivateRoute path="/wallet" exact component={Wallet} />
@@ -93,6 +107,8 @@ const AppContentInner: React.FC = () => {
         <PrivateRoute path="/personal-info" exact component={PersonalInfo} />
         <PrivateRoute path="/personal-req" exact component={PersonlaReq} />
         <PrivateRoute path="/transport-req" exact component={TransportReq} />
+        <Route path="/messages/:id" component={MessageDetail} />
+        <Redirect exact from="/" to="/messages" />
 
         {/* Root Redirect */}
         <Route path="/" exact>

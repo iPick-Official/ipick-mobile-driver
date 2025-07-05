@@ -1,0 +1,60 @@
+All user data (JSON): {
+  "count": 1,
+  "users": [
+    {
+      "_id": "6868c0ecc9e0a4c5ce5250a3",
+      "riderId": "CoXlh30Kvq",
+      "__v": 0,
+      "computations": {
+        "baseFare": 45,
+        "serviceFee": 124.00383333333335,
+        "fareDistanceInKM": 62.207,
+        "fareDurationInMins": 130.96666666666667,
+        "costPerKM": 15,
+        "costPerMin": 2
+      },
+      "createdAt": "2025-07-05T06:06:36.662Z",
+      "destination": {
+        "name": "Conrad Manila, Coral Way, Pasay City, Metro Manila",
+        "type": "Point",
+        "coordinates": [
+          14.5315812,
+          120.9800438
+        ]
+      },
+      "driverId": null,
+      "driverRating": [],
+      "origin": {
+        "name": "Yoki's Farm, 1, Mendez, Cavite",
+        "type": "Point",
+        "coordinates": [
+          14.1244377,
+          120.879931
+        ]
+      },
+      "status": "active",
+      "timestamp": "2025-07-05",
+      "travelFare": 1406.04,
+      "updatedAt": "2025-07-05T06:06:46.343Z",
+      "userRating": null,
+      "riderData": {
+        "_id": "6867f894d3895a0ce7febf30",
+        "id": "CoXlh30Kvq",
+        "__v": 0,
+        "address": "#202 Phase 3 Burol-1 Dasmariñas, Cavite",
+        "createdAt": "2025-07-04T15:51:48.601Z",
+        "email": "beverlyavorque@gmail.com",
+        "messages": [],
+        "mobnum": "9948567321",
+        "name": "Beverly Avorque",
+        "password": "$2a$10$ZcbWQtaEudBcJ2ooJHaH6.BiR55u/P8N7wxdePMjswPtexSjwAt7a",
+        "places": [],
+        "rideHistory": [],
+        "type": "rider",
+        "updatedAt": "2025-07-04T15:52:04.490Z",
+        "authToken": "$2a$10$Frr1YXp3h5xKmC4JSG8aFu/5uGRTqEqWBmKnW6kzbEzmBaZQ5Cyf2",
+        "isLogged": true
+      }
+    }
+  ]
+}

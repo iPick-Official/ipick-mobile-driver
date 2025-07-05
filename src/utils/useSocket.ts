@@ -38,11 +38,10 @@ export const fetchAllUserIds = (): Promise<string[]> => {
   return new Promise((resolve) => {
     if (!socket) return resolve([]);
 
-    socket.emit("getAllUsers"); // optional: only if required
     socket.once("all_users", (data) => {
       const ids = data?.users?.map((user: any) => user._id) || [];
-      console.log("User IDs from all_users:", ids);
-      console.log("All User Data Socket:", data);
+      // console.log("User IDs from all_users:", ids);
+      // console.log("All User Data Socket:", data);
       resolve(ids);
     });
   });

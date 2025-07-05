@@ -21,6 +21,7 @@ import BackButton from "../../components/BackButton";
 import { UploadService } from "../../services/uploadService";
 import { useHistory } from "react-router-dom";
 import "../../components/Menu.css";
+import { fetchMyRatings } from "../../services/apiService";
 import {
   callOutline,
   carOutline,
@@ -59,49 +60,15 @@ const MyProfile: React.FC = () => {
   const carColor = user?.transportRequirements?.carColor || "";
   const carBrand = user?.transportRequirements?.carBrand || "";
   const carModel = user?.transportRequirements?.carModel || "";
-  const token = localStorage.getItem("accessToken");
 
   useEffect(() => {
-    const getMyRating = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/${
-            user?.type
-          }/rating/${user?.id}`,
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          console.error("Failed to fetch rating, defaulting to 5.0");
-          setMyRating(5.0);
-          return;
-        }
-
-        const text = await response.text();
-        const parsed = Number(text);
-
-        if (!isNaN(parsed)) {
-          setMyRating(parsed);
-        } else {
-          setMyRating(5.0);
-        }
-      } catch (error) {
-        console.error("Error fetching rating:", error);
-        setMyRating(5.0); // ✅ Fallback on fetch failure
-      }
+    const loadRating = async () => {
+      const rating = await fetchMyRatings();
+      setMyRating(rating);
     };
 
-    if (user?.type && user?.id) {
-      getMyRating();
-    }
-  }, [user?.type, user?.id]);
+    loadRating();
+  }, []);
 
   useEffect(() => {
     const loadProfilePicture = async () => {

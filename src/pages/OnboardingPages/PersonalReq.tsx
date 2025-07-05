@@ -29,6 +29,7 @@ import "@theme/variables.css";
 import BackButton from "../../components/BackButton";
 import { cloudUploadSharp } from "ionicons/icons";
 import { UploadService } from "../../services/uploadService";
+import { capitalizeWords } from "../../utils/textUtils";
 import Loading from "../../components/Loading";
 
 const PersonlaReq: React.FC = () => {
@@ -98,6 +99,7 @@ const PersonlaReq: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const userId = localStorage.getItem("id");
+  const status = localStorage.getItem("status") === "approved";
 
   const uploadService = new UploadService(
     import.meta.env.VITE_AWS_ACCESS_KEY,
@@ -336,8 +338,6 @@ const PersonlaReq: React.FC = () => {
     handleFetchPersonReq();
   }, []);
 
-  const capitalizeWords = (str: string) =>
-    str.replace(/\b\w/g, (char) => char.toUpperCase());
   const handleTabChange = (e: CustomEvent) => {
     setActiveTab(e.detail.value);
   };
@@ -522,6 +522,7 @@ const PersonlaReq: React.FC = () => {
               ref={profilePicRef}
               style={{ display: "none" }}
               onChange={handleProfileChange}
+              disabled={status}
             />
           </div>
 
@@ -668,7 +669,7 @@ const PersonlaReq: React.FC = () => {
               type="text"
               value={emergencyPerson}
               onIonChange={(e) => {
-                const value = e.detail.value || "";
+                const value = capitalizeWords(e.detail.value || "");
                 setEmergencyPerson(value);
                 refs.emergencyPerson.current = value;
               }}
@@ -685,7 +686,7 @@ const PersonlaReq: React.FC = () => {
               type="tel"
               value={emergencyMobile}
               onIonChange={(e) => {
-                const value = capitalizeWords(e.detail.value || "");
+                const value = e.detail.value || "";
                 setEmergencyMobile(value);
                 refs.emergencyMobile.current = value;
               }}

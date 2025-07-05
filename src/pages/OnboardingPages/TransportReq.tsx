@@ -204,19 +204,19 @@ const TransportReq: React.FC = () => {
           transportRequirements?.vehicleOwnership?.ownershipId ||
           "",
         description:
-          capitalizeWords(refs.ownership.current?.trim() || "") ||
+          refs.ownership.current?.trim() ||
           transportRequirements?.vehicleOwnership?.description ||
           "",
         operatorsFullName:
-          capitalizeWords(refs.operatorsFullName.current?.trim() || "") ||
+          refs.operatorsFullName.current?.trim() ||
           transportRequirements?.vehicleOwnership?.operatorsFullName ||
           "",
         operatorsAddress:
-          capitalizeWords(refs.operatorsAddress.current?.trim() || "") ||
+          refs.operatorsAddress.current?.trim() ||
           transportRequirements?.vehicleOwnership?.operatorsAddress ||
           "",
         operatorsMobileNumber:
-          capitalizeWords(refs.operatorsMobileNumber.current?.trim() || "") ||
+          refs.operatorsMobileNumber.current?.trim() ||
           transportRequirements?.vehicleOwnership?.operatorsMobileNumber ||
           "",
         operatorDocuments: uploadedFiles.operatorDocuments || {
@@ -785,7 +785,7 @@ const TransportReq: React.FC = () => {
               value={operatorsFullName}
               onIonChange={(e) => {
                 const value = capitalizeWords(e.detail.value || "");
-                setOrNumber(value);
+                setOperatorsFullName(value);
                 refs.operatorsFullName.current = value;
               }}
               className="floating-label-dark"
@@ -802,7 +802,7 @@ const TransportReq: React.FC = () => {
               value={operatorsMobileNumber}
               onIonChange={(e) => {
                 const value = capitalizeWords(e.detail.value || "");
-                setOrNumber(value);
+                setOperatorsMobileNumber(value);
                 refs.operatorsMobileNumber.current = value;
               }}
               className="floating-label-dark"
@@ -818,7 +818,7 @@ const TransportReq: React.FC = () => {
               value={operatorsAddress}
               onIonChange={(e) => {
                 const value = capitalizeWords(e.detail.value || "");
-                setOrNumber(value);
+                setOperatorsAddress(value);
                 refs.operatorsAddress.current = value;
               }}
               className="floating-label-dark"
