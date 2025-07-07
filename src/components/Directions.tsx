@@ -1,6 +1,5 @@
-// Directions.tsx
 import React, { useEffect, useState } from "react";
-import { DirectionsRenderer } from "@react-google-maps/api";
+import { DirectionsRenderer, Marker } from "@react-google-maps/api";
 
 interface DirectionsProps {
   origin: google.maps.LatLngLiteral;
@@ -12,6 +11,8 @@ const Directions: React.FC<DirectionsProps> = ({ origin, destination }) => {
     useState<google.maps.DirectionsResult | null>(null);
 
   useEffect(() => {
+    if (!origin || !destination) return;
+
     const directionsService = new google.maps.DirectionsService();
 
     directionsService.route(
@@ -31,15 +32,34 @@ const Directions: React.FC<DirectionsProps> = ({ origin, destination }) => {
   }, [origin, destination]);
 
   return directions ? (
-    <DirectionsRenderer
-      directions={directions}
-      options={{
-        polylineOptions: {
-          strokeColor: "#008000", // Set the color of the direction line to green
-          strokeWeight: 7, // Line thickness
-        },
-      }}
-    />
+    <>
+      <DirectionsRenderer
+        directions={directions}
+        options={{
+          suppressMarkers: true,
+          polylineOptions: {
+            strokeColor: "#008000",
+            strokeWeight: 4,
+          },
+        }}
+      />
+      <Marker
+        position={origin}
+        icon={{
+          url: "/assets/icons/car.svg", // must be in public folder
+          scaledSize: new google.maps.Size(30, 30),
+          anchor: new google.maps.Point(15, 15),
+        }}
+      />
+      <Marker
+        position={destination}
+        icon={{
+          url: "/assets/icons/destination.gif", // must be in public folder
+          scaledSize: new google.maps.Size(40, 40),
+          anchor: new google.maps.Point(20, 40),
+        }}
+      />
+    </>
   ) : null;
 };
 

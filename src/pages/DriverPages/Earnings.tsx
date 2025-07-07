@@ -163,7 +163,7 @@ const Earnings: React.FC = () => {
                     style={{
                       minWidth: "140px",
                       background:
-                        "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                        "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
                     }}
                   >
                     <IonCardContent>
@@ -245,7 +245,7 @@ const Earnings: React.FC = () => {
         <IonList>
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <IonItem key={i}>
+              <IonItem lines="none" className="card-style" key={i}>
                 <IonLabel>
                   <IonSkeletonText animated style={{ width: "0%" }} />
                   <IonSkeletonText animated style={{ width: "60%" }} />
@@ -280,6 +280,8 @@ const Earnings: React.FC = () => {
           ) : (
             filteredTrips.map((trip, idx) => (
               <IonItem
+                lines="none"
+                className="card-style"
                 button
                 key={trip._id || idx}
                 onClick={() => {

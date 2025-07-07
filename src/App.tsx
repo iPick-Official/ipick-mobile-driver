@@ -7,7 +7,7 @@ import {
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { Redirect, Route, RouteProps, useLocation } from "react-router-dom";
-import React from "react";
+import React, { useEffect } from "react";
 
 import "@ionic/react/css/core.css";
 import "@ionic/react/css/normalize.css";
@@ -35,8 +35,7 @@ import Messages from "./pages/DriverPages/Messages";
 import MessageDetail from "./pages/DriverPages/MessageDetail";
 import HelpCenter from "./pages/DriverPages/HelpCenter";
 import Settings from "./pages/DriverPages/Settings";
-
-import { fetchActiveJobs } from "./services/apiService";
+import { enableKeepAwake, disableKeepAwake } from "./utils/KeepAwake";
 
 setupIonicReact();
 
@@ -64,14 +63,13 @@ const AppContentInner: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation(); // ✅ Now inside routing context
   const driverStatus = localStorage.getItem("status");
-  const { logout } = useAuth();
 
-  React.useEffect(() => {
-    const fetchAll = async () => {
-      fetchActiveJobs(logout);
+  useEffect(() => {
+    enableKeepAwake();
+
+    return () => {
+      disableKeepAwake(); // Optional: clean up on unmount
     };
-
-    fetchAll();
   }, []);
 
   const shouldShowMenu =

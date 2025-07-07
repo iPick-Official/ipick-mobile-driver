@@ -220,7 +220,7 @@ const Wallet: React.FC = () => {
         <IonList>
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <IonItem key={i}>
+              <IonItem lines="none" className="card-style" key={i}>
                 <IonLabel>
                   <IonSkeletonText animated style={{ width: "80%" }} />
                   <IonSkeletonText animated style={{ width: "60%" }} />
@@ -233,7 +233,7 @@ const Wallet: React.FC = () => {
             ))
           ) : filteredTransactions.length > 0 ? (
             filteredTransactions.map((tx) => (
-              <IonItem key={tx._id}>
+              <IonItem lines="none" className="card-style" key={tx._id}>
                 <IonLabel>
                   <h2>{tx.description}</h2>
                   <p>{new Date(tx.createdAt).toLocaleString()}</p>

@@ -1,4 +1,4 @@
-All user data (JSON): {
+{
   "count": 1,
   "users": [
     {
@@ -6,31 +6,27 @@ All user data (JSON): {
       "riderId": "CoXlh30Kvq",
       "__v": 0,
       "computations": {
-        "baseFare": 45,
-        "serviceFee": 124.00383333333335,
-        "fareDistanceInKM": 62.207,
-        "fareDurationInMins": 130.96666666666667,
-        "costPerKM": 15,
-        "costPerMin": 2
+        "dateTime": "2025-07-06T20:32:09.854Z",
+        "baseFare": 55,
+        "serviceFee": 0,
+        "fareDistanceInKM": 2.127,
+        "fareDurationInMins": 5.516666666666667,
+        "costPerKM": 18,
+        "costPerMin": 2,
+        "totalTravelFare": "104.32"
       },
       "createdAt": "2025-07-05T06:06:36.662Z",
       "destination": {
         "name": "Conrad Manila, Coral Way, Pasay City, Metro Manila",
         "type": "Point",
-        "coordinates": [
-          14.5315812,
-          120.9800438
-        ]
+        "coordinates": [14.5315812, 120.9800438]
       },
       "driverId": null,
       "driverRating": [],
       "origin": {
         "name": "Yoki's Farm, 1, Mendez, Cavite",
         "type": "Point",
-        "coordinates": [
-          14.1244377,
-          120.879931
-        ]
+        "coordinates": [14.1244377, 120.879931]
       },
       "status": "active",
       "timestamp": "2025-07-05",

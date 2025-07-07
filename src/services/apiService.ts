@@ -168,7 +168,6 @@ export const fetchMyRatings = async () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = localStorage.getItem("accessToken");
 
-  // If user info or token is missing, return default rating
   if (!user?.type || !user?.id || !token) {
     console.error("Missing user info or token");
     return 5.0;
@@ -207,4 +206,58 @@ export const fetchMyRatings = async () => {
     console.error("Error fetching rating:", error);
     return 5.0; // fallback
   }
+};
+
+import { watchLocation } from "../utils/locationHelpers";
+
+export const postDriverLocation = async (bookingId: string) => {
+  const userId = localStorage.getItem("userId");
+  const accessToken = localStorage.getItem("accessToken");
+  const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
+
+  if (!userId || !accessToken || !apiEndpoint) {
+    console.error("Missing required data in localStorage or environment.");
+    return;
+  }
+  const watchId = watchLocation(
+    async (position: { coords: { latitude: number; longitude: number } }) => {
+      const { latitude, longitude } = position.coords;
+      const reqBody = {
+        bookingId,
+        id: userId,
+        location: {
+          lat: latitude,
+          lng: longitude,
+        },
+      };
+      try {
+        const response = await fetch(
+          `${apiEndpoint}/ride-hail/driverLocation`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(reqBody),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          console.error(
+            "Failed to send location:",
+            error || response.statusText
+          );
+        } else {
+          const result = await response.json();
+          console.log("Driver location sent successfully:", result);
+        }
+      } catch (err) {
+        console.error("Error sending driver location:", err);
+      }
+    }
+  );
+
+  return watchId;
 };

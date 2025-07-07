@@ -20,7 +20,7 @@ const appPages = [
   { title: "My Account", url: "/my-profile", icon: "assets/icons/png/driver.svg" },
   { title: "Earnings", url: "/earnings", icon: "assets/icons/png/peso.svg" },
   { title: "Wallet", url: "/wallet", icon: "assets/icons/png/e-wallet.svg" },
-  { title: "Messages", url: "/messages", icon: "assets/icons/png/chat.svg" },
+  // { title: "Messages", url: "/messages", icon: "assets/icons/png/chat.svg" },
   {
     title: "Help Center",
     url: "/help-center",
