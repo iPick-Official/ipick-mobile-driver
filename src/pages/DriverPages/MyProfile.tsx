@@ -48,7 +48,7 @@ const MyProfile: React.FC = () => {
   const [profilePic, setProfilePic] = useState("");
   const [myRating, setMyRating] = useState(0);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = JSON.parse(localStorage.getItem("driverData") || "{}");
 
   const joinedRaw = user?.createdAt || "";
   const joinedDate = new Date(joinedRaw);

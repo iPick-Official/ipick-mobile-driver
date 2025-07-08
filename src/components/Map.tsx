@@ -7,7 +7,6 @@ import {
 } from "@react-google-maps/api";
 import customMapStyle from "./MapStyle.json";
 import Directions from "./Directions";
-import { watchLocation } from "../utils/locationHelpers";
 
 const containerStyle = {
   width: "100vw",
@@ -42,12 +41,15 @@ const Map: React.FC = () => {
   const [currentLocation, setCurrentLocation] =
     useState<google.maps.LatLngLiteral | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [reloadMapKey, setReloadMapKey] = useState<number>(0);
+
   const mapRef = useRef<google.maps.Map | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Parse destination from localStorage
-  let destination: google.maps.LatLngLiteral | null = null;
+  // Load destination from localStorage
   const storedDestination = localStorage.getItem("destination");
+  let destination: google.maps.LatLngLiteral | null = null;
+
   if (storedDestination) {
     try {
       const parsed = JSON.parse(storedDestination);
@@ -66,42 +68,38 @@ const Map: React.FC = () => {
   }
 
   useEffect(() => {
-    const id = watchLocation(
-      (position) => {
-        const loc = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-        setCurrentLocation(loc);
-        if (mapRef.current) {
-          mapRef.current.panTo(loc);
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setCurrentLocation(currentLocation);
+
+          if (mapRef.current) {
+            mapRef.current.panTo(currentLocation);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setLocationError("Unable to retrieve your location.");
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
         }
-      },
-      (error) => {
-        setLocationError("Unable to retrieve your location.");
-        console.error("Geolocation error:", error);
-      }
-    );
-
-    return () => {
-      if (id !== null) {
-        navigator.geolocation.clearWatch(id);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+      );
+    } else {
+      setLocationError("Geolocation is not supported by this browser.");
+    }
+  }, [reloadMapKey]); // Re-run when reloading
 
   const onMapIdle = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+
     timeoutRef.current = setTimeout(() => {
       if (currentLocation && mapRef.current) {
         mapRef.current.panTo(currentLocation);
@@ -109,8 +107,20 @@ const Map: React.FC = () => {
     }, 5000);
   };
 
+  const retryLocation = () => {
+    setLocationError(null);
+    setCurrentLocation(null);
+    setReloadMapKey((prev) => prev + 1);
+  };
+
   if (loadError) {
-    return <div>Error loading maps: {loadError.message}</div>;
+    retryLocation();
+    return (
+      <div>
+        <p>Error loading maps: {loadError.message}</p>
+        <button onClick={retryLocation}>Retry</button>
+      </div>
+    );
   }
 
   if (!isLoaded) {
@@ -118,36 +128,41 @@ const Map: React.FC = () => {
   }
 
   if (locationError) {
-    return <div>{locationError}</div>;
+    return (
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        <p>{locationError}</p>
+        <button onClick={retryLocation}>Retry</button>
+      </div>
+    );
   }
 
   if (!currentLocation) {
     return <div>Getting your location...</div>;
   }
 
-  const blueDotIcon = isLoaded
-    ? {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        fillColor: "#4285F4",
-        fillOpacity: 1,
-        strokeColor: "white",
-        strokeWeight: 2,
-        scale: 8,
-      }
-    : null;
+  const blueDotIcon = {
+    path: google.maps.SymbolPath.CIRCLE,
+    fillColor: "#4285F4",
+    fillOpacity: 1,
+    strokeColor: "white",
+    strokeWeight: 2,
+    scale: 8,
+  };
 
   return (
     <GoogleMap
+      key={reloadMapKey}
       mapContainerStyle={containerStyle}
       center={currentLocation}
       zoom={13}
       options={mapOptions}
-      onIdle={destination ? undefined : onMapIdle}
+      onDragEnd={destination ? undefined : onMapIdle}
+      onZoomChanged={destination ? undefined : onMapIdle}
       onLoad={(map) => {
         mapRef.current = map;
       }}
     >
-      {!destination && blueDotIcon && (
+      {!destination && (
         <>
           <Marker position={currentLocation} icon={blueDotIcon} />
           <Circle

@@ -325,6 +325,7 @@ const Earnings: React.FC = () => {
               <IonTitle>Receipt</IonTitle>
               <IonButtons slot="end">
                 <IonIcon
+                  color="danger"
                   icon={closeOutline}
                   slot="icon-only"
                   onClick={() => setShowModal(false)}

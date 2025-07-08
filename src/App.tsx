@@ -36,6 +36,7 @@ import MessageDetail from "./pages/DriverPages/MessageDetail";
 import HelpCenter from "./pages/DriverPages/HelpCenter";
 import Settings from "./pages/DriverPages/Settings";
 import { enableKeepAwake, disableKeepAwake } from "./utils/KeepAwake";
+import { fetchActiveJobs } from "./services/apiService";
 
 setupIonicReact();
 
@@ -60,8 +61,8 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
 };
 
 const AppContentInner: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  const location = useLocation(); // ✅ Now inside routing context
+  const { isAuthenticated, logout } = useAuth();
+  const location = useLocation();
   const driverStatus = localStorage.getItem("status");
 
   useEffect(() => {
@@ -71,6 +72,13 @@ const AppContentInner: React.FC = () => {
       disableKeepAwake(); // Optional: clean up on unmount
     };
   }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchActiveJobs(logout);
+    }, 30000);
+    return () => clearInterval(intervalId);
+  }, [logout]);
 
   const shouldShowMenu =
     isAuthenticated &&

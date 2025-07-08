@@ -24,16 +24,11 @@ import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import Loading from "../../components/Loading";
 import { connectSocket, socket } from "../../utils/useSocket";
 import {
+  fetchActiveJobs,
   fetchBookingDetails,
   postDriverLocation,
 } from "../../services/apiService";
-import {
-  call,
-  cashOutline,
-  chatbubbleOutline,
-  mapOutline,
-  star,
-} from "ionicons/icons";
+import { call, mapOutline, star } from "ionicons/icons";
 
 const DriverTrip: React.FC = () => {
   const history = useHistory();
@@ -81,6 +76,8 @@ const DriverTrip: React.FC = () => {
     return surgeCharge > 0 ? surgeCharge.toFixed(2) : "0.00";
   };
 
+  useEffect(() => {}, []);
+
   useEffect(() => {
     const item = localStorage.getItem("acceptedBooking");
     if (item) {
@@ -108,6 +105,7 @@ const DriverTrip: React.FC = () => {
       // console.log("Booking Details", booking);
       if (booking && booking.length > 0) {
         const bookingId = booking[0].paymentType.paymentType;
+
         setPaymentType(bookingId);
       }
       postDriverLocation(bookingId);
@@ -122,7 +120,7 @@ const DriverTrip: React.FC = () => {
 
     socket?.off("booking_data");
     socket?.on("booking_data", (data: any) => {
-      console.log("Received booking data:", data);
+      // console.log("Received booking data:", data);
       setBookingData(data);
 
       const hasSetDestinationLS = localStorage.getItem("hasSetDestination");
@@ -216,16 +214,19 @@ const DriverTrip: React.FC = () => {
     });
   const endTrip = () => updateRideStatus(4, true);
 
-  const navigateToLocation = (coordinates: [number, number]) => {
-    if (!coordinates) {
-      console.warn("No coordinates to navigate to");
+  const navigateToLocation = (
+    coordinates: [number, number],
+    currentLocation: google.maps.LatLngLiteral | null
+  ) => {
+    if (!coordinates || !currentLocation) {
+      console.warn("Missing coordinates or current location");
       return;
     }
 
-    const [lat, lng] = coordinates; // assuming coordinates is [lat, lng]
+    const [destLat, destLng] = coordinates;
+    const { lat: originLat, lng: originLng } = currentLocation;
 
-    // Example: open Google Maps to the coordinates in a new tab
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
     window.open(url, "_blank");
   };
 
@@ -256,54 +257,64 @@ const DriverTrip: React.FC = () => {
         <IonHeader
           className="no-ion-border"
           collapse="fade"
-          style={{ boxShadow: "none", "--box-shadow": "none" }}
+          style={{
+            boxShadow: "none",
+            "--box-shadow": "none",
+            marginBottom: "10px",
+          }}
         >
-          <IonToolbar style={{ boxShadow: "none", "--box-shadow": "none" }}>
-            <IonButton
-              color="primary"
-              slot="start"
-              fill="clear"
-              disabled={!bookingData}
+          <IonToolbar color="light">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                padding: "0 12px",
+              }}
             >
-              <IonIcon icon={call} />
-              <IonText color="medium" style={{ marginLeft: "5px" }}>
-                +63{bookingMobile}
-              </IonText>
-            </IonButton>
-            <IonButton
-              color="danger"
-              slot="end"
-              fill="clear"
-              onClick={() => promptCancelRide()}
-              disabled={!bookingData}
-              style={{ display: tripStatus >= 2 ? "none" : "inline-flex" }}
-            >
-              Cancel
-            </IonButton>
+              {/* Left Side: Icon + Name + Rating */}
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
+                <IonImg
+                  src="./assets/icons/png/driver.svg"
+                  style={{ width: 40, height: 40 }}
+                />
+
+                <div>
+                  <IonText>
+                    <p style={{ margin: 0 }}>{bookingName}</p>
+                  </IonText>
+                  <IonText
+                    color="medium"
+                    style={{
+                      fontSize: "0.7rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    {bookingRatings} <IonIcon color="tertiary" icon={star} />
+                  </IonText>
+                </div>
+              </div>
+
+              {/* Right Side: Cancel Button */}
+              {tripStatus < 3 && (
+                <IonButton
+                  color="danger"
+                  fill="clear"
+                  onClick={() => promptCancelRide()}
+                  disabled={!bookingData}
+                >
+                  Cancel
+                </IonButton>
+              )}
+            </div>
           </IonToolbar>
         </IonHeader>
         <IonContent fullscreen>
-          <IonItem
-            lines="full"
-            style={{
-              marginLeft: "10px",
-              marginRight: "10px",
-              marginBottom: "10px",
-            }}
-          >
-            <IonImg
-              slot="start"
-              src="./assets/icons/png/driver.svg"
-              style={{ width: 40, height: 40, marginBottom: 10 }}
-            />
-            <IonText>
-              <p>{bookingName}</p>
-            </IonText>
-            <IonText slot="end">
-              {bookingRatings} <IonIcon color="tertiary" icon={star} />
-            </IonText>
-          </IonItem>
-
           <IonGrid className="card-style">
             <IonRow className="ion-justify-content-between ion-align-items-center">
               <IonCol size="10">
@@ -323,10 +334,14 @@ const DriverTrip: React.FC = () => {
               <IonCol size="2">
                 <IonButton
                   size="small"
-                  fill="solid"
+                  fill="clear"
                   shape="round"
+                  disabled={!bookingData}
                   onClick={() =>
-                    navigateToLocation(bookingData?.origin?.coordinates)
+                    navigateToLocation(
+                      bookingData?.origin?.coordinates,
+                      currentLocation
+                    )
                   }
                 >
                   <IonIcon icon={mapOutline} />
@@ -355,10 +370,14 @@ const DriverTrip: React.FC = () => {
               <IonCol size="2">
                 <IonButton
                   size="small"
-                  fill="solid"
+                  fill="clear"
                   shape="round"
+                  disabled={!bookingData}
                   onClick={() =>
-                    navigateToLocation(bookingData?.destination?.coordinates)
+                    navigateToLocation(
+                      bookingData?.destination?.coordinates,
+                      currentLocation
+                    )
                   }
                 >
                   <IonIcon icon={mapOutline} />
@@ -385,7 +404,7 @@ const DriverTrip: React.FC = () => {
                     <IonCol size="12">
                       {bookingData ? (
                         <>
-                          <IonItem lines="none">
+                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
                             <IonLabel>Base Fare</IonLabel>
                             <IonText slot="end" color="medium">
                               ₱{" "}
@@ -393,7 +412,7 @@ const DriverTrip: React.FC = () => {
                                 "0.00"}
                             </IonText>
                           </IonItem>
-                          <IonItem lines="none">
+                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
                             <IonLabel>
                               Distance Fare{" "}
                               <IonText color="medium">
@@ -418,7 +437,7 @@ const DriverTrip: React.FC = () => {
                                 : "0.00"}
                             </IonText>
                           </IonItem>
-                          <IonItem lines="none">
+                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
                             <IonLabel>
                               Time Fare{" "}
                               <IonText color="medium">
@@ -445,7 +464,7 @@ const DriverTrip: React.FC = () => {
                                 : "0.00"}
                             </IonText>
                           </IonItem>
-                          <IonItem lines="none">
+                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
                             <IonLabel>Service Fees</IonLabel>
                             <IonText slot="end" color="medium">
                               ₱{" "}
@@ -455,7 +474,7 @@ const DriverTrip: React.FC = () => {
                             </IonText>
                           </IonItem>
 
-                          <IonItem lines="none">
+                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
                             <IonLabel>Surge Charges</IonLabel>
                             <IonText slot="end" color="medium">
                               ₱ {getSurgeCharge()}
@@ -553,7 +572,7 @@ const DriverTrip: React.FC = () => {
                       disabled={!bookingData}
                       onClick={endTrip}
                     >
-                      Collect Payment ₱{bookingData?.travelFare.toFixed(2)}
+                      End Trip
                     </IonButton>
                     <IonText
                       color="medium"
@@ -573,8 +592,13 @@ const DriverTrip: React.FC = () => {
                   color="primary"
                   shape="round"
                   disabled={!bookingData}
+                  onClick={() => {
+                    if (bookingMobile) {
+                      window.location.href = `tel:+63${bookingMobile}`;
+                    }
+                  }}
                 >
-                  <IonIcon icon={chatbubbleOutline} />
+                  <IonIcon icon={call} />
                 </IonButton>
               </IonCol>
             </IonRow>

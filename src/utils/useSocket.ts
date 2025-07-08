@@ -30,7 +30,7 @@ export const connectSocket = (userId: string): void => {
   eventList.forEach((event) => {
     socket?.off(event);
 
-    socket?.on(event, logEvent(event)); // fallback listener
+    socket?.on(event, logEvent(event));
   });
 };
 
@@ -46,7 +46,7 @@ export const fetchAllUserIds = (): Promise<string[]> => {
       if (_id) ids.push(_id);
 
       console.log("User IDs from booking_data:", ids);
-      console.log("Booking Data Socket:", data);
+      // console.log("Booking Data Socket:", data);
 
       resolve(ids);
     });

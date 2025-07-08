@@ -121,7 +121,7 @@ const Login: React.FC = () => {
       localStorage.setItem("userId", user.id);
       localStorage.setItem("name", user.name);
       localStorage.setItem("accessToken", access_token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("driverData", JSON.stringify(user));
       localStorage.setItem("isLogged", "true");
       localStorage.setItem("userType", user.type);
       localStorage.setItem("status", user.status);

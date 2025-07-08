@@ -165,7 +165,7 @@ export const fetchDriverTransactions = async () => {
 };
 
 export const fetchMyRatings = async () => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = JSON.parse(localStorage.getItem("driverData") || "{}");
   const token = localStorage.getItem("accessToken");
 
   if (!user?.type || !user?.id || !token) {

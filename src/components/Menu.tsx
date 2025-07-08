@@ -44,7 +44,7 @@ const uploadService = new UploadService(
 const Menu: React.FC = () => {
   const location = useLocation();
   const { logout } = useAuth();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = JSON.parse(localStorage.getItem("driverData") || "{}");
   const plateNumber = user?.transportRequirements?.plateNumber || "";
   const rawProfile = localStorage.getItem("profilePicture");
   const profile = rawProfile ?? undefined;

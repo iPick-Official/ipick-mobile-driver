@@ -1,4 +1,3 @@
-// locationHelpers.ts
 export const watchLocation = (
   onSuccess: (position: GeolocationPosition) => void,
   onError?: (error: GeolocationPositionError) => void
@@ -8,15 +7,27 @@ export const watchLocation = (
     return null;
   }
 
-  const watchId = navigator.geolocation.watchPosition(
-    onSuccess,
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      onSuccess(position);
+      // Then start watching
+      navigator.geolocation.watchPosition(
+        onSuccess,
+        onError || ((error) => console.error("Geolocation error:", error.message)),
+        {
+          enableHighAccuracy: true,
+          timeout: 30000,
+          maximumAge: 0,
+        }
+      );
+    },
     onError || ((error) => console.error("Geolocation error:", error.message)),
     {
-      enableHighAccuracy: true,
-      timeout: 30000,
-      maximumAge: 0,
+      enableHighAccuracy: false, // Relaxed for faster first fix
+      timeout: 10000,
+      maximumAge: Infinity,
     }
   );
 
-  return watchId;
+  return null; // Return watchId here if needed
 };

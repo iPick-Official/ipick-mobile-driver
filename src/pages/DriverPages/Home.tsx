@@ -17,6 +17,7 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonList,
+  IonToast,
 } from "@ionic/react";
 import {
   powerOutline,
@@ -24,21 +25,23 @@ import {
   menuOutline,
   powerSharp,
 } from "ionicons/icons";
-import { fetchBookingDetails } from "../../services/apiService";
-import { useAuth } from "../../contexts/AuthContext";
+import {
+  fetchBookingDetails,
+  postDriverLocation,
+} from "../../services/apiService";
 import Map from "../../components/Map";
 import { connectSocket, socket } from "../../utils/useSocket";
 import ConfirmActionSheet from "../../components/ConfirmActionSheet";
-import { fetchActiveJobs } from "../../services/apiService";
 import "@theme/variables.css";
 import "./Home.css";
 import Loading from "../../components/Loading";
 import { watchLocation } from "../../utils/locationHelpers";
+import { fetchDriverWallet } from "../../services/apiService";
 
 const Home: React.FC = () => {
-  const { logout } = useAuth();
   const modalRef = useRef<HTMLIonModalElement>(null);
   const history = useHistory();
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentLocation, setCurrentLocation] =
@@ -53,13 +56,13 @@ const Home: React.FC = () => {
   const [header, setHeader] = useState<any | null>(null);
   const [subHeader, setSubHeader] = useState<any | null>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
-  const [bookingData, setBookingData] = useState<any | null>(null);
   const [tripStatus, setTripStatus] = useState<any | null>(null);
   const [users, setUsers] = useState<any | null>(null);
 
   const [bookingId, setBookingId] = useState<any | null>(null);
   const [riderId, setRiderId] = useState<any | null>(null);
   const userId = localStorage.getItem("userId");
+  const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
 
   useEffect(() => {
     const id = watchLocation(
@@ -82,19 +85,25 @@ const Home: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    checkWallet();
+  }, []);
+
+  useEffect(() => {
     if (userId) {
       connectSocket(userId);
     }
-
     socket?.off("all_users");
     socket?.on("all_users", (data: any) => {
       // console.log("All user data received:", data);
 
       if (Array.isArray(data.users)) {
-        const origins = data.users.map((user: any, index: number) => {
-          const origin = user?.origin?.coordinates || "Unnamed Rider";
-          // console.log(`User ${index + 1} origin: ${origin}`);
-          return origin;
+        const user = data.users.map((user: any, index: number) => {
+          const baseFare = user?.computations?.baseFare || "Unnamed Rider";
+          const seatType = getSeatType(baseFare);
+          console.log(
+            `User ${index + 1} origin: ${baseFare} and seat type: ${seatType}`
+          );
+          return baseFare;
         });
         setUsers(data.users);
       } else {
@@ -103,6 +112,27 @@ const Home: React.FC = () => {
       }
     });
   }, []);
+
+  const getSeatType = (baseFare: number) => {
+    if (baseFare === 45) {
+      return "4 Seater";
+    } else if (baseFare === 55) {
+      return "6 Seater";
+    } else {
+      return "Taxi";
+    }
+  };
+
+  const filterByCarType = (
+    users: any[],
+    allowedTypes: string[] = ["4 Seater", "6 Seater", "Taxi"]
+  ) => {
+    return users.filter((user) => {
+      const baseFare = user?.computations?.baseFare;
+      const seatType = getSeatType(baseFare);
+      return allowedTypes.includes(seatType);
+    });
+  };
 
   useEffect(() => {
     const prevUsers = prevUsersRef.current;
@@ -117,7 +147,16 @@ const Home: React.FC = () => {
 
     if (!users || !Array.isArray(users)) return;
 
-    const ridersPickupCoordinates = users
+    const driverSeatType = driverData?.carType
+      ?.replace("-", " ")
+      ?.replace(/\b\w/g, (char: string) => char.toUpperCase());
+
+    if (!driverSeatType) return; // safety check
+
+    const filteredUsersByCarType = filterByCarType(users, [driverSeatType]);
+
+    // Use filteredUsersByCarType instead of raw `users`
+    const ridersPickupCoordinates = filteredUsersByCarType
       .map((rider: { riderId: any; origin: { coordinates: any } }) => ({
         riderId: rider?.riderId,
         coordinates: rider?.origin?.coordinates,
@@ -167,9 +206,15 @@ const Home: React.FC = () => {
         }
       }
 
-      console.log("📦 Distances to riders:", distances);
-      distances.sort((a, b) => a.distance - b.distance);
-      setRiderDistances(distances);
+      console.log("📦 Distances to riders (before filtering):", distances);
+
+      // Sort and filter distances below or equal to 5 km
+      const filteredDistances = distances
+        .sort((a, b) => a.distance - b.distance)
+        .filter((d) => d.distance <= 5);
+
+      console.log("✅ Riders within 5 km:", filteredDistances);
+      setRiderDistances(filteredDistances);
     };
 
     if (hasNewUsers) {
@@ -177,18 +222,40 @@ const Home: React.FC = () => {
       fetchDistances();
     }
 
-    // Update previous users for the next render
     prevUsersRef.current = users;
   }, [users, currentLocation]);
 
-  const openModal = async () => {
+  const checkWallet = async (): Promise<boolean> => {
+    try {
+      const walletData = await fetchDriverWallet();
+      console.log("👛 Wallet Data:", walletData);
+
+      if (!walletData || walletData.walletBalance < 100) {
+        setError("Please top up at least ₱100 to continue accepting jobs!");
+        setIsWorking(false);
+        await modalRef.current?.dismiss();
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("❌ Error checking wallet:", error);
+      alert("Something went wrong while checking your wallet.");
+      return false;
+    }
+  };
+
+  const openJobs = async () => {
+    const isWalletOk = await checkWallet();
+    if (!isWalletOk) return;
     await modalRef.current?.present();
     setIsModalOpen(true);
+    postDriverLocation(bookingId);
     setIsWorking(true);
     localStorage.setItem("working", "true");
   };
 
-  const closeModal = async () => {
+  const closeJobs = async () => {
     setShowActionSheet(true);
     setHeader("Go Offline");
     setSubHeader("Are you sure you want to go offline?");
@@ -232,69 +299,6 @@ const Home: React.FC = () => {
     };
     checkWorking();
   }, []);
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      const booking = await fetchBookingDetails();
-      fetchActiveJobs(logout);
-      setBookingData(booking);
-      postDriverLocation();
-    };
-    fetchAll();
-  }, [bookingData]);
-
-  const postDriverLocation = async () => {
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        // your existing position processing code here
-        const { latitude, longitude } = position.coords;
-
-        const reqBody = {
-          bookingId: bookingId,
-          id: localStorage.getItem("userId"),
-          location: {
-            lat: latitude,
-            lng: longitude,
-          },
-        };
-
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/driverLocation`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(reqBody),
-            }
-          );
-
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            console.error(
-              "Failed to send location:",
-              error || response.statusText
-            );
-          } else {
-            const result = await response.json();
-            console.log("Driver location sent successfully:", result);
-          }
-        } catch (err) {
-          console.error("Error sending driver location:", err);
-        }
-      },
-      (error) => {
-        console.error("Geolocation error:", error.message);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
-  };
 
   const handleAcceptBooking = (bookingId: string, riderId: string) => {
     setAcceptBooking(true);
@@ -375,7 +379,7 @@ const Home: React.FC = () => {
                 color="medium"
                 id="open-modal"
                 shape="round"
-                onClick={openModal}
+                onClick={openJobs}
               >
                 Offline
                 <IonIcon icon={powerOutline} style={{ marginLeft: "10px" }} />
@@ -399,88 +403,127 @@ const Home: React.FC = () => {
           <IonToolbar>
             <IonTitle color="primary">Online</IonTitle>
             <IonButtons slot="end">
-              <IonButton onClick={closeModal} color="danger">
+              <IonButton onClick={closeJobs} color="danger">
                 <IonIcon icon={powerSharp} slot="start" />
               </IonButton>
             </IonButtons>
           </IonToolbar>
         </IonHeader>
-
         <IonContent>
           {users && users.length > 0 ? (
-            <IonList className="ion-padding">
-              {users.map((user: any, index: number) => (
-                <IonCard key={user._id || index} className="user-card">
-                  <IonCardHeader className="user-card-header" color="primary">
-                    <IonCardTitle className="user-card-title">
-                      <div className="user-card-title-row">
-                        <span className="rider-name">
-                          {user?.riderData?.name || "Unnamed"}
-                        </span>
-                        <IonText className="rider-distance" slot="end">
-                          {distanceToPickup
-                            ?.find((d) => d.riderId === user.riderId)
-                            ?.distance.toFixed(1)}{" "}
-                          km from you ~
-                        </IonText>
-                      </div>
-                    </IonCardTitle>
-                  </IonCardHeader>
+            (() => {
+              const filteredUsers = users.filter((user: any) =>
+                distanceToPickup?.some((d) => d.riderId === user.riderId)
+              );
 
-                  <IonCardContent className="user-card-content">
-                    <div className="user-card-columns">
-                      <div className="user-card-left">
-                        <IonText color="dark">
-                          <p className="user-text">
-                            <strong>Pickup:</strong>{" "}
-                            {user?.origin?.name
-                              ?.split(",")
-                              ?.slice(-3)
-                              ?.map((part: string) => part.trim())
-                              ?.join(", ") || "Unknown origin"}
-                          </p>
-                          <p className="user-text">
-                            <strong>Dropoff:</strong>{" "}
-                            {user?.destination?.name
-                              ?.split(",")
-                              ?.slice(-3)
-                              ?.map((part: string) => part.trim())
-                              ?.join(", ") || "Unknown destination"}
-                          </p>
-                        </IonText>
-                      </div>
+              return filteredUsers.length > 0 ? (
+                <IonList className="ion-padding">
+                  {filteredUsers.map((user: any, index: number) => (
+                    <IonCard key={user._id || index} className="user-card">
+                      <IonCardHeader
+                        className="user-card-header"
+                        color="primary"
+                      >
+                        <IonCardTitle className="user-card-title">
+                          <div className="user-card-title-row">
+                            <span className="rider-name">
+                              {user?.riderData?.name || "Unnamed"}
+                            </span>
+                            <IonText className="rider-distance" slot="end">
+                              {distanceToPickup
+                                ?.find((d) => d.riderId === user.riderId)
+                                ?.distance.toFixed(1)}{" "}
+                              km from you
+                            </IonText>
+                          </div>
+                        </IonCardTitle>
+                      </IonCardHeader>
 
-                      <div className="user-card-right">
-                        <IonText color="primary" className="user-text-bold">
-                          <p>
-                            {user?.computations?.fareDistanceInKM?.toFixed(2) ||
-                              "0"}{" "}
-                            km
-                          </p>
-                          <p className="user-text-bold">
-                            ₱ {user?.travelFare?.toFixed(2) || "0.00"}
-                          </p>
-                        </IonText>
-                        <IonText color="medium">
-                          <p className="user-text-small">
-                            <strong>Rating:</strong>{" "}
-                            {user?.userRating ?? "Not rated"}
-                          </p>
-                        </IonText>
-                      </div>
-                    </div>
-                  </IonCardContent>
-                  <IonButton
-                    color="light"
-                    expand="full"
-                    shape="round"
-                    onClick={() => handleAcceptBooking(user._id, user.riderId)}
-                  >
-                    Accept
-                  </IonButton>
-                </IonCard>
-              ))}
-            </IonList>
+                      <IonCardContent className="user-card-content">
+                        <div className="user-card-columns">
+                          <div className="user-card-left">
+                            <IonText color="dark">
+                              <p className="user-text">
+                                <strong>Pickup:</strong>{" "}
+                                {user?.origin?.name
+                                  ?.split(",")
+                                  ?.slice(-3)
+                                  ?.map((part: string) => part.trim())
+                                  ?.join(", ") || "Unknown origin"}
+                              </p>
+                              <p className="user-text">
+                                <strong>Dropoff:</strong>{" "}
+                                {user?.destination?.name
+                                  ?.split(",")
+                                  ?.slice(-3)
+                                  ?.map((part: string) => part.trim())
+                                  ?.join(", ") || "Unknown destination"}
+                              </p>
+                            </IonText>
+                          </div>
+
+                          <div className="user-card-right">
+                            <IonText color="primary" className="user-text-bold">
+                              <p>
+                                {user?.computations?.fareDistanceInKM?.toFixed(
+                                  2
+                                ) || "0"}{" "}
+                                km
+                              </p>
+                              <p className="user-text-bold">
+                                ₱ {user?.travelFare?.toFixed(2) || "0.00"}
+                              </p>
+                            </IonText>
+                            <IonText color="medium">
+                              <p className="user-text-small">
+                                <strong>Rating:</strong>{" "}
+                                {user?.userRating ?? "Not rated"}
+                              </p>
+                            </IonText>
+                            <IonText color="medium">
+                              <p className="user-text-small">
+                                <strong>
+                                  {getSeatType(user?.computations.baseFare)}
+                                </strong>
+                              </p>
+                            </IonText>
+                          </div>
+                        </div>
+                      </IonCardContent>
+                      <IonButton
+                        color="light"
+                        expand="full"
+                        shape="round"
+                        onClick={() =>
+                          handleAcceptBooking(user._id, user.riderId)
+                        }
+                      >
+                        Accept
+                      </IonButton>
+                    </IonCard>
+                  ))}
+                </IonList>
+              ) : (
+                <div
+                  className="ion-no-border ion-text-center ion-padding"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <IonText>
+                    <p>No riders within 5 km.</p>
+                  </IonText>
+                  <IonIcon
+                    color="medium"
+                    icon={searchOutline}
+                    style={{ marginTop: "20px", fontSize: "100px" }}
+                  />
+                </div>
+              );
+            })()
           ) : (
             <div
               className="ion-no-border ion-text-center ion-padding"
@@ -504,6 +547,14 @@ const Home: React.FC = () => {
         </IonContent>
       </IonModal>
       <Loading isOpen={loading} message="Processing..." />
+      <IonToast
+        isOpen={!!error}
+        message={error}
+        duration={3000}
+        color="danger"
+        position="top"
+        onDidDismiss={() => setError("")}
+      />
       <ConfirmActionSheet
         isOpen={showActionSheet}
         onDismiss={() => setShowActionSheet(false)}

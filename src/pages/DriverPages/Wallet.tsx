@@ -164,7 +164,7 @@ const Wallet: React.FC = () => {
                 style={{ width: "100px", height: "30px" }}
               />
             ) : (
-              <IonText color="primary">
+              <IonText color={walletBalance < 0 ? "danger" : "primary"}>
                 <h1>
                   ₱
                   {walletBalance.toLocaleString("en-PH", {
