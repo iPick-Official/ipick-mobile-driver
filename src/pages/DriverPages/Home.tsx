@@ -18,6 +18,8 @@ import {
   IonCardTitle,
   IonList,
   IonToast,
+  IonSelect,
+  IonSelectOption,
 } from "@ionic/react";
 import {
   powerOutline,
@@ -63,6 +65,8 @@ const Home: React.FC = () => {
   const [riderId, setRiderId] = useState<any | null>(null);
   const userId = localStorage.getItem("userId");
   const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
+
+  const [distanceLimit, setDistanceLimit] = useState("5");
 
   useEffect(() => {
     const id = watchLocation(
@@ -123,6 +127,19 @@ const Home: React.FC = () => {
     }
   };
 
+  const getAllowedSeatTypes = (driverSeatType: string): string[] => {
+    switch (driverSeatType) {
+      case "6 Seater":
+        return ["6 Seater", "4 Seater"]; // 6-seater can accept both
+      case "4 Seater":
+        return ["4 Seater"];
+      case "Taxi":
+        return ["Taxi"];
+      default:
+        return [];
+    }
+  };
+
   const filterByCarType = (
     users: any[],
     allowedTypes: string[] = ["4 Seater", "6 Seater", "Taxi"]
@@ -153,7 +170,8 @@ const Home: React.FC = () => {
 
     if (!driverSeatType) return; // safety check
 
-    const filteredUsersByCarType = filterByCarType(users, [driverSeatType]);
+    const allowedSeatTypes = getAllowedSeatTypes(driverSeatType);
+    const filteredUsersByCarType = filterByCarType(users, allowedSeatTypes);
 
     // Use filteredUsersByCarType instead of raw `users`
     const ridersPickupCoordinates = filteredUsersByCarType
@@ -211,9 +229,12 @@ const Home: React.FC = () => {
       // Sort and filter distances below or equal to 5 km
       const filteredDistances = distances
         .sort((a, b) => a.distance - b.distance)
-        .filter((d) => d.distance <= 5);
+        .filter((d) => d.distance <= Number(distanceLimit));
 
-      console.log("✅ Riders within 5 km:", filteredDistances);
+      console.log(
+        `Riders within ${Number(distanceLimit)} km:`,
+        filteredDistances
+      );
       setRiderDistances(filteredDistances);
     };
 
@@ -228,7 +249,7 @@ const Home: React.FC = () => {
   const checkWallet = async (): Promise<boolean> => {
     try {
       const walletData = await fetchDriverWallet();
-      console.log("👛 Wallet Data:", walletData);
+      // console.log("👛 Wallet Data:", walletData);
 
       if (!walletData || walletData.walletBalance < 100) {
         setError("Please top up at least ₱100 to continue accepting jobs!");
@@ -381,7 +402,7 @@ const Home: React.FC = () => {
                 shape="round"
                 onClick={openJobs}
               >
-                Offline
+                Go Online
                 <IonIcon icon={powerOutline} style={{ marginLeft: "10px" }} />
               </IonButton>
             </div>
@@ -401,10 +422,27 @@ const Home: React.FC = () => {
       >
         <IonHeader className="no-ion-border transparent-header" collapse="fade">
           <IonToolbar>
-            <IonTitle color="primary">Online</IonTitle>
+            <IonTitle color="primary" slot="start">
+              Online
+            </IonTitle>
+            <IonSelect
+              interface="action-sheet"
+              slot="start"
+              value={distanceLimit}
+              placeholder="Set Distance"
+              onIonChange={(e) => {
+                const selectedValue = e.detail.value;
+                setDistanceLimit(selectedValue);
+              }}
+            >
+              <IonSelectOption value="5">5km</IonSelectOption>
+              <IonSelectOption value="10">10km</IonSelectOption>
+              <IonSelectOption value="20">20km</IonSelectOption>
+              <IonSelectOption value="30">30km</IonSelectOption>
+            </IonSelect>
             <IonButtons slot="end">
               <IonButton onClick={closeJobs} color="danger">
-                <IonIcon icon={powerSharp} slot="start" />
+                <IonIcon icon={powerSharp} slot="icon-only" />
               </IonButton>
             </IonButtons>
           </IonToolbar>
@@ -514,7 +552,7 @@ const Home: React.FC = () => {
                   }}
                 >
                   <IonText>
-                    <p>No riders within 5 km.</p>
+                    <p>No riders within {Number(distanceLimit)} km.</p>
                   </IonText>
                   <IonIcon
                     color="medium"
@@ -568,6 +606,8 @@ const Home: React.FC = () => {
             await modalRef.current?.dismiss();
             setIsModalOpen(false);
             bookAccepted();
+            fetchBookingDetails();
+            postDriverLocation(bookingId);
             history.push("/driver-trip");
           } else {
             await modalRef.current?.dismiss();

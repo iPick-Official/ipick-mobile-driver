@@ -232,23 +232,29 @@ const Wallet: React.FC = () => {
               </IonItem>
             ))
           ) : filteredTransactions.length > 0 ? (
-            filteredTransactions.map((tx) => (
-              <IonItem lines="none" className="card-style" key={tx._id}>
-                <IonLabel>
-                  <h2>{tx.description}</h2>
-                  <p>{new Date(tx.createdAt).toLocaleString()}</p>
-                </IonLabel>
-                <IonText color={tx.amount > 0 ? "primary" : "secondary"}>
-                  <strong>
-                    {tx.amount > 0 ? "+" : "-"}₱
-                    {Math.abs(tx.amount).toLocaleString("en-PH", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </strong>
-                </IonText>
-              </IonItem>
-            ))
+            filteredTransactions
+              .sort(
+                (a, b) =>
+                  new Date(b.updatedAt).getTime() -
+                  new Date(a.updatedAt).getTime()
+              )
+              .map((tx) => (
+                <IonItem lines="none" className="card-style" key={tx._id}>
+                  <IonLabel>
+                    <h2>{tx.description}</h2>
+                    <p>{new Date(tx.createdAt).toLocaleString()}</p>
+                  </IonLabel>
+                  <IonText color={tx.amount > 0 ? "primary" : "secondary"}>
+                    <strong>
+                      {tx.amount > 0 ? "+" : "-"}₱
+                      {Math.abs(tx.amount).toLocaleString("en-PH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </strong>
+                  </IonText>
+                </IonItem>
+              ))
           ) : (
             <div
               className="ion-no-border ion-text-center ion-padding"

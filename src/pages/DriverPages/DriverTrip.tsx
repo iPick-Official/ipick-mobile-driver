@@ -24,7 +24,6 @@ import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import Loading from "../../components/Loading";
 import { connectSocket, socket } from "../../utils/useSocket";
 import {
-  fetchActiveJobs,
   fetchBookingDetails,
   postDriverLocation,
 } from "../../services/apiService";
@@ -33,6 +32,10 @@ import { call, mapOutline, star } from "ionicons/icons";
 const DriverTrip: React.FC = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<() => Promise<void>>(
+    () => async () => {}
+  );
+
   const [showActionSheet, setShowActionSheet] = useState(false);
   const modalRef = useRef<HTMLIonModalElement>(null);
   const hasSetDestination = useRef(false);
@@ -105,10 +108,8 @@ const DriverTrip: React.FC = () => {
       // console.log("Booking Details", booking);
       if (booking && booking.length > 0) {
         const bookingId = booking[0].paymentType.paymentType;
-
         setPaymentType(bookingId);
       }
-      postDriverLocation(bookingId);
     };
     fetchAll();
   }, [bookingData, bookingDetails]);
@@ -155,10 +156,41 @@ const DriverTrip: React.FC = () => {
     }
   }, []);
 
-  const promptCancelRide = () => {
-    setHeader("Cancel Ride?");
-    setSubHeader("Are you sure you want to cancel this ride?");
+  const showPrompt = (
+    header: string,
+    subHeader: string,
+    action: () => Promise<void>
+  ) => {
+    setHeader(header);
+    setSubHeader(subHeader);
+    setConfirmAction(() => action);
     setShowActionSheet(true);
+  };
+
+  const promptCancelRide = () =>
+    showPrompt(
+      "Cancel Ride?",
+      "Are you sure you want to cancel this ride?",
+      confirmCancelRide
+    );
+
+  const promptArrived = () =>
+    showPrompt(
+      "You've Arrived?",
+      "Are you sure you've arrived at the pickup location?",
+      arrivedAtPickup
+    );
+
+  const promptConfirmPassenger = () =>
+    showPrompt(
+      "Confirm Passenger",
+      "Please confirm: Has the passenger boarded your car?",
+      confirmPassenger
+    );
+
+  const promptEndTrip = () => {
+    const fare = bookingData.travelFare.toFixed(2);
+    showPrompt("End Trip?", `Please collect payment of ₱${fare}`, endTrip);
   };
 
   const updateRideStatus = async (
@@ -204,7 +236,7 @@ const DriverTrip: React.FC = () => {
 
   const confirmCancelRide = () => updateRideStatus(0, true);
   const arrivedAtPickup = () => updateRideStatus(2);
-  const confrimPassenger = () =>
+  const confirmPassenger = () =>
     updateRideStatus(3, false, (data) => {
       setDestination(data?.destination?.coordinates || null);
       localStorage.setItem(
@@ -319,7 +351,7 @@ const DriverTrip: React.FC = () => {
             <IonRow className="ion-justify-content-between ion-align-items-center">
               <IonCol size="10">
                 <IonLabel position="stacked" color="primary">
-                  Pick-up
+                  <strong>Pick-up</strong>
                 </IonLabel>
                 <IonText
                   style={{
@@ -354,7 +386,7 @@ const DriverTrip: React.FC = () => {
             <IonRow className="ion-justify-content-between ion-align-items-center">
               <IonCol size="10">
                 <IonLabel position="stacked" color="primary">
-                  Drop-off
+                  <strong>Drop-off</strong>
                 </IonLabel>
 
                 <IonText
@@ -416,12 +448,11 @@ const DriverTrip: React.FC = () => {
                             <IonLabel>
                               Distance Fare{" "}
                               <IonText color="medium">
-                                ({bookingData.computations.costPerKM.toFixed(2)}{" "}
-                                *{" "}
+                                (₱{bookingData.computations.costPerKM} *{" "}
                                 {bookingData.computations.fareDistanceInKM.toFixed(
                                   2
                                 )}
-                                )
+                                km)
                               </IonText>
                             </IonLabel>
                             <IonText slot="end" color="medium">
@@ -441,13 +472,11 @@ const DriverTrip: React.FC = () => {
                             <IonLabel>
                               Time Fare{" "}
                               <IonText color="medium">
-                                (
-                                {bookingData.computations.costPerMin.toFixed(2)}{" "}
-                                *{" "}
+                                (₱{bookingData.computations.costPerMin} *{" "}
                                 {bookingData.computations.fareDurationInMins.toFixed(
                                   2
                                 )}
-                                )
+                                mins)
                               </IonText>
                             </IonLabel>
                             <IonText slot="end" color="medium">
@@ -524,7 +553,7 @@ const DriverTrip: React.FC = () => {
                       expand="block"
                       shape="round"
                       disabled={!bookingData || !bookingDetails}
-                      onClick={arrivedAtPickup}
+                      onClick={promptArrived}
                     >
                       I've arrived
                     </IonButton>
@@ -547,7 +576,7 @@ const DriverTrip: React.FC = () => {
                       expand="block"
                       shape="round"
                       disabled={!bookingData}
-                      onClick={confrimPassenger}
+                      onClick={promptConfirmPassenger}
                     >
                       Confirm Passenger
                     </IonButton>
@@ -570,7 +599,7 @@ const DriverTrip: React.FC = () => {
                       expand="block"
                       shape="round"
                       disabled={!bookingData}
-                      onClick={endTrip}
+                      onClick={promptEndTrip}
                     >
                       End Trip
                     </IonButton>
@@ -613,7 +642,9 @@ const DriverTrip: React.FC = () => {
         subHeader={subHeader}
         onConfirm={async () => {
           setShowActionSheet(false);
-          await confirmCancelRide();
+          if (confirmAction) {
+            await confirmAction();
+          }
         }}
         cssClass="my-custom-action-sheet"
       />

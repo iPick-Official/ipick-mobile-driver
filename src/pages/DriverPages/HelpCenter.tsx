@@ -25,12 +25,13 @@ const helpTopics = [
   {
     title: "Navigation & Pickups",
     description:
-      "Use the your preferred map app to reach pickup and drop-off locations efficiently. Communicate with riders if needed.",
+      "Use googlemap app to reach pickup and drop-off locations efficiently. Communicate with riders if needed.",
   },
   {
     title: "Payments & Earnings",
     description:
       "Monitor your earnings in the Driver Wallet, available in supported regions.",
+    action: "/wallet",
   },
   {
     title: "Ratings & Reviews",
@@ -41,6 +42,7 @@ const helpTopics = [
     title: "Account & Vehicle Management",
     description:
       "Update your vehicle info, insurance, and driver documents in the Profile section to stay active and compliant.",
+    action: "/my-profile",
   },
   {
     title: "Support & Safety",
@@ -73,7 +75,11 @@ const HelpCenter: React.FC = () => {
       <IonContent className="ion-padding" fullscreen>
         <IonList lines="full">
           {helpTopics.map((topic, index) => (
-            <IonItem key={index}>
+            <IonItem
+              key={index}
+              routerLink={topic.action || undefined}
+              detail={!!topic.action}
+            >
               <IonLabel>
                 <h2>{topic.title}</h2>
                 <p>{topic.description}</p>

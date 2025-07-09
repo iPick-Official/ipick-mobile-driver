@@ -1,4 +1,5 @@
 import {
+  IonButton,
   IonButtons,
   IonCard,
   IonCardContent,
@@ -16,21 +17,19 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import {
-  calendarClearOutline,
-  calendarNumberOutline,
-  calendarOutline,
-  searchOutline,
-  timeOutline,
-  closeOutline,
-} from "ionicons/icons";
-import { useEffect, useState } from "react";
+import { searchOutline, closeOutline, downloadOutline } from "ionicons/icons";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import { useEffect, useRef, useState } from "react";
 import BackButton from "../../components/BackButton";
 import { fetchRideHistory } from "../../services/apiService";
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { FileOpener } from "@capacitor-community/file-opener";
 
 const Earnings: React.FC = () => {
   const [rideHistory, setRideHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const receiptRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
@@ -132,6 +131,67 @@ const Earnings: React.FC = () => {
       return null;
     }
   }
+
+  const getSurgeCharge = () => {
+    const { Computations, TotalFare } = bookingDetails;
+
+    if (!Computations) return 0;
+
+    const distance = Computations.fareDistanceInKM ?? 0;
+    const costPerKM = Computations.costPerKM ?? 0;
+    const duration = Computations.fareDurationInMins ?? 0;
+    const costPerMin = Computations.costPerMin ?? 0;
+    const serviceFee = Computations.serviceFee ?? 0;
+    const baseFare = Computations.baseFare ?? 0;
+    const travelFare = TotalFare ?? 0;
+
+    const totalKm = distance * costPerKM;
+    const totalDur = duration * costPerMin;
+
+    const totalFare = totalKm + totalDur + serviceFee + baseFare;
+    const surge = travelFare - totalFare;
+    return parseFloat(surge.toFixed(2));
+  };
+
+  const captureScreenshot = async () => {
+    const input = receiptRef.current;
+    if (!input) return;
+
+    try {
+      // Capture the component as canvas
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff", // Ensure background is not transparent
+      });
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const base64Data = dataUrl.split(",")[1];
+
+      const fileName = `receipt-${
+        bookingDetails?.ReferenceNumber || "trip"
+      }.png`;
+
+      // Save to filesystem
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: Directory.Documents,
+        recursive: true,
+      });
+
+      console.log("Saved file:", savedFile.uri);
+
+      // Open the saved file
+      await FileOpener.open({
+        filePath: savedFile.uri,
+        contentType: "image/png",
+        openWithDefault: true,
+      });
+    } catch (error) {
+      console.error("Screenshot capture failed:", error);
+    }
+  };
 
   return (
     <IonPage>
@@ -278,34 +338,40 @@ const Earnings: React.FC = () => {
               />
             </div>
           ) : (
-            filteredTrips.map((trip, idx) => (
-              <IonItem
-                lines="none"
-                className="card-style"
-                button
-                key={trip._id || idx}
-                onClick={() => {
-                  setSelectedTrip(trip);
-                  setShowModal(true);
-                  openReceipt(trip);
-                }}
-              >
-                <IonLabel>
-                  <h6>Trip Earnings</h6>
-                  <p>
-                    {new Date(trip.updatedAt).toLocaleString()}
-                    <br />
-                    <small>
-                      From: {trip.origin?.name || "Unknown"} <br />
-                      To: {trip.destination?.name || "Unknown"}
-                    </small>
-                  </p>
-                </IonLabel>
-                <IonText color="primary" slot="end">
-                  <strong>₱{(trip.travelFare || 0).toFixed(2)}</strong>
-                </IonText>
-              </IonItem>
-            ))
+            filteredTrips
+              .sort(
+                (a, b) =>
+                  new Date(b.updatedAt).getTime() -
+                  new Date(a.updatedAt).getTime()
+              )
+              .map((trip, idx) => (
+                <IonItem
+                  lines="none"
+                  className="card-style"
+                  button
+                  key={trip._id || idx}
+                  onClick={() => {
+                    setSelectedTrip(trip);
+                    setShowModal(true);
+                    openReceipt(trip);
+                  }}
+                >
+                  <IonLabel>
+                    <h6>Trip Earnings</h6>
+                    <p>
+                      {new Date(trip.updatedAt).toLocaleString()}
+                      <br />
+                      <small>
+                        From: {trip.origin?.name || "Unknown"} <br />
+                        To: {trip.destination?.name || "Unknown"}
+                      </small>
+                    </p>
+                  </IonLabel>
+                  <IonText color="primary" slot="end">
+                    <strong>₱{(trip.travelFare || 0).toFixed(2)}</strong>
+                  </IonText>
+                </IonItem>
+              ))
           )}
         </IonList>
 
@@ -314,7 +380,7 @@ const Earnings: React.FC = () => {
           trigger="open-modal"
           isOpen={showModal}
           onDidDismiss={() => setShowModal(false)}
-          initialBreakpoint={0.75}
+          initialBreakpoint={1}
           breakpoints={[0.25, 0.75, 1]}
         >
           <IonHeader
@@ -335,89 +401,177 @@ const Earnings: React.FC = () => {
           </IonHeader>
           <IonContent className="ion-padding">
             {selectedTrip && bookingDetails && (
-              <IonCard
-                style={{
-                  fontFamily: "monospace",
-                  maxWidth: 480,
-                  margin: "auto",
-                }}
-              >
-                <IonList lines="full">
-                  {/* Booking-specific fields */}
-                  {[
-                    {
-                      label: "Reference #",
-                      value: bookingDetails.ReferenceNumber,
-                    },
-                    { label: "Driver", value: bookingDetails.Driver },
-                    { label: "Passenger", value: bookingDetails.Passenger },
-                    { label: "Car Type", value: bookingDetails.Cartype },
-                    { label: "Payment", value: bookingDetails.PaymentType },
-                  ].map((f, idx) => (
-                    <IonItem key={idx}>
-                      <IonLabel>{f.label}</IonLabel>
-                      <IonText slot="end">{f.value}</IonText>
-                    </IonItem>
-                  ))}
+              <div ref={receiptRef}>
+                <IonCard
+                  style={{
+                    fontFamily: "monospace",
+                    maxWidth: 480,
+                    margin: "auto",
+                  }}
+                >
+                  <IonList lines="full" className="ion-padding">
+                    {/* Booking Details */}
+                    {[
+                      {
+                        label: "Reference #",
+                        value: bookingDetails.ReferenceNumber,
+                      },
+                      { label: "Driver", value: bookingDetails.Driver },
+                      { label: "Passenger", value: bookingDetails.Passenger },
+                      { label: "Car Type", value: bookingDetails.Cartype },
+                      { label: "Payment", value: bookingDetails.PaymentType },
+                      {
+                        label: "Pickup",
+                        value: bookingDetails.Origin || "Unknown",
+                      },
+                      {
+                        label: "Drop off",
+                        value: bookingDetails.Destination || "Unknown",
+                      },
+                    ].map((f, idx) => (
+                      <IonItem key={`details-${idx}`} lines="full">
+                        <div style={{ display: "flex", width: "100%" }}>
+                          <div style={{ flex: 1 }}>
+                            <IonLabel>
+                              <strong>{f.label}</strong>
+                            </IonLabel>
+                          </div>
+                          <div style={{ flex: 2 }}>
+                            <IonText color="medium">{f.value}</IonText>
+                          </div>
+                        </div>
+                      </IonItem>
+                    ))}
 
-                  {/* Computation & fare breakdown */}
-                  {[
-                    {
-                      label: "Pickup",
-                      value: bookingDetails.Origin || "Unknown",
-                    },
-                    {
-                      label: "Drop off",
-                      value: bookingDetails.Destination || "Unknown",
-                    },
-                    {
-                      label: "Distance (km)",
-                      value:
-                        bookingDetails.Computations.fareDistanceInKM.toFixed(2),
-                    },
-                    {
-                      label: "Duration (mins)",
-                      value:
-                        bookingDetails.Computations.fareDurationInMins.toFixed(
+                    {/* Fare Breakdown */}
+                    {[
+                      {
+                        label: "Description",
+                        value: "Value",
+                        total: "Total",
+                        color: "primary",
+                      },
+                      {
+                        label: "Base Fare",
+                        total: `₱${bookingDetails.Computations.baseFare.toFixed(
                           2
-                        ),
-                    },
-                    {
-                      label: "Base Fare",
-                      value: `₱${bookingDetails.Computations.baseFare.toFixed(
-                        2
-                      )}`,
-                    },
-                    {
-                      label: "Service Fee",
-                      value: `₱${bookingDetails.Computations.serviceFee.toFixed(
-                        2
-                      )}`,
-                    },
-                  ].map((f, idx) => (
-                    <IonItem key={idx}>
-                      <IonLabel>{f.label}</IonLabel>
-                      <IonText slot="end">{f.value}</IonText>
-                    </IonItem>
-                  ))}
+                        )}`,
+                        color: "medium",
+                      },
+                      {
+                        label: `Distance (₱${bookingDetails.Computations.costPerKM})`,
+                        value: `${bookingDetails.Computations.fareDistanceInKM.toFixed(
+                          2
+                        )}km`,
+                        total: `₱${(
+                          bookingDetails.Computations.fareDistanceInKM *
+                          bookingDetails.Computations.costPerKM
+                        ).toFixed(2)}`,
+                        color: "medium",
+                      },
+                      {
+                        label: `Duration (₱${bookingDetails.Computations.costPerMin})`,
+                        value: `${bookingDetails.Computations.fareDurationInMins.toFixed(
+                          2
+                        )}mins`,
+                        total: `₱${(
+                          bookingDetails.Computations.fareDurationInMins *
+                          bookingDetails.Computations.costPerMin
+                        ).toFixed(2)}`,
+                        color: "medium",
+                      },
+                      {
+                        label: "Service Fee",
+                        total: `₱${bookingDetails.Computations.serviceFee.toFixed(
+                          2
+                        )}`,
+                        color: "medium",
+                      },
+                      {
+                        label: "Surge Charge",
+                        total: `₱${getSurgeCharge().toFixed(2)}`,
+                        color: "medium",
+                      },
+                    ].map((f, idx) => (
+                      <IonItem
+                        key={`fare-${idx}`}
+                        lines="full"
+                        style={{ fontSize: "0.9rem", fontWeight: "bolder" }}
+                      >
+                        <div style={{ display: "flex", width: "100%" }}>
+                          <div style={{ flex: 2 }}>
+                            <IonLabel color={f.color}>{f.label}</IonLabel>
+                          </div>
+                          <div style={{ flex: 2 }}>
+                            <IonText color={f.color}>{f.value}</IonText>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <IonText color={f.color}>{f.total}</IonText>
+                          </div>
+                        </div>
+                      </IonItem>
+                    ))}
 
-                  {/* Total */}
-                  <IonItem
-                    lines="none"
-                    className="ion-no-padding"
-                    style={{ marginTop: "20px" }}
+                    {/* Total Fare */}
+                    <IonItem lines="none" style={{ marginTop: "20px" }}>
+                      <IonLabel style={{ fontWeight: 700 }}>
+                        Total Fare
+                      </IonLabel>
+                      <IonText
+                        slot="end"
+                        color="primary"
+                        style={{ fontWeight: 700, fontSize: "1.1em" }}
+                      >
+                        ₱{bookingDetails.TotalFare.toFixed(2)}
+                      </IonText>
+                    </IonItem>
+                    {[
+                      {
+                        label: "Commision",
+                        value: "20%",
+                        total: `₱-${(bookingDetails.TotalFare * 0.2).toFixed(
+                          2
+                        )}`,
+                        color: "medium",
+                      },
+                      {
+                        label: "Earnings",
+                        total: `₱${(
+                          bookingDetails.TotalFare -
+                          bookingDetails.TotalFare * 0.2
+                        ).toFixed(2)}`,
+                        color: "medium",
+                      },
+                    ].map((f, idx) => (
+                      <IonItem
+                        key={`fare-${idx}`}
+                        lines="full"
+                        style={{ fontSize: "0.9rem", fontWeight: "bolder" }}
+                      >
+                        <div style={{ display: "flex", width: "100%" }}>
+                          <div style={{ flex: 2 }}>
+                            <IonLabel color={f.color}>{f.label}</IonLabel>
+                          </div>
+                          <div style={{ flex: 2 }}>
+                            <IonText color={f.color}>{f.value}</IonText>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <IonText color={f.color}>{f.total}</IonText>
+                          </div>
+                        </div>
+                      </IonItem>
+                    ))}
+                  </IonList>
+                  <IonButton
+                    expand="block"
+                    fill="default"
+                    color="primary"
+                    onClick={captureScreenshot}
                   >
-                    <IonLabel style={{ fontWeight: 700 }}>Total Fare</IonLabel>
-                    <IonText
-                      slot="end"
-                      color="primary"
-                      style={{ fontWeight: 700 }}
-                    >
-                      ₱{bookingDetails.TotalFare.toFixed(2)}
-                    </IonText>
-                  </IonItem>
-                </IonList>
-              </IonCard>
+                    Download
+                  </IonButton>
+                </IonCard>
+              </div>
             )}
           </IonContent>
         </IonModal>

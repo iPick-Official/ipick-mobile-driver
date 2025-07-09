@@ -5,6 +5,8 @@ PODS:
     - Capacitor
   - CapacitorCamera (7.0.1):
     - Capacitor
+  - CapacitorCommunityFileOpener (7.0.1):
+    - Capacitor
   - CapacitorCommunityKeepAwake (7.1.0):
     - Capacitor
   - CapacitorCordova (7.4.1)
@@ -42,6 +44,7 @@ DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
+  - "CapacitorCommunityFileOpener (from `../../node_modules/@capacitor-community/file-opener`)"
   - "CapacitorCommunityKeepAwake (from `../../node_modules/@capacitor-community/keep-awake`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
@@ -67,6 +70,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/app"
   CapacitorCamera:
     :path: "../../node_modules/@capacitor/camera"
+  CapacitorCommunityFileOpener:
+    :path: "../../node_modules/@capacitor-community/file-opener"
   CapacitorCommunityKeepAwake:
     :path: "../../node_modules/@capacitor-community/keep-awake"
   CapacitorCordova:
@@ -92,6 +97,7 @@ SPEC CHECKSUMS:
   Capacitor: 78ad32d4b0d9dfa25402eb8b0ac46c2b8a4696b8
   CapacitorApp: febecbb9582cb353aed037e18ec765141f880fe9
   CapacitorCamera: 6e73f1fc6c629a672658705a02409b60854bc0f1
+  CapacitorCommunityFileOpener: 97362898506cf0a4194639f6fc05276af607191c
   CapacitorCommunityKeepAwake: 05c75aab989f60e621870cf03b24a144a5544c30
   CapacitorCordova: 34618fa1b14b6b091fd60a7658f7654044ae8d8a
   CapacitorFilesystem: 337eeaf16a9fa5a44d2329df411523fa3a9a6ee9
@@ -107,6 +113,6 @@ SPEC CHECKSUMS:
   IONFilesystemLib: ceacae793975039530458eabab0c495c70515a0d
   IONGeolocationLib: 81f33f88d025846946de2cf63b0c7628e7c6bc9d
 
-PODFILE CHECKSUM: ead95fdea2a2cefa5cd9d3d0f3494093cb03308e
+PODFILE CHECKSUM: b112f427db75f5ea5d22a19fe4b4cddcd065c703
 
 COCOAPODS: 1.16.2
