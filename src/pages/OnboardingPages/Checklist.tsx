@@ -85,21 +85,6 @@ const Checklist: React.FC = () => {
           Sign Out
         </IonButton>
       </IonContent>
-      <IonFooter>
-        <IonButton
-          className="custom-button"
-          color="danger"
-          expand="full"
-          shape="round"
-          size="large"
-          onClick={() => {
-            window.location.href =
-              "https://docs.google.com/forms/d/1AH302t6VRm1R6268U9nYdeaIknpY7zuKuaMXu8BQ6AQ/edit";
-          }}
-        >
-          Account Deletion
-        </IonButton>
-      </IonFooter>
     </IonPage>
   );
 };

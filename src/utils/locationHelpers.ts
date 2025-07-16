@@ -16,7 +16,7 @@ export const watchLocation = (
         onError || ((error) => console.error("Geolocation error:", error.message)),
         {
           enableHighAccuracy: true,
-          timeout: 30000,
+          timeout: 10000,
           maximumAge: 0,
         }
       );

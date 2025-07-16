@@ -55,6 +55,7 @@ const DriverTrip: React.FC = () => {
   const userId = localStorage.getItem("userId");
   const [destination, setDestination] =
     useState<google.maps.LatLngLiteral | null>(null);
+  const hasFetchedBooking = useRef(false);
 
   const getSurgeCharge = () => {
     if (!bookingData || !bookingData.computations) return "0.00";
@@ -103,14 +104,20 @@ const DriverTrip: React.FC = () => {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const booking = await fetchBookingDetails();
-      setBookingDetails(booking);
-      // console.log("Booking Details", booking);
-      if (booking && booking.length > 0) {
-        const bookingId = booking[0].paymentType.paymentType;
-        setPaymentType(bookingId);
+      postDriverLocation(bookingId);
+
+      if (!hasFetchedBooking.current) {
+        const booking = await fetchBookingDetails();
+        setBookingDetails(booking);
+        hasFetchedBooking.current = true;
+
+        if (booking && booking.length > 0) {
+          const payment = booking[0].paymentType.paymentType;
+          setPaymentType(payment);
+        }
       }
     };
+
     fetchAll();
   }, [bookingData, bookingDetails]);
 
@@ -196,7 +203,7 @@ const DriverTrip: React.FC = () => {
   const updateRideStatus = async (
     status: number,
     shouldReset = false,
-    onSuccess?: (data?: any) => void // optional callback
+    onSuccess?: (data?: any) => void
   ) => {
     setLoading(true);
     try {

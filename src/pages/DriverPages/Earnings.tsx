@@ -525,7 +525,7 @@ const Earnings: React.FC = () => {
                         ₱{bookingDetails.TotalFare.toFixed(2)}
                       </IonText>
                     </IonItem>
-                    {[
+                    {/* {[
                       {
                         label: "Commision",
                         value: "20%",
@@ -560,7 +560,7 @@ const Earnings: React.FC = () => {
                           </div>
                         </div>
                       </IonItem>
-                    ))}
+                    ))} */}
                   </IonList>
                   <IonButton
                     expand="block"

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useHistory } from "react-router";
 import {
   IonPage,
@@ -26,6 +26,7 @@ import {
   searchOutline,
   menuOutline,
   powerSharp,
+  refreshOutline,
 } from "ionicons/icons";
 import {
   fetchBookingDetails,
@@ -39,6 +40,7 @@ import "./Home.css";
 import Loading from "../../components/Loading";
 import { watchLocation } from "../../utils/locationHelpers";
 import { fetchDriverWallet } from "../../services/apiService";
+import { fetchRiderDistances } from "../../utils/fetchRiderDistances";
 
 const Home: React.FC = () => {
   const modalRef = useRef<HTMLIonModalElement>(null);
@@ -66,7 +68,10 @@ const Home: React.FC = () => {
   const userId = localStorage.getItem("userId");
   const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
 
-  const [distanceLimit, setDistanceLimit] = useState("5");
+  const [distanceLimit, setDistanceLimit] = useState<number>(() => {
+    const stored = localStorage.getItem("distanceLimit");
+    return stored ? Number(stored) : 10;
+  });
 
   useEffect(() => {
     const id = watchLocation(
@@ -104,9 +109,10 @@ const Home: React.FC = () => {
         const user = data.users.map((user: any, index: number) => {
           const baseFare = user?.computations?.baseFare || "Unnamed Rider";
           const seatType = getSeatType(baseFare);
-          console.log(
-            `User ${index + 1} origin: ${baseFare} and seat type: ${seatType}`
-          );
+          console
+            .log
+            // `User ${index + 1} origin: ${baseFare} and seat type: ${seatType}`
+            ();
           return baseFare;
         });
         setUsers(data.users);
@@ -152,28 +158,28 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!users || !Array.isArray(users) || !currentLocation) return;
+
     const prevUsers = prevUsersRef.current;
-    const currentUserIds = (users || []).map(
-      (u: { riderId: string }) => u?.riderId
-    );
+
+    const currentUserIds = users.map((u: { riderId: string }) => u?.riderId);
     const prevUserIds = (prevUsers || []).map((u) => u?.riderId);
 
     const hasNewUsers =
       currentUserIds.length > prevUserIds.length &&
       currentUserIds.some((id: string) => !prevUserIds.includes(id));
 
-    if (!users || !Array.isArray(users)) return;
+    if (!hasNewUsers) return;
 
     const driverSeatType = driverData?.carType
       ?.replace("-", " ")
       ?.replace(/\b\w/g, (char: string) => char.toUpperCase());
 
-    if (!driverSeatType) return; // safety check
+    if (!driverSeatType) return;
 
     const allowedSeatTypes = getAllowedSeatTypes(driverSeatType);
     const filteredUsersByCarType = filterByCarType(users, allowedSeatTypes);
 
-    // Use filteredUsersByCarType instead of raw `users`
     const ridersPickupCoordinates = filteredUsersByCarType
       .map((rider: { riderId: any; origin: { coordinates: any } }) => ({
         riderId: rider?.riderId,
@@ -186,65 +192,22 @@ const Home: React.FC = () => {
           r.coordinates.length === 2
       );
 
-    const fetchDistances = async () => {
-      if (!currentLocation || ridersPickupCoordinates.length === 0) return;
+    if (ridersPickupCoordinates.length === 0) return;
 
-      const { lat: currentLat, lng: currentLng } = currentLocation;
-
-      const directionsService = new google.maps.DirectionsService();
-      const distances: { riderId: string; distance: number }[] = [];
-
-      for (const rider of ridersPickupCoordinates) {
-        const [pickupLat, pickupLng] = rider.coordinates;
-        try {
-          const result = await directionsService.route({
-            origin: new google.maps.LatLng(currentLat, currentLng),
-            destination: new google.maps.LatLng(pickupLat, pickupLng),
-            travelMode: google.maps.TravelMode.DRIVING,
-          });
-
-          if (result && result.routes.length > 0) {
-            const leg = result.routes[0].legs[0];
-            const distanceText = leg?.distance?.text ?? "0 km";
-            const numericDistance = parseFloat(
-              distanceText.replace(/[^\d.]/g, "")
-            );
-            distances.push({
-              riderId: rider.riderId,
-              distance: numericDistance,
-            });
-          } else {
-            console.warn(`No route found for rider ${rider.riderId}`);
-          }
-        } catch (err) {
-          console.error(
-            `❌ Failed to fetch route for rider ${rider.riderId}:`,
-            err
-          );
-        }
-      }
-
-      console.log("📦 Distances to riders (before filtering):", distances);
-
-      // Sort and filter distances below or equal to 5 km
-      const filteredDistances = distances
-        .sort((a, b) => a.distance - b.distance)
-        .filter((d) => d.distance <= Number(distanceLimit));
-
-      console.log(
-        `Riders within ${Number(distanceLimit)} km:`,
-        filteredDistances
-      );
-      setRiderDistances(filteredDistances);
-    };
-
-    if (hasNewUsers) {
+    const timeout = setTimeout(() => {
       console.log("🆕 New users detected. Fetching distances...");
-      fetchDistances();
-    }
+      fetchRiderDistances({
+        currentLocation,
+        ridersPickupCoordinates,
+        distanceLimit: Number(distanceLimit),
+        callback: setRiderDistances,
+      });
+    }, 500); // debounce: 500ms
 
     prevUsersRef.current = users;
-  }, [users, currentLocation]);
+
+    return () => clearTimeout(timeout); // cleanup debounce
+  }, [users, currentLocation, driverData, distanceLimit]);
 
   const checkWallet = async (): Promise<boolean> => {
     try {
@@ -428,11 +391,12 @@ const Home: React.FC = () => {
             <IonSelect
               interface="action-sheet"
               slot="start"
-              value={distanceLimit}
+              value={String(distanceLimit)}
               placeholder="Set Distance"
               onIonChange={(e) => {
-                const selectedValue = e.detail.value;
+                const selectedValue = Number(e.detail.value);
                 setDistanceLimit(selectedValue);
+                localStorage.setItem("distanceLimit", String(selectedValue));
               }}
             >
               <IonSelectOption value="5">5km</IonSelectOption>
@@ -440,7 +404,15 @@ const Home: React.FC = () => {
               <IonSelectOption value="20">20km</IonSelectOption>
               <IonSelectOption value="30">30km</IonSelectOption>
             </IonSelect>
+
             <IonButtons slot="end">
+              <IonButton
+                onClick={() => window.location.reload()}
+                color="primary"
+              >
+                <IonIcon icon={refreshOutline} slot="icon-only" />
+              </IonButton>
+
               <IonButton onClick={closeJobs} color="danger">
                 <IonIcon icon={powerSharp} slot="icon-only" />
               </IonButton>

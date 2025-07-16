@@ -128,7 +128,7 @@ const Login: React.FC = () => {
       localStorage.setItem("accountStatus", accountStatus);
       localStorage.setItem("profilePicture", profilePictureUrl);
 
-      login(); // Assuming this sets context or app-wide auth state
+      login();
 
       const userStatus = user.status?.toLowerCase();
       history.replace(userStatus === "approved" ? "/home" : "/checklist");

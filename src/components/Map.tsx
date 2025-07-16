@@ -41,7 +41,6 @@ const Map: React.FC = () => {
   const [currentLocation, setCurrentLocation] =
     useState<google.maps.LatLngLiteral | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [reloadMapKey, setReloadMapKey] = useState<number>(0);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,7 +92,19 @@ const Map: React.FC = () => {
     } else {
       setLocationError("Geolocation is not supported by this browser.");
     }
-  }, [reloadMapKey]); // Re-run when reloading
+  }, []);
+
+  // Auto-reload on error after 5 seconds
+  useEffect(() => {
+    const fallbackTimeout = setTimeout(() => {
+      if (!isLoaded) {
+        console.warn("Map failed to load within timeout. Reloading...");
+        window.location.reload();
+      }
+    }, 30000); // 10 seconds
+
+    return () => clearTimeout(fallbackTimeout);
+  }, [isLoaded]);
 
   const onMapIdle = () => {
     if (timeoutRef.current) {
@@ -107,33 +118,17 @@ const Map: React.FC = () => {
     }, 5000);
   };
 
-  const retryLocation = () => {
-    setLocationError(null);
-    setCurrentLocation(null);
-    setReloadMapKey((prev) => prev + 1);
-  };
-
-  if (loadError) {
-    retryLocation();
+  if (loadError || locationError) {
     return (
-      <div>
-        <p>Error loading maps: {loadError.message}</p>
-        <button onClick={retryLocation}>Retry</button>
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        <p>{loadError?.message || locationError}</p>
+        <p>Restarting app...</p>
       </div>
     );
   }
 
   if (!isLoaded) {
     return <div>Loading Map...</div>;
-  }
-
-  if (locationError) {
-    return (
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <p>{locationError}</p>
-        <button onClick={retryLocation}>Retry</button>
-      </div>
-    );
   }
 
   if (!currentLocation) {
@@ -151,7 +146,6 @@ const Map: React.FC = () => {
 
   return (
     <GoogleMap
-      key={reloadMapKey}
       mapContainerStyle={containerStyle}
       center={currentLocation}
       zoom={13}
@@ -183,9 +177,7 @@ const Map: React.FC = () => {
           />
         </>
       )}
-      {destination && (
-        <Directions origin={currentLocation} destination={destination} />
-      )}
+      {destination && <Directions destination={destination} />}
     </GoogleMap>
   );
 };
