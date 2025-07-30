@@ -357,16 +357,6 @@ const Login: React.FC = () => {
           onDidDismiss={() => setError("")}
         />
       </IonContent>
-      <IonFooter
-        className="ion-no-border ion-text-center ion-padding"
-        style={{ bottom: "20px" }}
-      >
-        <IonText>
-          <IonLabel>
-            &copy; {new Date().getFullYear()} All rights reserved.
-          </IonLabel>
-        </IonText>
-      </IonFooter>
     </IonPage>
   );
 };

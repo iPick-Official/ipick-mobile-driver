@@ -37,6 +37,7 @@ import HelpCenter from "./pages/DriverPages/HelpCenter";
 import Settings from "./pages/DriverPages/Settings";
 import { enableKeepAwake, disableKeepAwake } from "./utils/KeepAwake";
 import { fetchActiveJobs } from "./services/apiService";
+import VersionCheck from "./components/VersionCheck";
 
 setupIonicReact();
 
@@ -88,6 +89,7 @@ const AppContentInner: React.FC = () => {
   return (
     <IonSplitPane contentId="main">
       {shouldShowMenu && <Menu />}
+      <VersionCheck />
       <IonRouterOutlet id="main">
         {/* Public Routes */}
         <Route path="/login" exact>

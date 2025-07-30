@@ -17,17 +17,18 @@ import {
   IonText,
   IonToolbar,
 } from "@ionic/react";
+import {
+  fetchBookingDetails,
+  fetchRiderDetails,
+  postDriverLocation,
+} from "../../services/apiService";
 import React, { useState, useEffect, useRef } from "react";
 import Map from "../../components/Map";
 import { useHistory } from "react-router";
 import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import Loading from "../../components/Loading";
 import { connectSocket, socket } from "../../utils/useSocket";
-import {
-  fetchBookingDetails,
-  postDriverLocation,
-} from "../../services/apiService";
-import { call, mapOutline, star } from "ionicons/icons";
+import { call, star } from "ionicons/icons";
 
 const DriverTrip: React.FC = () => {
   const history = useHistory();
@@ -80,8 +81,6 @@ const DriverTrip: React.FC = () => {
     return surgeCharge > 0 ? surgeCharge.toFixed(2) : "0.00";
   };
 
-  useEffect(() => {}, []);
-
   useEffect(() => {
     const item = localStorage.getItem("acceptedBooking");
     if (item) {
@@ -105,7 +104,6 @@ const DriverTrip: React.FC = () => {
   useEffect(() => {
     const fetchAll = async () => {
       postDriverLocation(bookingId);
-
       if (!hasFetchedBooking.current) {
         const booking = await fetchBookingDetails();
         setBookingDetails(booking);
@@ -114,6 +112,27 @@ const DriverTrip: React.FC = () => {
         if (booking && booking.length > 0) {
           const payment = booking[0].paymentType.paymentType;
           setPaymentType(payment);
+        }
+        const riderId = bookingData?.riderId;
+
+        if (riderId) {
+          const riderDetails = await fetchRiderDetails(riderId);
+          console.log("Rider Details:", riderDetails);
+
+          const name = riderDetails?.name || "";
+          const mobile = riderDetails?.mobnum || "";
+
+          setBookingName(name);
+          setBookingMobile(mobile);
+
+          const item = localStorage.getItem("acceptedBooking");
+
+          if (item) {
+            const bookingObj = JSON.parse(item);
+            bookingObj.name = name;
+            bookingObj.mobile = mobile;
+            localStorage.setItem("acceptedBooking", JSON.stringify(bookingObj));
+          }
         }
       }
     };
@@ -253,19 +272,14 @@ const DriverTrip: React.FC = () => {
     });
   const endTrip = () => updateRideStatus(4, true);
 
-  const navigateToLocation = (
-    coordinates: [number, number],
-    currentLocation: google.maps.LatLngLiteral | null
-  ) => {
-    if (!coordinates || !currentLocation) {
-      console.warn("Missing coordinates or current location");
+  const navigateToLocation = (coordinates: [number, number]) => {
+    if (!coordinates) {
+      console.warn("Missing coordinates");
       return;
     }
 
     const [destLat, destLng] = coordinates;
-    const { lat: originLat, lng: originLng } = currentLocation;
-
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`;
     window.open(url, "_blank");
   };
 
@@ -355,7 +369,12 @@ const DriverTrip: React.FC = () => {
         </IonHeader>
         <IonContent fullscreen>
           <IonGrid className="card-style">
-            <IonRow className="ion-justify-content-between ion-align-items-center">
+            <IonRow
+              className="ion-justify-content-between ion-align-items-center"
+              onClick={() =>
+                navigateToLocation(bookingData?.origin?.coordinates)
+              }
+            >
               <IonCol size="10">
                 <IonLabel position="stacked" color="primary">
                   <strong>Pick-up</strong>
@@ -363,34 +382,35 @@ const DriverTrip: React.FC = () => {
                 <IonText
                   style={{
                     fontSize: "0.8rem",
-                    margin: "10px",
+                    margin: "10px 0",
                     display: "block",
                   }}
                 >
                   <LoadingText>{bookingData?.origin?.name}</LoadingText>
                 </IonText>
               </IonCol>
-              <IonCol size="2">
-                <IonButton
-                  size="small"
-                  fill="clear"
-                  shape="round"
-                  disabled={!bookingData}
-                  onClick={() =>
-                    navigateToLocation(
-                      bookingData?.origin?.coordinates,
-                      currentLocation
-                    )
-                  }
-                >
-                  <IonIcon icon={mapOutline} />
-                </IonButton>
+
+              <IonCol size="2" className="ion-text-right">
+                <IonImg
+                  src="/assets/driverTrip/start.png"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    objectFit: "contain",
+                  }}
+                  alt="Start Location Icon"
+                />
               </IonCol>
             </IonRow>
           </IonGrid>
 
           <IonGrid className="card-style">
-            <IonRow className="ion-justify-content-between ion-align-items-center">
+            <IonRow
+              className="ion-justify-content-between ion-align-items-center"
+              onClick={() =>
+                navigateToLocation(bookingData?.destination?.coordinates)
+              }
+            >
               <IonCol size="10">
                 <IonLabel position="stacked" color="primary">
                   <strong>Drop-off</strong>
@@ -406,21 +426,16 @@ const DriverTrip: React.FC = () => {
                   <LoadingText>{bookingData?.destination?.name}</LoadingText>
                 </IonText>
               </IonCol>
-              <IonCol size="2">
-                <IonButton
-                  size="small"
-                  fill="clear"
-                  shape="round"
-                  disabled={!bookingData}
-                  onClick={() =>
-                    navigateToLocation(
-                      bookingData?.destination?.coordinates,
-                      currentLocation
-                    )
-                  }
-                >
-                  <IonIcon icon={mapOutline} />
-                </IonButton>
+              <IonCol size="2" className="ion-text-right">
+                <IonImg
+                  src="/assets/driverTrip/finish.png"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    objectFit: "contain",
+                  }}
+                  alt="Start Location Icon"
+                />
               </IonCol>
             </IonRow>
           </IonGrid>
@@ -430,7 +445,9 @@ const DriverTrip: React.FC = () => {
           >
             <IonAccordion value="fareBreakdown">
               <IonItem slot="header" lines="none">
-                <IonLabel color="primary">Fare</IonLabel>
+                <IonLabel color="primary">
+                  <strong>Fare</strong>
+                </IonLabel>
                 <IonText slot="end">
                   <LoadingText>
                     <strong>₱{bookingData?.travelFare.toFixed(2)}</strong>
@@ -543,7 +560,7 @@ const DriverTrip: React.FC = () => {
             style={{ marginLeft: "10px", marginRight: "10px" }}
           >
             <IonLabel slot="start" color="primary">
-              Payment Method
+              <strong>Payment Method</strong>
             </IonLabel>
             <IonText slot="end">
               <LoadingText>{paymentType}</LoadingText>

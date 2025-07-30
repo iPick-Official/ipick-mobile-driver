@@ -17,13 +17,12 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import { searchOutline, closeOutline, downloadOutline } from "ionicons/icons";
-import jsPDF from "jspdf";
+import { searchOutline, closeOutline } from "ionicons/icons";
 import html2canvas from "html2canvas";
 import { useEffect, useRef, useState } from "react";
 import BackButton from "../../components/BackButton";
 import { fetchRideHistory } from "../../services/apiService";
-import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capacitor-community/file-opener";
 
 const Earnings: React.FC = () => {

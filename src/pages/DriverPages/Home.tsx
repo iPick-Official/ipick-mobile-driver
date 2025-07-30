@@ -20,6 +20,7 @@ import {
   IonToast,
   IonSelect,
   IonSelectOption,
+  IonLabel,
 } from "@ionic/react";
 import {
   powerOutline,
@@ -36,7 +37,7 @@ import Map from "../../components/Map";
 import { connectSocket, socket } from "../../utils/useSocket";
 import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import "@theme/variables.css";
-import "./Home.css";
+import "../../theme/Home.css";
 import Loading from "../../components/Loading";
 import { watchLocation } from "../../utils/locationHelpers";
 import { fetchDriverWallet } from "../../services/apiService";
@@ -72,6 +73,62 @@ const Home: React.FC = () => {
     const stored = localStorage.getItem("distanceLimit");
     return stored ? Number(stored) : 10;
   });
+  const [disabled, setDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  const DISABLE_TIME = 30;
+  const STORAGE_KEY = "refresh_disabled_until";
+
+  useEffect(() => {
+    const disabledUntil = localStorage.getItem(STORAGE_KEY);
+    if (disabledUntil) {
+      const now = Date.now();
+      const target = parseInt(disabledUntil, 10);
+      const diff = Math.floor((target - now) / 1000);
+
+      if (diff > 0) {
+        setDisabled(true);
+        setCountdown(diff);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (disabled) {
+      setDisabled(false);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const handleRefresh = () => {
+    const now = Date.now();
+    const disabledUntil = now + DISABLE_TIME * 1000;
+    localStorage.setItem(STORAGE_KEY, disabledUntil.toString());
+
+    setDisabled(true);
+    setCountdown(DISABLE_TIME);
+
+    window.location.reload();
+  };
+
+  // Countdown logic
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+    } else if (disabled) {
+      setDisabled(false);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   useEffect(() => {
     const id = watchLocation(
@@ -335,6 +392,7 @@ const Home: React.FC = () => {
           "acceptedBooking",
           JSON.stringify(selectedBooking)
         );
+        localStorage.setItem("riderId", riderId);
         console.log("Booking saved locally.");
       }
     } catch (error) {
@@ -407,10 +465,15 @@ const Home: React.FC = () => {
 
             <IonButtons slot="end">
               <IonButton
-                onClick={() => window.location.reload()}
+                onClick={handleRefresh}
                 color="primary"
+                disabled={disabled}
               >
-                <IonIcon icon={refreshOutline} slot="icon-only" />
+                {disabled ? (
+                  <IonLabel>{countdown}s</IonLabel>
+                ) : (
+                  <IonIcon icon={refreshOutline} slot="icon-only" />
+                )}
               </IonButton>
 
               <IonButton onClick={closeJobs} color="danger">

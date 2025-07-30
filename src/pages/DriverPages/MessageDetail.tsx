@@ -15,7 +15,7 @@ import {
 } from "@ionic/react";
 import { useParams } from "react-router";
 import { useEffect, useRef, useState } from "react";
-import "./MessageDetail.css";
+import "../../theme/MessageDetail.css";
 import { sendSharp } from "ionicons/icons";
 import BackButton from "../../components/BackButton";
 

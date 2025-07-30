@@ -219,8 +219,16 @@ export const postDriverLocation = async (bookingId: string) => {
     console.error("Missing required data in localStorage or environment.");
     return;
   }
+
+  let lastSentTime = 0; // Timestamp of last successful send
+
   const watchId = watchLocation(
     async (position: { coords: { latitude: number; longitude: number } }) => {
+      const now = Date.now();
+      if (now - lastSentTime < 30000) {
+        return;
+      }
+
       const { latitude, longitude } = position.coords;
       const reqBody = {
         bookingId,
@@ -230,6 +238,7 @@ export const postDriverLocation = async (bookingId: string) => {
           lng: longitude,
         },
       };
+
       try {
         const response = await fetch(
           `${apiEndpoint}/ride-hail/driverLocation`,
@@ -251,6 +260,7 @@ export const postDriverLocation = async (bookingId: string) => {
           );
         } else {
           const result = await response.json();
+          lastSentTime = now; // Update timestamp on success
           console.log("Driver location sent successfully:", result);
         }
       } catch (err) {
@@ -260,4 +270,54 @@ export const postDriverLocation = async (bookingId: string) => {
   );
 
   return watchId;
+};
+
+export const fetchRiderDetails = async (riderId: any) => {
+  if (!riderId) return null;
+
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/auth/findUser/${riderId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching rider details:", error);
+    return null;
+  }
+};
+
+export const fetchVersion = async () => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/api/AppVersion`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching rider details:", error);
+    return null;
+  }
 };

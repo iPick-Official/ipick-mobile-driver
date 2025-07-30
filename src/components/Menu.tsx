@@ -10,14 +10,18 @@ import {
   IonMenuToggle,
   IonText,
 } from "@ionic/react";
-import "./Menu.css";
+import "../theme/Menu.css";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { UploadService } from "../services/uploadService";
 
 const appPages = [
-  { title: "My Account", url: "/my-profile", icon: "assets/icons/png/driver.svg" },
+  {
+    title: "My Account",
+    url: "/my-profile",
+    icon: "assets/icons/png/driver.svg",
+  },
   { title: "Earnings", url: "/earnings", icon: "assets/icons/png/peso.svg" },
   { title: "Wallet", url: "/wallet", icon: "assets/icons/png/e-wallet.svg" },
   // { title: "Messages", url: "/messages", icon: "assets/icons/png/chat.svg" },

@@ -12,16 +12,42 @@ const Directions: React.FC<DirectionsProps> = ({ destination }) => {
     useState<google.maps.DirectionsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRequestedOrigin = useRef<google.maps.LatLngLiteral | null>(null);
+  const lastRequestedDestination = useRef<google.maps.LatLngLiteral | null>(
+    null
+  );
+
+  // Haversine formula to calculate distance between two points (in meters)
+  const calculateDistance = (
+    a: google.maps.LatLngLiteral,
+    b: google.maps.LatLngLiteral
+  ) => {
+    const toRad = (value: number) => (value * Math.PI) / 180;
+    const R = 6371000; // Radius of Earth in meters
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+
+    const aComp =
+      Math.sin(dLat / 2) ** 2 +
+      Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+    const c = 2 * Math.atan2(Math.sqrt(aComp), Math.sqrt(1 - aComp));
+
+    return R * c;
+  };
 
   // Watch user location and set it as origin
   useEffect(() => {
     const id = watchLocation(
       (position) => {
-        setOrigin({
+        const newOrigin = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        });
+        };
+        setOrigin(newOrigin);
       },
       (err) => {
         console.error("Geolocation error:", err);
@@ -36,13 +62,29 @@ const Directions: React.FC<DirectionsProps> = ({ destination }) => {
     };
   }, []);
 
-  // Fetch directions whenever origin or destination changes
+  // Debounced route fetching
   useEffect(() => {
     if (!origin || !destination || !window.google?.maps) return;
+
+    const originChanged =
+      !lastRequestedOrigin.current ||
+      calculateDistance(origin, lastRequestedOrigin.current) >= 500;
+
+    const destinationChanged =
+      !lastRequestedDestination.current ||
+      destination.lat !== lastRequestedDestination.current.lat ||
+      destination.lng !== lastRequestedDestination.current.lng;
+
+    if (!originChanged && !destinationChanged) {
+      console.log("📏 No significant changes, skipping route fetch.");
+      return;
+    }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
+      console.log("📡 Requesting directions...");
+
       const directionsService = new google.maps.DirectionsService();
 
       setLoading(true);
@@ -57,14 +99,17 @@ const Directions: React.FC<DirectionsProps> = ({ destination }) => {
         (result, status) => {
           setLoading(false);
           if (status === google.maps.DirectionsStatus.OK && result) {
+            console.log("✅ Directions fetched");
             setDirections(result);
+            lastRequestedOrigin.current = origin;
+            lastRequestedDestination.current = destination;
           } else {
             console.error("❌ Directions request failed:", status);
             setError("Failed to load route.");
           }
         }
       );
-    }, 300);
+    }, 2000);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);

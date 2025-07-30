@@ -5,7 +5,7 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import customMapStyle from "./MapStyle.json";
+import customMapStyle from "../theme/MapStyle.json";
 import Directions from "./Directions";
 
 const containerStyle = {
@@ -33,6 +33,11 @@ const mapOptions = {
   },
 };
 
+const fallbackLocation: google.maps.LatLngLiteral = {
+  lat: 14.5995, // Manila latitude
+  lng: 120.9842, // Manila longitude
+};
+
 const Map: React.FC = () => {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_APP_GOOGLE_MAP_KEY,
@@ -41,6 +46,7 @@ const Map: React.FC = () => {
   const [currentLocation, setCurrentLocation] =
     useState<google.maps.LatLngLiteral | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [showLocationAlert, setShowLocationAlert] = useState(false); // new state for alert
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -70,19 +76,19 @@ const Map: React.FC = () => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const currentLocation = {
+          const userLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           };
-          setCurrentLocation(currentLocation);
-
-          if (mapRef.current) {
-            mapRef.current.panTo(currentLocation);
-          }
+          setCurrentLocation(userLocation);
+          mapRef.current?.panTo(userLocation);
+          setShowLocationAlert(false); // ensure alert hidden on success
         },
         (error) => {
           console.error("Geolocation error:", error);
           setLocationError("Unable to retrieve your location.");
+          setCurrentLocation(fallbackLocation); // fallback to Manila
+          setShowLocationAlert(true); // show alert when location access denied
         },
         {
           enableHighAccuracy: true,
@@ -91,17 +97,18 @@ const Map: React.FC = () => {
       );
     } else {
       setLocationError("Geolocation is not supported by this browser.");
+      setCurrentLocation(fallbackLocation); // fallback to Manila
+      setShowLocationAlert(true); // show alert if unsupported
     }
   }, []);
 
-  // Auto-reload on error after 5 seconds
   useEffect(() => {
     const fallbackTimeout = setTimeout(() => {
       if (!isLoaded) {
-        console.warn("Map failed to load within timeout. Reloading...");
+        alert("Map failed to load. The page will reload.");
         window.location.reload();
       }
-    }, 30000); // 10 seconds
+    }, 30000); // 30 seconds
 
     return () => clearTimeout(fallbackTimeout);
   }, [isLoaded]);
@@ -118,21 +125,56 @@ const Map: React.FC = () => {
     }, 5000);
   };
 
-  if (loadError || locationError) {
+  // Render non-dismissible location alert modal if needed
+  if (showLocationAlert) {
     return (
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <p>{loadError?.message || locationError}</p>
-        <p>Restarting app...</p>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0.75)",
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 9999,
+          fontSize: "1.25rem",
+          padding: "1rem",
+          textAlign: "center",
+        }}
+      >
+        <div>
+          <h2>Location Access Required</h2>
+          <p>
+            This app needs your location to work properly. Please enable
+            location services in your browser or device settings and reload the
+            page.
+          </p>
+          <p>
+            <em>
+              This message cannot be dismissed until location access is granted.
+            </em>
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!isLoaded) {
-    return <div>Loading Map...</div>;
+    return (
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        Loading Map...
+      </div>
+    );
   }
 
   if (!currentLocation) {
-    return <div>Getting your location...</div>;
+    return (
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        Getting your location...
+      </div>
+    );
   }
 
   const blueDotIcon = {
@@ -148,7 +190,7 @@ const Map: React.FC = () => {
     <GoogleMap
       mapContainerStyle={containerStyle}
       center={currentLocation}
-      zoom={13}
+      zoom={15}
       options={mapOptions}
       onDragEnd={destination ? undefined : onMapIdle}
       onZoomChanged={destination ? undefined : onMapIdle}
@@ -161,7 +203,7 @@ const Map: React.FC = () => {
           <Marker position={currentLocation} icon={blueDotIcon} />
           <Circle
             center={currentLocation}
-            radius={4000}
+            radius={1000}
             options={{
               strokeColor: "#4285F4",
               strokeOpacity: 0.6,

@@ -20,7 +20,7 @@ import React, { useEffect, useState } from "react";
 import BackButton from "../../components/BackButton";
 import { UploadService } from "../../services/uploadService";
 import { useHistory } from "react-router-dom";
-import "../../components/Menu.css";
+import "../../theme/Menu.css";
 import { fetchMyRatings } from "../../services/apiService";
 import {
   callOutline,
