@@ -125,42 +125,6 @@ const Map: React.FC = () => {
     }, 5000);
   };
 
-  // Render non-dismissible location alert modal if needed
-  if (showLocationAlert) {
-    return (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.75)",
-          color: "white",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 9999,
-          fontSize: "1.25rem",
-          padding: "1rem",
-          textAlign: "center",
-        }}
-      >
-        <div>
-          <h2>Location Access Required</h2>
-          <p>
-            This app needs your location to work properly. Please enable
-            location services in your browser or device settings and reload the
-            page.
-          </p>
-          <p>
-            <em>
-              This message cannot be dismissed until location access is granted.
-            </em>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!isLoaded) {
     return (
       <div style={{ textAlign: "center", marginTop: "2rem" }}>

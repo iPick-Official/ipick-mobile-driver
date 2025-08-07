@@ -1,85 +1,178 @@
 import {
-  IonButtons,
   IonContent,
   IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
   IonPage,
   IonTitle,
   IonToolbar,
-  IonBadge,
+  IonButton,
+  IonTextarea,
+  IonFooter,
+  IonButtons,
+  IonIcon,
 } from "@ionic/react";
-import { useHistory } from "react-router";
+import React, { useEffect, useRef, useState } from "react";
+import { sendMsg } from "../../services/apiService";
+import { socket } from "../../utils/useSocket";
+import { useLocationContext } from "../../contexts/LocationContext";
+import { Message, ChatPageProps } from "../../types/messageTypes";
+import "../../theme/ChatPage.css";
 import BackButton from "../../components/BackButton";
+import { callSharp } from "ionicons/icons";
 
-const Messages: React.FC = () => {
-  const history = useHistory();
+const ChatPage: React.FC<ChatPageProps> = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMsg, setInputMsg] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const messageThreads = [
-    {
-      id: "1",
-      sender: "John Doe",
-      preview: "Thanks for the smooth ride today!",
-      time: "2h ago",
-      unread: false,
-    },
-    {
-      id: "2",
-      sender: "Sarah Smith",
-      preview: "You were really helpful with the bags. Thanks!",
-      time: "5h ago",
-      unread: false,
-    },
-    {
-      id: "3",
-      sender: "Mike Johnson",
-      preview: "I think I left my sunglasses in your car.",
-      time: "1d ago",
-      unread: false,
-    },
-  ];
+  const {
+    driverId,
+    bookingId,
+    riderId,
+    riderName,
+    riderMobile,
+  } = useLocationContext();
 
-  const hasMessages = messageThreads.length > 0;
+  // Load existing chat from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(`chat_${bookingId}`);
+    if (stored) {
+      setMessages(JSON.parse(stored));
+    }
+  }, [bookingId]);
+
+  const saveMessagesToStorage = (msgs: Message[]) => {
+    localStorage.setItem(`chat_${bookingId}`, JSON.stringify(msgs));
+  };
+
+  useEffect(() => {
+    socket?.emit("iAmDriver", driverId);
+    const handleNewMessages = (newMessages: Message[]) => {
+      const relevantMessages = newMessages.filter((msg) => msg.bookingId === bookingId);
+
+      if (relevantMessages.length > 0) {
+        console.log(`[Messages Match] ${relevantMessages.length} messages for bookingId ${bookingId}`);
+
+        setMessages((prev) => {
+          const existingTimestamps = new Set(prev.map((m) => m.createdAt));
+
+          const filteredNew = relevantMessages.filter(
+            (m) => m.createdAt && !existingTimestamps.has(m.createdAt)
+          );
+
+          if (filteredNew.length === 0) {
+            return prev;
+          }
+
+          const updated = [...prev, ...filteredNew];
+          saveMessagesToStorage(updated);
+          scrollToBottom();
+          return updated;
+        });
+      } else {
+        console.log("[Messages Ignored] No messages matched bookingId:", bookingId);
+      }
+    };
+    socket?.on("user_messages", handleNewMessages);
+
+    return () => {
+      socket?.off("user_messages", handleNewMessages);
+    };
+  }, [bookingId, driverId]);
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = async () => {
+    const trimmedMsg = inputMsg.trim();
+    if (!trimmedMsg) return;
+
+    const newMessage: Message = {
+      bookingId,
+      driverId,
+      riderId,
+      sender: "driver",
+      msg: trimmedMsg,
+    };
+
+    try {
+      await sendMsg(riderId, bookingId, driverId, trimmedMsg, "driver");
+      const updated = [
+        ...messages,
+        { ...newMessage, createdAt: new Date().toISOString() },
+      ];
+      setMessages(updated);
+      saveMessagesToStorage(updated);
+      scrollToBottom();
+      setInputMsg("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  };
 
   return (
     <IonPage>
-      <IonHeader collapse="fade" className="ion-no-border">
+      <IonHeader className="ion-no-border" collapse="fade">
         <IonToolbar>
           <IonButtons slot="start">
             <BackButton />
           </IonButtons>
-          <IonTitle>Messages</IonTitle>
+          <IonTitle>{riderName}</IonTitle>
+          <IonButton fill="clear" slot="end" href={`tel:+63${riderMobile}`} size="default">
+            <IonIcon icon={callSharp} />
+          </IonButton>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding" fullscreen>
-        {hasMessages ? (
-          <IonList>
-            {messageThreads.map((msg) => (
-              <IonItem
-                button
-                key={msg.id}
-                onClick={() => history.push(`/messages/${msg.id}`)}
+
+      <IonContent className="ion-padding" fullscreen scrollY={true}>
+        <div className="messages-container">
+          {[...messages]
+            .sort((a, b) => new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime())
+            .map((msg) => (
+              <div
+                key={`${msg.createdAt}-${msg.msg}`}
+                className={`chat-bubble ${msg.sender === "driver" ? "sent" : "received"}`}
               >
-                <IonLabel>
-                  <h2>{msg.sender}</h2>
-                  <p>{msg.preview}</p>
-                  <small>{msg.time}</small>
-                </IonLabel>
-                {msg.unread && <IonBadge color="primary">New</IonBadge>}
-              </IonItem>
+                <p className="chat-text">{msg.msg}</p>
+                <small className="chat-time">
+                  {new Date(msg.createdAt || "").toLocaleTimeString()}
+                </small>
+              </div>
             ))}
-          </IonList>
-        ) : (
-          <div
-            style={{ textAlign: "center", marginTop: "40px", color: "#888" }}
-          >
-            <p>No messages yet</p>
-          </div>
-        )}
+          <div ref={messagesEndRef} />
+        </div>
       </IonContent>
+
+      <IonFooter className="chat-footer ion-no-border" collapse="fade">
+        <div className="chat-input-container">
+          <IonTextarea
+            rows={1}
+            placeholder="Type a message..."
+            value={inputMsg}
+            autoGrow
+            onIonChange={(e) => setInputMsg(e.detail.value ?? "")}
+            onInput={(e: any) => setInputMsg(e.target.value ?? "")}
+            className="chat-textarea"
+          />
+          <IonButton
+            onClick={handleSend}
+            disabled={!inputMsg.trim()}
+            shape="round"
+          >
+            Send
+          </IonButton>
+        </div>
+      </IonFooter>
     </IonPage>
   );
 };
 
-export default Messages;
+export default ChatPage;

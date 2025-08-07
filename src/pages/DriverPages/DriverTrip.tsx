@@ -2,14 +2,17 @@ import {
   IonAccordion,
   IonAccordionGroup,
   IonButton,
+  IonCard,
   IonCol,
   IonContent,
+  IonFooter,
   IonGrid,
   IonHeader,
   IonIcon,
   IonImg,
   IonItem,
   IonLabel,
+  IonList,
   IonModal,
   IonPage,
   IonRow,
@@ -28,14 +31,22 @@ import { useHistory } from "react-router";
 import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import Loading from "../../components/Loading";
 import { connectSocket, socket } from "../../utils/useSocket";
-import { call, star } from "ionicons/icons";
+import { call, chatbubblesSharp, mapOutline, star } from "ionicons/icons";
+import { useLocationContext } from "../../contexts/LocationContext";
+import { Message } from "../../types/messageTypes";
+import CustomAlert from "../../components/CustomAlert";
 
 const DriverTrip: React.FC = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<() => Promise<void>>(
-    () => async () => {}
+    () => async () => { }
   );
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [socketAlerts, setSocketAlerts] = useState(false);
+  const [statusHead, setStatusHead] = useState<string>("");
+  const [statusMsg, setStatusMsg] = useState<string>("");
 
   const [showActionSheet, setShowActionSheet] = useState(false);
   const modalRef = useRef<HTMLIonModalElement>(null);
@@ -46,40 +57,68 @@ const DriverTrip: React.FC = () => {
     useState<google.maps.LatLngLiteral | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState<any | null>(null);
-  const [bookingId, setBookingId] = useState<any | null>(null);
-  const [bookingName, setBookingName] = useState<any | null>(null);
-  const [bookingMobile, setBookingMobile] = useState<any | null>(null);
   const [bookingRatings, setBookingRatings] = useState<any | null>(null);
   const [tripStatus, setTripStatus] = useState<any | null>(null);
   const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [paymentType, setPaymentType] = useState<any | null>(null);
-  const userId = localStorage.getItem("userId");
   const [destination, setDestination] =
     useState<google.maps.LatLngLiteral | null>(null);
   const hasFetchedBooking = useRef(false);
 
-  const getSurgeCharge = () => {
-    if (!bookingData || !bookingData.computations) return "0.00";
+  const {
+    driverId,
+    bookingId, setBookingId,
+    setRiderId, setDriverId,
+    riderName, setRiderName,
+    setRiderMobile
+  } = useLocationContext();
 
-    const {
-      baseFare = 0,
-      serviceFee = 0,
-      fareDistanceInKM = 0,
-      fareDurationInMins = 0,
-      costPerKM = 0,
-      costPerMin = 0,
-    } = bookingData.computations;
-
-    const totalFare = bookingData?.travelFare;
-
-    const distanceFare = fareDistanceInKM * costPerKM;
-    const timeFare = fareDurationInMins * costPerMin;
-
-    const computedTotal = baseFare + serviceFee + distanceFare + timeFare;
-    const surgeCharge = totalFare - computedTotal;
-
-    return surgeCharge > 0 ? surgeCharge.toFixed(2) : "0.00";
+  const saveMessagesToStorage = (msgs: Message[]) => {
+    localStorage.setItem(`chat_${bookingId}`, JSON.stringify(msgs));
   };
+
+  useEffect(() => {
+    socket?.emit("iAmDriver", driverId);
+
+    const handleNewMessages = (newMessages: Message[]) => {
+      const relevantMessages = newMessages.filter((msg) => msg.bookingId === bookingId);
+
+      if (relevantMessages.length > 0) {
+        console.log(`[Messages Match] ${relevantMessages.length} messages for bookingId ${bookingId}`);
+
+        setMessages((prev) => {
+          const existingTimestamps = new Set(prev.map((m) => m.createdAt));
+
+          const filteredNew = relevantMessages.filter(
+            (m) => m.createdAt && !existingTimestamps.has(m.createdAt)
+          );
+
+          if (filteredNew.length === 0) {
+            console.log("[No New Messages] All messages are duplicates.");
+            return prev;
+          }
+
+          const updated = [...prev, ...filteredNew];
+          saveMessagesToStorage(updated);
+
+          // ✅ Only alert the user if new messages were added
+          setSocketAlerts(true);
+          setStatusHead("New Message Received");
+          setStatusMsg("You have a new message in the conversation thread.");
+
+          return updated;
+        });
+      } else {
+        console.log("[Messages Ignored] No messages matched bookingId:", bookingId);
+      }
+    };
+
+    socket?.on("user_messages", handleNewMessages);
+
+    return () => {
+      socket?.off("user_messages", handleNewMessages);
+    };
+  }, [bookingId, driverId]);
 
   useEffect(() => {
     const item = localStorage.getItem("acceptedBooking");
@@ -88,9 +127,9 @@ const DriverTrip: React.FC = () => {
         const data = JSON.parse(item);
         if (data?._id) {
           setBookingId(data?._id);
-          setBookingName(data?.riderData.name);
+          setRiderName(data?.riderData.name);
           setBookingRatings(data?.userRating);
-          setBookingMobile(data?.riderData.mobnum);
+          setRiderMobile(data?.riderData.mobnum);
         }
       } catch (error) {
         console.error(
@@ -102,8 +141,15 @@ const DriverTrip: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const intervalId = setInterval(() => {
       postDriverLocation(bookingId);
+    }, 30000);
+    postDriverLocation(bookingId);
+    return () => clearInterval(intervalId);
+  }, [bookingId]);
+
+  useEffect(() => {
+    const fetchAll = async () => {
       if (!hasFetchedBooking.current) {
         const booking = await fetchBookingDetails();
         setBookingDetails(booking);
@@ -118,19 +164,13 @@ const DriverTrip: React.FC = () => {
         if (riderId) {
           const riderDetails = await fetchRiderDetails(riderId);
           console.log("Rider Details:", riderDetails);
-
-          const name = riderDetails?.name || "";
-          const mobile = riderDetails?.mobnum || "";
-
-          setBookingName(name);
-          setBookingMobile(mobile);
-
+          setRiderName(riderDetails?.name);
+          setRiderMobile(riderDetails?.mobnum);
           const item = localStorage.getItem("acceptedBooking");
-
           if (item) {
             const bookingObj = JSON.parse(item);
-            bookingObj.name = name;
-            bookingObj.mobile = mobile;
+            bookingObj.name = riderDetails?.name;
+            bookingObj.mobile = riderDetails?.mobnum;
             localStorage.setItem("acceptedBooking", JSON.stringify(bookingObj));
           }
         }
@@ -141,19 +181,21 @@ const DriverTrip: React.FC = () => {
   }, [bookingData, bookingDetails]);
 
   useEffect(() => {
-    if (userId) {
-      connectSocket(userId);
+    if (driverId) {
+      connectSocket(driverId);
     }
 
     socket?.off("booking_data");
     socket?.on("booking_data", (data: any) => {
-      // console.log("Received booking data:", data);
+      console.log("Received booking data:", data);
       setBookingData(data);
+      setBookingId(data?._id);
+      setRiderId(data?.riderId);
+      setDriverId(data?.driverId);
 
       const hasSetDestinationLS = localStorage.getItem("hasSetDestination");
       if (!hasSetDestinationLS) {
         const coords = data?.origin?.coordinates || null;
-
         localStorage.setItem("destination", JSON.stringify(coords));
         localStorage.setItem("hasSetDestination", "true");
       }
@@ -296,381 +338,115 @@ const DriverTrip: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent fullscreen>
+      <IonContent fullscreen scrollY={false}>
         <Map />
       </IonContent>
-      <IonModal
-        ref={modalRef}
-        trigger="open-modal"
-        initialBreakpoint={0.75}
-        breakpoints={[0.25, 0.5, 0.75, 1]}
-        backdropDismiss={false}
-        backdropBreakpoint={0.25}
-      >
-        <IonHeader
-          className="no-ion-border"
-          collapse="fade"
-          style={{
-            boxShadow: "none",
-            "--box-shadow": "none",
-            marginBottom: "10px",
-          }}
-        >
-          <IonToolbar color="light">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-                padding: "0 12px",
-              }}
-            >
-              {/* Left Side: Icon + Name + Rating */}
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
-              >
-                <IonImg
-                  src="./assets/icons/png/driver.svg"
-                  style={{ width: 40, height: 40 }}
-                />
-
+      <IonFooter className="rounded-toolbar">
+        <div className="footer-container">
+          <IonCard className="footer-card ion-padding">
+            <div className="driver-info">
+              {/* Left: Driver info */}
+              <div className="driver-details">
+                <IonImg src="./favicon.png" className="driver-avatar" />
                 <div>
-                  <IonText>
-                    <p style={{ margin: 0 }}>{bookingName}</p>
-                  </IonText>
-                  <IonText
-                    color="medium"
-                    style={{
-                      fontSize: "0.7rem",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    {bookingRatings} <IonIcon color="tertiary" icon={star} />
+                  <IonText><p className="driver-name">{riderName}</p></IonText>
+                  <IonText color="medium" className="driver-rating">
+                    {bookingRatings ?? 5} <IonIcon color="tertiary" icon={star} />
                   </IonText>
                 </div>
               </div>
 
-              {/* Right Side: Cancel Button */}
+              {/* Cancel button */}
               {tripStatus < 3 && (
-                <IonButton
-                  color="danger"
-                  fill="clear"
-                  onClick={() => promptCancelRide()}
-                  disabled={!bookingData}
-                >
+                <IonButton color="danger" fill="clear" onClick={promptCancelRide} disabled={!bookingData}>
                   Cancel
                 </IonButton>
               )}
             </div>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent fullscreen>
-          <IonGrid className="card-style">
-            <IonRow
-              className="ion-justify-content-between ion-align-items-center"
-              onClick={() =>
-                navigateToLocation(bookingData?.origin?.coordinates)
-              }
-            >
-              <IonCol size="10">
-                <IonLabel position="stacked" color="primary">
-                  <strong>Pick-up</strong>
-                </IonLabel>
-                <IonText
-                  style={{
-                    fontSize: "0.8rem",
-                    margin: "10px 0",
-                    display: "block",
-                  }}
-                >
-                  <LoadingText>{bookingData?.origin?.name}</LoadingText>
-                </IonText>
-              </IonCol>
+          </IonCard>
 
-              <IonCol size="2" className="ion-text-right">
-                <IonImg
-                  src="/assets/driverTrip/start.png"
-                  style={{
-                    width: "50px",
-                    height: "50px",
-                    objectFit: "contain",
-                  }}
-                  alt="Start Location Icon"
-                />
-              </IonCol>
-            </IonRow>
-          </IonGrid>
+          {/* Pickup & Drop-off */}
+          <IonList>
+            <IonItem button lines="none" onClick={() => navigateToLocation(bookingData?.origin?.coordinates)}>
+              <IonLabel color="primary">
+                <strong>Pick-up</strong>
+                <p>{bookingData?.origin?.name || <LoadingText />}</p>
+              </IonLabel>
+              <IonIcon slot="end" icon={mapOutline} size="small" color="dark" />
+            </IonItem>
 
-          <IonGrid className="card-style">
-            <IonRow
-              className="ion-justify-content-between ion-align-items-center"
-              onClick={() =>
-                navigateToLocation(bookingData?.destination?.coordinates)
-              }
-            >
-              <IonCol size="10">
-                <IonLabel position="stacked" color="primary">
-                  <strong>Drop-off</strong>
-                </IonLabel>
+            <IonItem button lines="none" onClick={() => navigateToLocation(bookingData?.destination?.coordinates)}>
+              <IonLabel color="primary">
+                <strong>Drop-off</strong>
+                <p>{bookingData?.destination?.name || <LoadingText />}</p>
+              </IonLabel>
+              <IonIcon slot="end" icon={mapOutline} size="small" color="dark" />
+            </IonItem>
+          </IonList>
 
-                <IonText
-                  style={{
-                    fontSize: "0.8rem",
-                    margin: "10px",
-                    display: "block",
-                  }}
-                >
-                  <LoadingText>{bookingData?.destination?.name}</LoadingText>
-                </IonText>
-              </IonCol>
-              <IonCol size="2" className="ion-text-right">
-                <IonImg
-                  src="/assets/driverTrip/finish.png"
-                  style={{
-                    width: "50px",
-                    height: "50px",
-                    objectFit: "contain",
-                  }}
-                  alt="Start Location Icon"
-                />
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-          <IonAccordionGroup
-            expand="compact"
-            style={{ marginLeft: "10px", marginRight: "10px" }}
-          >
-            <IonAccordion value="fareBreakdown">
-              <IonItem slot="header" lines="none">
-                <IonLabel color="primary">
-                  <strong>Fare</strong>
-                </IonLabel>
-                <IonText slot="end">
-                  <LoadingText>
-                    <strong>₱{bookingData?.travelFare.toFixed(2)}</strong>
-                  </LoadingText>
-                </IonText>
-              </IonItem>
-              <IonItem slot="content" lines="none">
-                <IonGrid>
-                  <IonRow>
-                    <IonCol size="12">
-                      {bookingData ? (
-                        <>
-                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
-                            <IonLabel>Base Fare</IonLabel>
-                            <IonText slot="end" color="medium">
-                              ₱{" "}
-                              {bookingData.computations.baseFare?.toFixed(2) ||
-                                "0.00"}
-                            </IonText>
-                          </IonItem>
-                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
-                            <IonLabel>
-                              Distance Fare{" "}
-                              <IonText color="medium">
-                                (₱{bookingData.computations.costPerKM} *{" "}
-                                {bookingData.computations.fareDistanceInKM.toFixed(
-                                  2
-                                )}
-                                km)
-                              </IonText>
-                            </IonLabel>
-                            <IonText slot="end" color="medium">
-                              ₱{" "}
-                              {bookingData &&
-                              bookingData.computations.fareDistanceInKM !=
-                                null &&
-                              bookingData.computations.costPerKM != null
-                                ? (
-                                    bookingData.computations.fareDistanceInKM *
-                                    bookingData.computations.costPerKM
-                                  ).toFixed(2)
-                                : "0.00"}
-                            </IonText>
-                          </IonItem>
-                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
-                            <IonLabel>
-                              Time Fare{" "}
-                              <IonText color="medium">
-                                (₱{bookingData.computations.costPerMin} *{" "}
-                                {bookingData.computations.fareDurationInMins.toFixed(
-                                  2
-                                )}
-                                mins)
-                              </IonText>
-                            </IonLabel>
-                            <IonText slot="end" color="medium">
-                              ₱{" "}
-                              {bookingData &&
-                              bookingData.computations.fareDurationInMins !=
-                                null &&
-                              bookingData.computations.costPerMin != null
-                                ? (
-                                    bookingData.computations
-                                      .fareDurationInMins *
-                                    bookingData.computations.costPerMin
-                                  ).toFixed(2)
-                                : "0.00"}
-                            </IonText>
-                          </IonItem>
-                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
-                            <IonLabel>Service Fees</IonLabel>
-                            <IonText slot="end" color="medium">
-                              ₱{" "}
-                              {bookingData.computations.serviceFee?.toFixed(
-                                2
-                              ) || "0.00"}
-                            </IonText>
-                          </IonItem>
+          {/* Fare & Payment */}
+          <IonList>
+            <IonItem lines="none">
+              <IonLabel color="primary"><strong>Fare</strong></IonLabel>
+              <IonText slot="end">
+                <LoadingText><strong>₱{bookingData?.travelFare?.toFixed(2)}</strong></LoadingText>
+              </IonText>
+            </IonItem>
 
-                          <IonItem lines="none" style={{ fontSize: "0.9rem" }}>
-                            <IonLabel>Surge Charges</IonLabel>
-                            <IonText slot="end" color="medium">
-                              ₱ {getSurgeCharge()}
-                            </IonText>
-                          </IonItem>
+            <IonItem lines="none">
+              <IonLabel color="primary"><strong>Payment Method</strong></IonLabel>
+              <IonText slot="end">
+                <LoadingText><strong>{paymentType}</strong></LoadingText>
+              </IonText>
+            </IonItem>
+          </IonList>
 
-                          <IonItem lines="full">
-                            <IonLabel color="primary">
-                              <strong>Total</strong>
-                            </IonLabel>
-                            <IonText slot="end" color="primary">
-                              <strong>
-                                ₱ {bookingData.travelFare.toFixed(2)}
-                              </strong>
-                            </IonText>
-                          </IonItem>
-                        </>
-                      ) : (
-                        <LoadingText />
-                      )}
-                    </IonCol>
-                  </IonRow>
-                </IonGrid>
-              </IonItem>
-            </IonAccordion>
-          </IonAccordionGroup>
-
-          <IonItem
-            lines="none"
-            style={{ marginLeft: "10px", marginRight: "10px" }}
-          >
-            <IonLabel slot="start" color="primary">
-              <strong>Payment Method</strong>
-            </IonLabel>
-            <IonText slot="end">
-              <LoadingText>{paymentType}</LoadingText>
-            </IonText>
-          </IonItem>
-
-          <IonGrid>
-            <IonRow className="ion-justify-content-between ion-align-items-center">
-              <IonCol size="9">
-                {tripStatus === 1 && (
-                  <>
-                    <IonButton
-                      color="primary"
-                      expand="block"
-                      shape="round"
-                      disabled={!bookingData || !bookingDetails}
-                      onClick={promptArrived}
-                    >
-                      I've arrived
-                    </IonButton>
-                    <IonText
-                      color="medium"
-                      style={{
-                        fontSize: "0.8rem",
-                        margin: "10px",
-                        display: "block",
-                      }}
-                    >
-                      Confirm you have arrived at the pickup location
-                    </IonText>
-                  </>
-                )}
-                {tripStatus === 2 && (
-                  <>
-                    <IonButton
-                      color="primary"
-                      expand="block"
-                      shape="round"
-                      disabled={!bookingData}
-                      onClick={promptConfirmPassenger}
-                    >
-                      Confirm Passenger
-                    </IonButton>
-                    <IonText
-                      color="medium"
-                      style={{
-                        fontSize: "0.8rem",
-                        margin: "10px",
-                        display: "block",
-                      }}
-                    >
-                      Confirm the passenger has boarded
-                    </IonText>
-                  </>
-                )}
-                {tripStatus === 3 && (
-                  <>
-                    <IonButton
-                      color="primary"
-                      expand="block"
-                      shape="round"
-                      disabled={!bookingData}
-                      onClick={promptEndTrip}
-                    >
-                      End Trip
-                    </IonButton>
-                    <IonText
-                      color="medium"
-                      style={{
-                        fontSize: "0.8rem",
-                        margin: "10px",
-                        display: "block",
-                      }}
-                    >
-                      End the trip and collect payment
-                    </IonText>
-                  </>
-                )}
-              </IonCol>
-              <IonCol size="3">
-                <IonButton
-                  color="primary"
-                  shape="round"
-                  disabled={!bookingData}
-                  onClick={() => {
-                    if (bookingMobile) {
-                      window.location.href = `tel:+63${bookingMobile}`;
-                    }
-                  }}
-                >
-                  <IonIcon icon={call} />
+          {/* Action buttons */}
+          <div className="footer-actions">
+            <div className="action-button">
+              {tripStatus === 1 && (
+                <IonButton expand="block" shape="round" disabled={!bookingData || !bookingDetails} onClick={promptArrived}>
+                  I've arrived
                 </IonButton>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-        </IonContent>
-      </IonModal>
+              )}
+              {tripStatus === 2 && (
+                <IonButton expand="block" shape="round" disabled={!bookingData} onClick={promptConfirmPassenger}>
+                  Confirm Passenger
+                </IonButton>
+              )}
+              {tripStatus === 3 && (
+                <IonButton expand="block" shape="round" disabled={!bookingData} onClick={promptEndTrip}>
+                  End Trip
+                </IonButton>
+              )}
+            </div>
+            <IonButton shape="round" color="primary" onClick={() => history.push("/messages")} disabled={!bookingData}>
+              <IonIcon icon={chatbubblesSharp} />
+            </IonButton>
+          </div>
+        </div>
+      </IonFooter>
+
       <Loading isOpen={loading} message="Processing..." />
+
       <ConfirmActionSheet
         isOpen={showActionSheet}
         onDismiss={() => setShowActionSheet(false)}
         header={header}
         subHeader={subHeader}
         onConfirm={async () => {
-          setShowActionSheet(false);
+          setShowActionSheet(false)
           if (confirmAction) {
             await confirmAction();
           }
         }}
         cssClass="my-custom-action-sheet"
+      />
+      <CustomAlert
+        isOpen={socketAlerts}
+        onClose={() => { setSocketAlerts(false) }}
+        header={statusHead}
+        message={statusMsg}
       />
     </IonPage>
   );

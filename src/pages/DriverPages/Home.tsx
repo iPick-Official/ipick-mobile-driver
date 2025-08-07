@@ -42,8 +42,15 @@ import Loading from "../../components/Loading";
 import { watchLocation } from "../../utils/locationHelpers";
 import { fetchDriverWallet } from "../../services/apiService";
 import { fetchRiderDistances } from "../../utils/fetchRiderDistances";
+import { useLocationContext } from "../../contexts/LocationContext";
 
 const Home: React.FC = () => {
+  const {
+    tripStatus, setTripStatus,
+    bookingId, setBookingId,
+    riderId, setRiderId,
+  } = useLocationContext();
+
   const modalRef = useRef<HTMLIonModalElement>(null);
   const history = useHistory();
   const [error, setError] = useState("");
@@ -51,21 +58,18 @@ const Home: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentLocation, setCurrentLocation] =
     useState<google.maps.LatLngLiteral | null>(null);
-  const [distanceToPickup, setRiderDistances] = useState<
+  const [riderDistances, setRiderDistances] = useState<
     { riderId: string; distance: number }[] | null
   >(null);
   const prevUsersRef = useRef<any[]>([]);
+  const prevRiderDistancesRef = useRef<{ riderId: string; distance: number }[] | null>(null);
 
   const [isWorking, setIsWorking] = useState(false);
   const [acceptBooking, setAcceptBooking] = useState(false);
   const [header, setHeader] = useState<any | null>(null);
   const [subHeader, setSubHeader] = useState<any | null>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
-  const [tripStatus, setTripStatus] = useState<any | null>(null);
   const [users, setUsers] = useState<any | null>(null);
-
-  const [bookingId, setBookingId] = useState<any | null>(null);
-  const [riderId, setRiderId] = useState<any | null>(null);
   const userId = localStorage.getItem("userId");
   const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
 
@@ -216,17 +220,15 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (!users || !Array.isArray(users) || !currentLocation) return;
-
     const prevUsers = prevUsersRef.current;
-
     const currentUserIds = users.map((u: { riderId: string }) => u?.riderId);
     const prevUserIds = (prevUsers || []).map((u) => u?.riderId);
-
     const hasNewUsers =
       currentUserIds.length > prevUserIds.length &&
       currentUserIds.some((id: string) => !prevUserIds.includes(id));
+    const riderDistancesChanged = JSON.stringify(riderDistances ?? []) !== JSON.stringify(prevRiderDistancesRef.current ?? []);
 
-    if (!hasNewUsers) return;
+    if (!hasNewUsers && !riderDistancesChanged) return;
 
     const driverSeatType = driverData?.carType
       ?.replace("-", " ")
@@ -252,19 +254,20 @@ const Home: React.FC = () => {
     if (ridersPickupCoordinates.length === 0) return;
 
     const timeout = setTimeout(() => {
-      console.log("🆕 New users detected. Fetching distances...");
+      console.log("🆕 New users or distances detected. Fetching distances...");
       fetchRiderDistances({
         currentLocation,
         ridersPickupCoordinates,
         distanceLimit: Number(distanceLimit),
         callback: setRiderDistances,
       });
-    }, 500); // debounce: 500ms
+    }, 500);
 
     prevUsersRef.current = users;
+    prevRiderDistancesRef.current = riderDistances;
 
     return () => clearTimeout(timeout); // cleanup debounce
-  }, [users, currentLocation, driverData, distanceLimit]);
+  }, [users, currentLocation, driverData, distanceLimit, riderDistances]);
 
   const checkWallet = async (): Promise<boolean> => {
     try {
@@ -318,7 +321,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     const handleTripStatus = async () => {
-      if (tripStatus > 0 && tripStatus < 4) {
+      if ((tripStatus ?? 0) > 0 && (tripStatus ?? 0) < 4) {
         await modalRef.current?.dismiss();
         history.push("/driver-trip");
         window.location.reload();
@@ -486,7 +489,7 @@ const Home: React.FC = () => {
           {users && users.length > 0 ? (
             (() => {
               const filteredUsers = users.filter((user: any) =>
-                distanceToPickup?.some((d) => d.riderId === user.riderId)
+                riderDistances?.some((d) => d.riderId === user.riderId)
               );
 
               return filteredUsers.length > 0 ? (
@@ -503,7 +506,7 @@ const Home: React.FC = () => {
                               {user?.riderData?.name || "Unnamed"}
                             </span>
                             <IonText className="rider-distance" slot="end">
-                              {distanceToPickup
+                              {riderDistances
                                 ?.find((d) => d.riderId === user.riderId)
                                 ?.distance.toFixed(1)}{" "}
                               km from you
@@ -587,7 +590,7 @@ const Home: React.FC = () => {
                   }}
                 >
                   <IonText>
-                    <p>No riders within {Number(distanceLimit)} km.</p>
+                    <p>Bookings may be available within a {Number(distanceLimit)} km radius. Please refresh to check for updates.</p>
                   </IonText>
                   <IonIcon
                     color="medium"

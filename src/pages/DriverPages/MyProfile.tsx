@@ -22,6 +22,7 @@ import { UploadService } from "../../services/uploadService";
 import { useHistory } from "react-router-dom";
 import "../../theme/Menu.css";
 import { fetchMyRatings } from "../../services/apiService";
+import { useLocationContext } from "../../contexts/LocationContext";
 import {
   callOutline,
   carOutline,
@@ -42,8 +43,17 @@ const uploadService = new UploadService(
 );
 
 const MyProfile: React.FC = () => {
+  const {
+    driverName,
+    profilePicture,
+    plateNum,
+    carType,
+    carBrand,
+    carModel,
+    carColor,
+  } = useLocationContext();
   const history = useHistory();
-  const rawProfile = localStorage.getItem("profilePicture");
+  const rawProfile = profilePicture;
   const profile = rawProfile ?? undefined;
   const [profilePic, setProfilePic] = useState("");
   const [myRating, setMyRating] = useState(0);
@@ -56,10 +66,6 @@ const MyProfile: React.FC = () => {
     month: "long",
     year: "numeric",
   });
-  const plateNumber = user?.transportRequirements?.plateNumber || "";
-  const carColor = user?.transportRequirements?.carColor || "";
-  const carBrand = user?.transportRequirements?.carBrand || "";
-  const carModel = user?.transportRequirements?.carModel || "";
 
   useEffect(() => {
     const loadRating = async () => {
@@ -72,7 +78,7 @@ const MyProfile: React.FC = () => {
 
   useEffect(() => {
     const loadProfilePicture = async () => {
-      const url = await getFileUrlIfAvailable(profile);
+      const url = await getFileUrlIfAvailable(profilePicture);
       setProfilePic(url);
     };
 
@@ -124,10 +130,10 @@ const MyProfile: React.FC = () => {
           </IonAvatar>
           <div className="profile-details">
             <span className="profile-name">
-              {localStorage.getItem("name") ?? "Driver"}
+              {driverName}
             </span>
             <span className="profile-plate">
-              Joined {joinedFormatted} | {plateNumber ?? "ABC1234"}
+              Joined {joinedFormatted} | {plateNum}
             </span>
           </div>
           <div

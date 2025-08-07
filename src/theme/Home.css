@@ -65,3 +65,65 @@
   font-size: 0.8rem; /* smaller font */
   color: #f2f2f2; /* optional: subtle color */
 }
+
+.footer-container {
+  padding: 16px;
+}
+
+.footer-card {
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.driver-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.driver-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.driver-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.driver-name {
+  margin: 0;
+}
+
+.driver-rating {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.location-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.action-button {
+  flex: 1;
+}
+
+.rounded-toolbar {
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
+  overflow: hidden; /* ensure child elements don't overflow rounded corners */
+  background: #ffffff;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08); /* top shadow */
+}

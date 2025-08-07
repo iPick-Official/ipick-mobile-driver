@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { UploadService } from "../services/uploadService";
+import { useLocationContext } from "../contexts/LocationContext";
 
 const appPages = [
   {
@@ -46,22 +47,23 @@ const uploadService = new UploadService(
 );
 
 const Menu: React.FC = () => {
+  const {
+    driverName,
+    profilePicture,
+    plateNum
+  } = useLocationContext();
+
   const location = useLocation();
   const { logout } = useAuth();
-  const user = JSON.parse(localStorage.getItem("driverData") || "{}");
-  const plateNumber = user?.transportRequirements?.plateNumber || "";
-  const rawProfile = localStorage.getItem("profilePicture");
-  const profile = rawProfile ?? undefined;
   const [profilePic, setProfilePic] = useState("");
 
   useEffect(() => {
     const loadProfilePicture = async () => {
-      const url = await getFileUrlIfAvailable(profile);
+      const url = await getFileUrlIfAvailable(profilePicture);
       setProfilePic(url);
     };
-
     loadProfilePicture();
-  }, [profile]);
+  }, [profilePicture]);
 
   const getFileUrlIfAvailable = async (
     fileObj: { name?: string; url?: string } | string | undefined
@@ -81,9 +83,9 @@ const Menu: React.FC = () => {
 
             <div className="profile-details">
               <span className="profile-name">
-                {localStorage.getItem("name") ?? "Driver"}
+                {driverName}
               </span>
-              <span className="profile-plate">{plateNumber ?? "ABC1234"}</span>
+              <span className="profile-plate">{plateNum}</span>
             </div>
           </IonItem>
 
@@ -94,9 +96,9 @@ const Menu: React.FC = () => {
                 onClick={
                   action === "logout"
                     ? async () => {
-                        await logout();
-                        window.location.href = "/login";
-                      }
+                      await logout();
+                      window.location.href = "/login";
+                    }
                     : undefined
                 }
                 routerLink={action ? undefined : url}

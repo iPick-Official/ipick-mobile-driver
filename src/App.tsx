@@ -32,12 +32,12 @@ import TransportReq from "./pages/OnboardingPages/TransportReq";
 import Earnings from "./pages/DriverPages/Earnings";
 import Wallet from "./pages/DriverPages/Wallet";
 import Messages from "./pages/DriverPages/Messages";
-import MessageDetail from "./pages/DriverPages/MessageDetail";
 import HelpCenter from "./pages/DriverPages/HelpCenter";
 import Settings from "./pages/DriverPages/Settings";
 import { enableKeepAwake, disableKeepAwake } from "./utils/KeepAwake";
 import { fetchActiveJobs } from "./services/apiService";
 import VersionCheck from "./components/VersionCheck";
+import { LocationProvider } from "./contexts/LocationContext";
 
 setupIonicReact();
 
@@ -115,7 +115,6 @@ const AppContentInner: React.FC = () => {
         <PrivateRoute path="/personal-info" exact component={PersonalInfo} />
         <PrivateRoute path="/personal-req" exact component={PersonlaReq} />
         <PrivateRoute path="/transport-req" exact component={TransportReq} />
-        <Route path="/messages/:id" component={MessageDetail} />
         <Redirect exact from="/" to="/messages" />
 
         {/* Root Redirect */}
@@ -144,9 +143,11 @@ const AppContent: React.FC = () => (
 const App: React.FC = () => {
   return (
     <IonApp>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <LocationProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </LocationProvider>
     </IonApp>
   );
 };

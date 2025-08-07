@@ -1,0 +1,73 @@
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+export interface LocationContextType {
+
+  userId: string;
+  setUserId: (userId: string) => void;
+  driverId: string;
+  setDriverId: (driverId: string) => void;
+  driverName: string;
+  setDriverName: (driverName: string) => void;
+  accessToken: string;
+  setAccessToken: (accessToken: string) => void;
+  userType: string;
+  setUserType: (userType: string) => void;
+  status: string;
+  setStatus: (status: string) => void;
+  accountStatus: string;
+  setAccountStatus: (accountStatus: string) => void;
+  profilePicture: string;
+  setProfilePicture: (profilePicture: string) => void;
+  userCarType: string;
+  setUserCarType: (userCarType: string) => void;
+
+  currentLocation: LatLng | null;
+  setCurrentLocation: (coords: LatLng | null) => void;
+
+  pickupAddress: string;
+  setPickupAddress: (address: string) => void;
+  dropoffAddress: string;
+  setDropoffAddress: (address: string) => void;
+  pickupCoords: LatLng | null;
+  setPickupCoords: (coords: LatLng | null) => void;
+  dropoffCoords: LatLng | null;
+  setDropoffCoords: (coords: LatLng | null) => void;
+  confirmed: boolean;
+  setConfirmed: (value: boolean) => void;
+  carType: string;
+  setCarType: (car: string) => void;
+  distance: number | undefined;
+  setDistance: (distance: number) => void;
+  eta: number | undefined;
+  setEta: (eta: number) => void;
+  seats: number | undefined;
+  setSeats: (seats: number | undefined) => void;
+  durationInTraffic: number | undefined;
+  setDurationInTraffic: (durationInTraffic: number | undefined) => void;
+  tripStatus: number | undefined;
+  setTripStatus: (tripStatus: number | undefined) => void;
+  driverPicked: boolean;
+  setDriverPicked: (value: boolean) => void;
+  riderName: string;
+  setRiderName: (riderName: string) => void;
+  plateNum: string;
+  setPlateNum: (plateNum: string) => void;
+  carColor: string;
+  setCarColor: (carColor: string) => void;
+  carBrand: string;
+  setCarBrand: (carBrand: string) => void;
+  carModel: string;
+  setCarModel: (carModel: string) => void;
+  riderMobile: number | undefined;
+  setRiderMobile: (riderRatings: number) => void;
+  riderRatings: number | undefined;
+  setRiderRatings: (riderRatings: number) => void;
+  bookingId: string;
+  setBookingId: (bookingId: string) => void;
+  riderId: string;
+  setRiderId: (riderId: string) => void;
+  resetAll: () => void;
+}

@@ -321,3 +321,44 @@ export const fetchVersion = async () => {
     return null;
   }
 };
+
+export const sendMsg = async (
+  riderId: string,
+  bookingId: string,
+  driverId: string,
+  msg: string,
+  sender: string
+) => {
+  if (msg === "") return;
+  const token = localStorage.getItem("accessToken");
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/newMessage`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          riderId,
+          bookingId,
+          driverId,
+          msg,
+          sender,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error sending message:", error);
+    // Optionally return or throw the error depending on your needs
+    throw error;
+  }
+};

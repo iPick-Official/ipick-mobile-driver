@@ -18,6 +18,7 @@ import { useHistory } from "react-router-dom";
 import Loading from "../../components/Loading";
 import OtpModal from "../../components/OtpModal";
 import "@theme/variables.css";
+import { useLocationContext } from "../../contexts/LocationContext";
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -35,6 +36,16 @@ const Login: React.FC = () => {
   const [countdown, setCountdown] = useState(0);
   const mobileRef = useRef<HTMLIonInputElement>(null);
   const passwordRef = useRef<HTMLIonInputElement>(null);
+
+  const {
+    setUserId, setDriverId,
+    setDriverName, setAccessToken,
+    userType, setUserType,
+    setStatus, setAccountStatus,
+    setProfilePicture, setPlateNum,
+    setCarBrand, setCarModel,
+    setUserCarType,
+    setCarColor } = useLocationContext();
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -117,11 +128,24 @@ const Login: React.FC = () => {
       // Save user info to localStorage
       const profilePictureUrl =
         user.personalRequirements?.profilePicture?.url || "";
+      setUserId(user._id);
+      setDriverId(user.id);
+      setDriverName(user.name);
+      setAccessToken(access_token);
+      setUserType(userType);
+      setStatus(user.status);
+      setUserCarType(user.carType)
+      setAccountStatus(accountStatus);
+      setProfilePicture(profilePictureUrl);
+      setPlateNum(user?.transportRequirements?.plateNumber);
+      setCarBrand(user?.transportRequirements?.carColor);
+      setCarModel(user?.transportRequirements?.carBrand);
+      setCarColor(user?.transportRequirements?.carModel);
+      
+      localStorage.setItem("driverData", JSON.stringify(user));
       localStorage.setItem("id", user._id);
       localStorage.setItem("userId", user.id);
-      localStorage.setItem("name", user.name);
       localStorage.setItem("accessToken", access_token);
-      localStorage.setItem("driverData", JSON.stringify(user));
       localStorage.setItem("isLogged", "true");
       localStorage.setItem("userType", user.type);
       localStorage.setItem("status", user.status);
@@ -154,8 +178,7 @@ const Login: React.FC = () => {
 
     try {
       const otpResponse = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }/otp/requestOtpReset/${lastTenDigits}`,
         {
           method: "POST",
@@ -169,8 +192,7 @@ const Login: React.FC = () => {
       if (otpResponse.status === 201) {
         localStorage.setItem("otpMobile", lastTenDigits);
         const driverInfoResponse = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT_DRIVER
+          `${import.meta.env.VITE_API_ENDPOINT_DRIVER
           }/Drivers/${lastTenDigits}`,
           {
             method: "GET",
