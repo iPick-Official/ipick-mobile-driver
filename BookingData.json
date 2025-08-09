@@ -1,56 +1,67 @@
 {
-  "count": 1,
-  "users": [
-    {
-      "_id": "6868c0ecc9e0a4c5ce5250a3",
-      "riderId": "CoXlh30Kvq",
-      "__v": 0,
-      "computations": {
-        "dateTime": "2025-07-06T20:32:09.854Z",
-        "baseFare": 55,
-        "serviceFee": 0,
-        "fareDistanceInKM": 2.127,
-        "fareDurationInMins": 5.516666666666667,
-        "costPerKM": 18,
-        "costPerMin": 2,
-        "totalTravelFare": "104.32"
-      },
-      "createdAt": "2025-07-05T06:06:36.662Z",
-      "destination": {
-        "name": "Conrad Manila, Coral Way, Pasay City, Metro Manila",
+  "_id": "68972f237b2d99db2b90a05f",
+  "riderId": "pcLAfBHG9f",
+  "__v": 0,
+  "computations": {
+    "baseFare": 55,
+    "serviceFee": 33.044666666666664,
+    "fareDistanceInKM": 3.284,
+    "fareDurationInMins": 9.033333333333333,
+    "costPerKM": 18,
+    "costPerMin": 2
+  },
+  "createdAt": "2025-08-09T11:21:07.153Z",
+  "destination": {
+    "name": "WRPV+C33, Apalit Bypass Road, Pulilan, Bulacan, Philippines",
+    "type": "Point",
+    "coordinates": [14.936025936944432, 120.84275932600468]
+  },
+  "driverId": "4D3rDpUD1f",
+  "driverRating": [],
+  "origin": {
+    "name": "WR4W+RFV, Pulilan, Bulacan, Philippines",
+    "type": "Point",
+    "coordinates": [14.907145915402552, 120.84628533064391]
+  },
+  "status": "booked",
+  "timestamp": "2025-08-09",
+  "travelFare": 187.22,
+  "tripStatus": 1,
+  "updatedAt": "2025-08-09T12:40:02.925Z",
+  "driverLoc": { "lat": 14.931934692992579, "lng": 120.84127936354574 },
+  "riderData": {
+    "_id": "66bd92f8a782d663787f5245",
+    "id": "pcLAfBHG9f",
+    "__v": 0,
+    "address": "",
+    "createdAt": "2024-08-15T05:32:40.012Z",
+    "email": "cs2@email.com",
+    "messages": [],
+    "mobnum": "9629678875",
+    "name": "Carlo Vincent Soriano Morales",
+    "password": "$2a$10$gq2BYS9AN2MZzl.eeOvklulGb2HceKtX0Uo4LQCMRyxXWIjxTuzRC",
+    "places": [
+      {
+        "nick": "test 2",
         "type": "Point",
-        "coordinates": [14.5315812, 120.9800438]
+        "name": "Fora Mall Tagaytay, East, Tagaytay, Cavite",
+        "coordinates": [14.1155932, 120.9613844],
+        "notes": ""
       },
-      "driverId": null,
-      "driverRating": [],
-      "origin": {
-        "name": "Yoki's Farm, 1, Mendez, Cavite",
+      {
+        "nick": "test1",
         "type": "Point",
-        "coordinates": [14.1244377, 120.879931]
-      },
-      "status": "active",
-      "timestamp": "2025-07-05",
-      "travelFare": 1406.04,
-      "updatedAt": "2025-07-05T06:06:46.343Z",
-      "userRating": null,
-      "riderData": {
-        "_id": "6867f894d3895a0ce7febf30",
-        "id": "CoXlh30Kvq",
-        "__v": 0,
-        "address": "#202 Phase 3 Burol-1 Dasmariñas, Cavite",
-        "createdAt": "2025-07-04T15:51:48.601Z",
-        "email": "beverlyavorque@gmail.com",
-        "messages": [],
-        "mobnum": "9948567321",
-        "name": "Beverly Avorque",
-        "password": "$2a$10$ZcbWQtaEudBcJ2ooJHaH6.BiR55u/P8N7wxdePMjswPtexSjwAt7a",
-        "places": [],
-        "rideHistory": [],
-        "type": "rider",
-        "updatedAt": "2025-07-04T15:52:04.490Z",
-        "authToken": "$2a$10$Frr1YXp3h5xKmC4JSG8aFu/5uGRTqEqWBmKnW6kzbEzmBaZQ5Cyf2",
-        "isLogged": true
+        "name": "Tagaytay, Cavite",
+        "coordinates": [14.1154117, 120.9620361],
+        "notes": ""
       }
-    }
-  ]
+    ],
+    "rideHistory": [],
+    "type": "rider",
+    "updatedAt": "2025-08-09T11:06:25.150Z",
+    "authToken": "$2a$10$rYxNutUe6qdqiVZg46nz6ujfc0ZwkCkpEk7e0RZqFPdWNCY9KyXRK",
+    "isLogged": true,
+    "fcmToken": "",
+    "rating": 5
+  }
 }

@@ -362,3 +362,33 @@ export const sendMsg = async (
     throw error;
   }
 };
+
+export const fetchMsgs = async (riderId: string, driverId: string) => {
+  const token = localStorage.getItem("accessToken");
+
+  const url = new URL(
+    `${
+      import.meta.env.VITE_API_ENDPOINT
+    }/ride-hail/userMessages/${riderId}/${driverId}`
+  );
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    throw error;
+  }
+};

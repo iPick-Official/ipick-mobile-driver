@@ -272,7 +272,6 @@ const Home: React.FC = () => {
   const checkWallet = async (): Promise<boolean> => {
     try {
       const walletData = await fetchDriverWallet();
-      // console.log("👛 Wallet Data:", walletData);
 
       if (!walletData || walletData.walletBalance < 100) {
         setError("Please top up at least ₱100 to continue accepting jobs!");

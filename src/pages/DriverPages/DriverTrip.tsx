@@ -23,7 +23,6 @@ import {
 import {
   fetchBookingDetails,
   fetchRiderDetails,
-  postDriverLocation,
 } from "../../services/apiService";
 import React, { useState, useEffect, useRef } from "react";
 import Map from "../../components/Map";
@@ -73,41 +72,19 @@ const DriverTrip: React.FC = () => {
     setRiderMobile
   } = useLocationContext();
 
-  const saveMessagesToStorage = (msgs: Message[]) => {
-    localStorage.setItem(`chat_${bookingId}`, JSON.stringify(msgs));
-  };
-
   useEffect(() => {
     socket?.emit("iAmDriver", driverId);
 
     const handleNewMessages = (newMessages: Message[]) => {
-      const relevantMessages = newMessages.filter((msg) => msg.bookingId === bookingId);
+      const hasRelevantMessages = newMessages.some(
+        (msg) => msg.bookingId === bookingId
+      );
 
-      if (relevantMessages.length > 0) {
-        console.log(`[Messages Match] ${relevantMessages.length} messages for bookingId ${bookingId}`);
-
-        setMessages((prev) => {
-          const existingTimestamps = new Set(prev.map((m) => m.createdAt));
-
-          const filteredNew = relevantMessages.filter(
-            (m) => m.createdAt && !existingTimestamps.has(m.createdAt)
-          );
-
-          if (filteredNew.length === 0) {
-            console.log("[No New Messages] All messages are duplicates.");
-            return prev;
-          }
-
-          const updated = [...prev, ...filteredNew];
-          saveMessagesToStorage(updated);
-
-          // ✅ Only alert the user if new messages were added
-          setSocketAlerts(true);
-          setStatusHead("New Message Received");
-          setStatusMsg("You have a new message in the conversation thread.");
-
-          return updated;
-        });
+      if (hasRelevantMessages) {
+        console.log(`[Alert] New message received for bookingId: ${bookingId}`);
+        setSocketAlerts(true);
+        setStatusHead("New Message Received");
+        setStatusMsg("You have a new message in the conversation thread.");
       } else {
         console.log("[Messages Ignored] No messages matched bookingId:", bookingId);
       }
@@ -139,14 +116,6 @@ const DriverTrip: React.FC = () => {
       }
     }
   }, []);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      postDriverLocation(bookingId);
-    }, 30000);
-    postDriverLocation(bookingId);
-    return () => clearInterval(intervalId);
-  }, [bookingId]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -199,9 +168,14 @@ const DriverTrip: React.FC = () => {
         localStorage.setItem("destination", JSON.stringify(coords));
         localStorage.setItem("hasSetDestination", "true");
       }
-
       setTripStatus(data?.tripStatus);
     });
+  }, []);
+
+  useEffect(() => {
+    if (tripStatus === 0 || tripStatus === 4) {
+      history.goBack();
+    }
   }, []);
 
   useEffect(() => {
@@ -266,39 +240,67 @@ const DriverTrip: React.FC = () => {
     shouldReset = false,
     onSuccess?: (data?: any) => void
   ) => {
+    console.log("updateRideStatus called with:", {
+      status,
+      shouldReset,
+      bookingId: bookingData?._id,
+    });
+
     setLoading(true);
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/rideUpdate`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            _id: bookingData?._id,
-            status,
-            action: "driver",
-          }),
-        }
-      );
+      const endpoint = `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/rideUpdate`;
+      const token = localStorage.getItem("accessToken");
 
-      const data = await res.json(); // get the response data
+      console.log("Sending request to:", endpoint);
+      console.log("Request headers and body:", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: {
+          _id: bookingData?._id,
+          status,
+          action: "driver",
+        },
+      });
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          _id: bookingData?._id,
+          status,
+          action: "driver",
+        }),
+      });
+
+      console.log("Response status:", res.status);
+
+      const data = await res.json();
+      console.log("Response JSON:", data);
+
       setTripStatus(status);
+      console.log("Trip status updated to:", status);
 
-      if (onSuccess) onSuccess(data); // run callback
+      if (onSuccess) {
+        console.log("Executing onSuccess callback...");
+        onSuccess(data);
+      }
 
       if (shouldReset) {
+        console.log("Resetting localStorage and reloading...");
         localStorage.removeItem("destination");
         localStorage.removeItem("hasSetDestination");
-        history.replace("/");
-        window.location.reload();
+        history.goBack();
       }
     } catch (err) {
       console.error("Ride update failed:", err);
     } finally {
       setLoading(false);
+      console.log("Loading state set to false");
     }
   };
 

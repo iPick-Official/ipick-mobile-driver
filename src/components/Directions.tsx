@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DirectionsRenderer, Marker } from "@react-google-maps/api";
 import { watchLocation } from "../utils/locationHelpers";
+import { postDriverLocation } from "../services/apiService";
+import { useLocationContext } from "../contexts/LocationContext";
 
 interface DirectionsProps {
   destination: google.maps.LatLngLiteral;
@@ -18,6 +20,7 @@ const Directions: React.FC<DirectionsProps> = ({ destination }) => {
   const lastRequestedDestination = useRef<google.maps.LatLngLiteral | null>(
     null
   );
+  const { bookingId } = useLocationContext();
 
   // Haversine formula to calculate distance between two points (in meters)
   const calculateDistance = (
@@ -68,7 +71,7 @@ const Directions: React.FC<DirectionsProps> = ({ destination }) => {
 
     const originChanged =
       !lastRequestedOrigin.current ||
-      calculateDistance(origin, lastRequestedOrigin.current) >= 500;
+      calculateDistance(origin, lastRequestedOrigin.current) >= 50;
 
     const destinationChanged =
       !lastRequestedDestination.current ||
@@ -86,7 +89,7 @@ const Directions: React.FC<DirectionsProps> = ({ destination }) => {
       console.log("📡 Requesting directions...");
 
       const directionsService = new google.maps.DirectionsService();
-
+      postDriverLocation(bookingId);
       setLoading(true);
       setError(null);
 
