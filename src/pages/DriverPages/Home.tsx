@@ -552,7 +552,7 @@ const Home: React.FC = () => {
                             <IonText color="medium">
                               <p className="user-text-small">
                                 <strong>Rating:</strong>{" "}
-                                {user?.userRating ?? "Not rated"}
+                                {user?.userRating ?? 5}
                               </p>
                             </IonText>
                             <IonText color="medium">

@@ -1,24 +1,16 @@
 import {
-  IonAccordion,
-  IonAccordionGroup,
   IonButton,
   IonCard,
-  IonCol,
   IonContent,
   IonFooter,
-  IonGrid,
-  IonHeader,
   IonIcon,
   IonImg,
   IonItem,
   IonLabel,
   IonList,
-  IonModal,
   IonPage,
-  IonRow,
   IonSkeletonText,
   IonText,
-  IonToolbar,
 } from "@ionic/react";
 import {
   fetchBookingDetails,
@@ -30,7 +22,7 @@ import { useHistory } from "react-router";
 import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import Loading from "../../components/Loading";
 import { connectSocket, socket } from "../../utils/useSocket";
-import { call, chatbubblesSharp, mapOutline, star } from "ionicons/icons";
+import { chatbubblesSharp, mapOutline, star } from "ionicons/icons";
 import { useLocationContext } from "../../contexts/LocationContext";
 import { Message } from "../../types/messageTypes";
 import CustomAlert from "../../components/CustomAlert";
@@ -41,8 +33,6 @@ const DriverTrip: React.FC = () => {
   const [confirmAction, setConfirmAction] = useState<() => Promise<void>>(
     () => async () => { }
   );
-
-  const [messages, setMessages] = useState<Message[]>([]);
   const [socketAlerts, setSocketAlerts] = useState(false);
   const [statusHead, setStatusHead] = useState<string>("");
   const [statusMsg, setStatusMsg] = useState<string>("");
@@ -57,7 +47,6 @@ const DriverTrip: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState<any | null>(null);
   const [bookingRatings, setBookingRatings] = useState<any | null>(null);
-  const [tripStatus, setTripStatus] = useState<any | null>(null);
   const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [paymentType, setPaymentType] = useState<any | null>(null);
   const [destination, setDestination] =
@@ -69,7 +58,8 @@ const DriverTrip: React.FC = () => {
     bookingId, setBookingId,
     setRiderId, setDriverId,
     riderName, setRiderName,
-    setRiderMobile
+    setRiderMobile,
+    tripStatus, setTripStatus,
   } = useLocationContext();
 
   useEffect(() => {
@@ -359,7 +349,7 @@ const DriverTrip: React.FC = () => {
               </div>
 
               {/* Cancel button */}
-              {tripStatus < 3 && (
+              {(tripStatus ?? 0) < 3 && (
                 <IonButton color="danger" fill="clear" onClick={promptCancelRide} disabled={!bookingData}>
                   Cancel
                 </IonButton>

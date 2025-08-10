@@ -45,8 +45,6 @@ const Map: React.FC = () => {
 
   const [currentLocation, setCurrentLocation] =
     useState<google.maps.LatLngLiteral | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [showLocationAlert, setShowLocationAlert] = useState(false); // new state for alert
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -82,13 +80,10 @@ const Map: React.FC = () => {
           };
           setCurrentLocation(userLocation);
           mapRef.current?.panTo(userLocation);
-          setShowLocationAlert(false); // ensure alert hidden on success
         },
         (error) => {
           console.error("Geolocation error:", error);
-          setLocationError("Unable to retrieve your location.");
-          setCurrentLocation(fallbackLocation); // fallback to Manila
-          setShowLocationAlert(true); // show alert when location access denied
+          setCurrentLocation(fallbackLocation); 
         },
         {
           enableHighAccuracy: true,
@@ -96,9 +91,7 @@ const Map: React.FC = () => {
         }
       );
     } else {
-      setLocationError("Geolocation is not supported by this browser.");
-      setCurrentLocation(fallbackLocation); // fallback to Manila
-      setShowLocationAlert(true); // show alert if unsupported
+      setCurrentLocation(fallbackLocation); 
     }
   }, []);
 
@@ -132,14 +125,8 @@ const Map: React.FC = () => {
       </div>
     );
   }
-
-  if (!currentLocation) {
-    return (
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        Getting your location...
-      </div>
-    );
-  }
+  
+  const center = currentLocation || fallbackLocation;
 
   const blueDotIcon = {
     path: google.maps.SymbolPath.CIRCLE,
@@ -153,7 +140,7 @@ const Map: React.FC = () => {
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}
-      center={currentLocation}
+      center={center}
       zoom={15}
       options={mapOptions}
       onDragEnd={destination ? undefined : onMapIdle}
@@ -164,10 +151,10 @@ const Map: React.FC = () => {
     >
       {!destination && (
         <>
-          <Marker position={currentLocation} icon={blueDotIcon} />
+          <Marker position={center} icon={blueDotIcon} />
           <Circle
-            center={currentLocation}
-            radius={1000}
+            center={center}
+            radius={500}
             options={{
               strokeColor: "#4285F4",
               strokeOpacity: 0.6,
