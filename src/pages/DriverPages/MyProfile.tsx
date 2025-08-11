@@ -98,7 +98,7 @@ const MyProfile: React.FC = () => {
     { label: "Service Type", value: user?.carType, icon: carSportOutline },
     {
       label: "Vehicle Information",
-      value: carBrand + " " + carModel + " | " + carColor,
+      value: carBrand + " " + carModel + " / " + carColor,
       icon: carOutline,
     },
     {

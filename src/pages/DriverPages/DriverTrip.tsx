@@ -13,6 +13,7 @@ import {
   IonText,
 } from "@ionic/react";
 import {
+  fetchActiveJobs,
   fetchBookingDetails,
   fetchRiderDetails,
 } from "../../services/apiService";
@@ -26,9 +27,11 @@ import { chatbubblesSharp, mapOutline, star } from "ionicons/icons";
 import { useLocationContext } from "../../contexts/LocationContext";
 import { Message } from "../../types/messageTypes";
 import CustomAlert from "../../components/CustomAlert";
+import { useAuth } from "../../contexts/AuthContext";
 
 const DriverTrip: React.FC = () => {
   const history = useHistory();
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<() => Promise<void>>(
     () => async () => { }
@@ -60,6 +63,7 @@ const DriverTrip: React.FC = () => {
     riderName, setRiderName,
     setRiderMobile,
     tripStatus, setTripStatus,
+    setPickupCoords, setDropoffCoords
   } = useLocationContext();
 
   useEffect(() => {
@@ -88,23 +92,32 @@ const DriverTrip: React.FC = () => {
   }, [bookingId, driverId]);
 
   useEffect(() => {
-    const item = localStorage.getItem("acceptedBooking");
-    if (item) {
+    const getJobs = async () => {
       try {
-        const data = JSON.parse(item);
-        if (data?._id) {
-          setBookingId(data?._id);
-          setRiderName(data?.riderData.name);
-          setBookingRatings(data?.userRating);
-          setRiderMobile(data?.riderData.mobnum);
-        }
+        const data = await fetchActiveJobs(logout);
+        console.log("Active jobs response:", data);
+        setBookingData(data);
+        setBookingId(data?._id);
+        setRiderName(data?.riderData.name);
+        setBookingRatings(data?.userRating);
+        setRiderMobile(data?.riderData.mobnum);
+        setDriverId(data?.driverId);
+        setRiderId(data?.riderId);
+        setTripStatus(data?.tripStatus);
+        setPickupCoords({
+          lat: data?.origin.coordinates[0],
+          lng: data?.origin.coordinates[1],
+        });
+
+        setDropoffCoords({
+          lat: data?.destination.coordinates[0],
+          lng: data?.destination.coordinates[1],
+        });
       } catch (error) {
-        console.error(
-          "Error parsing acceptedBooking from localStorage:",
-          error
-        );
+        console.error("Error fetching active jobs:", error);
       }
-    }
+    };
+    getJobs();
   }, []);
 
   useEffect(() => {
@@ -113,54 +126,14 @@ const DriverTrip: React.FC = () => {
         const booking = await fetchBookingDetails();
         setBookingDetails(booking);
         hasFetchedBooking.current = true;
-
         if (booking && booking.length > 0) {
           const payment = booking[0].paymentType.paymentType;
           setPaymentType(payment);
         }
-        const riderId = bookingData?.riderId;
-
-        if (riderId) {
-          const riderDetails = await fetchRiderDetails(riderId);
-          console.log("Rider Details:", riderDetails);
-          setRiderName(riderDetails?.name);
-          setRiderMobile(riderDetails?.mobnum);
-          const item = localStorage.getItem("acceptedBooking");
-          if (item) {
-            const bookingObj = JSON.parse(item);
-            bookingObj.name = riderDetails?.name;
-            bookingObj.mobile = riderDetails?.mobnum;
-            localStorage.setItem("acceptedBooking", JSON.stringify(bookingObj));
-          }
-        }
       }
     };
-
     fetchAll();
   }, [bookingData, bookingDetails]);
-
-  useEffect(() => {
-    if (driverId) {
-      connectSocket(driverId);
-    }
-
-    socket?.off("booking_data");
-    socket?.on("booking_data", (data: any) => {
-      console.log("Received booking data:", data);
-      setBookingData(data);
-      setBookingId(data?._id);
-      setRiderId(data?.riderId);
-      setDriverId(data?.driverId);
-
-      const hasSetDestinationLS = localStorage.getItem("hasSetDestination");
-      if (!hasSetDestinationLS) {
-        const coords = data?.origin?.coordinates || null;
-        localStorage.setItem("destination", JSON.stringify(coords));
-        localStorage.setItem("hasSetDestination", "true");
-      }
-      setTripStatus(data?.tripStatus);
-    });
-  }, []);
 
   useEffect(() => {
     if (tripStatus === 0 || tripStatus === 4) {
@@ -331,31 +304,29 @@ const DriverTrip: React.FC = () => {
   return (
     <IonPage>
       <IonContent fullscreen scrollY={false}>
-        <Map />
+        <Map isHomeScreen={false} />
       </IonContent>
       <IonFooter className="rounded-toolbar">
         <div className="footer-container">
-          <IonCard className="footer-card ion-padding">
-            <div className="driver-info">
-              {/* Left: Driver info */}
-              <div className="driver-details">
-                <IonImg src="./favicon.png" className="driver-avatar" />
-                <div>
-                  <IonText><p className="driver-name">{riderName}</p></IonText>
-                  <IonText color="medium" className="driver-rating">
-                    {bookingRatings ?? 5} <IonIcon color="tertiary" icon={star} />
-                  </IonText>
-                </div>
+          <div className="driver-info">
+            {/* Left: Driver info */}
+            <div className="driver-details">
+              <IonImg src="./favicon.png" className="driver-avatar" />
+              <div>
+                <IonText><p className="driver-name">{riderName}</p></IonText>
+                <IonText color="medium" className="driver-rating">
+                  {bookingRatings ?? 5} <IonIcon color="tertiary" icon={star} />
+                </IonText>
               </div>
-
-              {/* Cancel button */}
-              {(tripStatus ?? 0) < 3 && (
-                <IonButton color="danger" fill="clear" onClick={promptCancelRide} disabled={!bookingData}>
-                  Cancel
-                </IonButton>
-              )}
             </div>
-          </IonCard>
+
+            {/* Cancel button */}
+            {(tripStatus ?? 0) < 3 && (
+              <IonButton color="danger" fill="clear" onClick={promptCancelRide} disabled={!bookingData}>
+                Cancel
+              </IonButton>
+            )}
+          </div>
 
           {/* Pickup & Drop-off */}
           <IonList>

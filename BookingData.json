@@ -1,34 +1,34 @@
 {
-  "_id": "68972f237b2d99db2b90a05f",
+  "_id": "6899e3b97b2d99db2b929356",
   "riderId": "pcLAfBHG9f",
   "__v": 0,
   "computations": {
     "baseFare": 55,
-    "serviceFee": 33.044666666666664,
-    "fareDistanceInKM": 3.284,
-    "fareDurationInMins": 9.033333333333333,
+    "serviceFee": 4.0342,
+    "fareDistanceInKM": 0.938,
+    "fareDurationInMins": 4.4,
     "costPerKM": 18,
     "costPerMin": 2
   },
-  "createdAt": "2025-08-09T11:21:07.153Z",
+  "createdAt": "2025-08-11T12:36:09.319Z",
   "destination": {
-    "name": "WRPV+C33, Apalit Bypass Road, Pulilan, Bulacan, Philippines",
+    "name": "WR4V+FMX, J. Ramos Ext, Sangandaan, Caloocan, Metro Manila, Philippines",
     "type": "Point",
-    "coordinates": [14.936025936944432, 120.84275932600468]
+    "coordinates": [14.906037078247275, 120.8441581634739]
   },
-  "driverId": "4D3rDpUD1f",
+  "driverId": "9BOV0INXoo",
   "driverRating": [],
   "origin": {
-    "name": "WR4W+RFV, Pulilan, Bulacan, Philippines",
+    "name": "1080 Esguerra, Pulilan, Bulacan, Philippines",
     "type": "Point",
-    "coordinates": [14.907145915402552, 120.84628533064391]
+    "coordinates": [14.910914901018598, 120.84423729310171]
   },
   "status": "booked",
-  "timestamp": "2025-08-09",
-  "travelFare": 187.22,
+  "timestamp": "2025-08-11",
+  "travelFare": 113.72,
   "tripStatus": 1,
-  "updatedAt": "2025-08-09T12:40:02.925Z",
-  "driverLoc": { "lat": 14.931934692992579, "lng": 120.84127936354574 },
+  "updatedAt": "2025-08-11T12:45:22.438Z",
+  "driverLoc": { "lat": 14.932043811177298, "lng": 120.84135523764378 },
   "riderData": {
     "_id": "66bd92f8a782d663787f5245",
     "id": "pcLAfBHG9f",
@@ -58,8 +58,8 @@
     ],
     "rideHistory": [],
     "type": "rider",
-    "updatedAt": "2025-08-09T11:06:25.150Z",
-    "authToken": "$2a$10$rYxNutUe6qdqiVZg46nz6ujfc0ZwkCkpEk7e0RZqFPdWNCY9KyXRK",
+    "updatedAt": "2025-08-11T12:31:18.352Z",
+    "authToken": "$2a$10$iuUN2mdngZEXMlSKAqpaIOuUS1Bq9WIHjeHg7KiaZUbjPj8t7dKfu",
     "isLogged": true,
     "fcmToken": "",
     "rating": 5

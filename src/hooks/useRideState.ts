@@ -4,6 +4,7 @@ import { LatLng } from "../types/locationContextTypes";
 
 export const useRideState = (initialState: any) => {
   const [currentLocation, _setCurrentLocation] = useState<LatLng | null>(initialState.currentLocation ?? null);
+  const [destination, _setDestination] = useState<LatLng | null>(initialState.currentLocation ?? null);
   const [pickupAddress, _setPickupAddress] = useState<string>(initialState.pickupAddress ?? "");
   const [dropoffAddress, _setDropoffAddress] = useState<string>(initialState.dropoffAddress ?? "");
   const [pickupCoords, _setPickupCoords] = useState<LatLng | null>(initialState.pickupCoords ?? null);
@@ -28,6 +29,7 @@ export const useRideState = (initialState: any) => {
 
   return {
     currentLocation, _setCurrentLocation,
+    destination, _setDestination,
     pickupAddress, _setPickupAddress,
     dropoffAddress, _setDropoffAddress,
     pickupCoords, _setPickupCoords,

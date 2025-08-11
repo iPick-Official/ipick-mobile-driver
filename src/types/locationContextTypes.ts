@@ -4,7 +4,6 @@ export interface LatLng {
 }
 
 export interface LocationContextType {
-
   userId: string;
   setUserId: (userId: string) => void;
   driverId: string;
@@ -26,6 +25,8 @@ export interface LocationContextType {
 
   currentLocation: LatLng | null;
   setCurrentLocation: (coords: LatLng | null) => void;
+  destination: LatLng | null;
+  setDestination: (coords: LatLng | null) => void;
 
   pickupAddress: string;
   setPickupAddress: (address: string) => void;

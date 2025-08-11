@@ -49,6 +49,8 @@ const Home: React.FC = () => {
     tripStatus, setTripStatus,
     bookingId, setBookingId,
     riderId, setRiderId,
+    currentLocation, setCurrentLocation,
+
   } = useLocationContext();
 
   const modalRef = useRef<HTMLIonModalElement>(null);
@@ -56,8 +58,6 @@ const Home: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentLocation, setCurrentLocation] =
-    useState<google.maps.LatLngLiteral | null>(null);
   const [riderDistances, setRiderDistances] = useState<
     { riderId: string; distance: number }[] | null
   >(null);
@@ -414,8 +414,8 @@ const Home: React.FC = () => {
         </IonButtons>
       </IonHeader>
 
-      <IonContent fullscreen>
-        <Map />
+      <IonContent fullscreen scrollY={false}>
+        <Map isHomeScreen={true} />
         {!isModalOpen && (
           <IonHeader>
             <div className="absolute-bottom-bar">

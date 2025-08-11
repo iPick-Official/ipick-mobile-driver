@@ -7,6 +7,15 @@ import {
 } from "@react-google-maps/api";
 import customMapStyle from "../theme/MapStyle.json";
 import Directions from "./Directions";
+import { useLocationContext } from "../contexts/LocationContext";
+import { philippinesBounds } from "../utils/bounds";
+
+interface MapProps {
+  onIdle?: () => void;
+  onMapLoad?: (map: google.maps.Map) => void;
+  isHomeScreen?: boolean;
+  zoom?: number;
+}
 
 const containerStyle = {
   width: "100vw",
@@ -23,110 +32,54 @@ const mapOptions = {
   fullscreenControl: false,
   styles: customMapStyle,
   restriction: {
-    latLngBounds: {
-      north: 19.45,
-      south: 5.0,
-      west: 119.0,
-      east: 126.0,
-    },
+    latLngBounds: philippinesBounds,
     strictBounds: true,
   },
 };
 
 const fallbackLocation: google.maps.LatLngLiteral = {
-  lat: 14.5995, // Manila latitude
-  lng: 120.9842, // Manila longitude
+  lat: 14.5995,
+  lng: 120.9842,
 };
 
-const Map: React.FC = () => {
-  const { isLoaded, loadError } = useJsApiLoader({
+const Map: React.FC<MapProps> = ({
+  onIdle,
+  onMapLoad,
+  isHomeScreen = false,
+  zoom,
+}) => {
+  const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_APP_GOOGLE_MAP_KEY,
+    region: "PH",
+    language: "en",
+    version: "weekly",
   });
 
-  const [currentLocation, setCurrentLocation] =
-    useState<google.maps.LatLngLiteral | null>(null);
-
   const mapRef = useRef<google.maps.Map | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Load destination from localStorage
-  const storedDestination = localStorage.getItem("destination");
-  let destination: google.maps.LatLngLiteral | null = null;
-
-  if (storedDestination) {
-    try {
-      const parsed = JSON.parse(storedDestination);
-      if (
-        parsed &&
-        typeof parsed.lat === "number" &&
-        typeof parsed.lng === "number"
-      ) {
-        destination = parsed;
-      } else if (Array.isArray(parsed) && parsed.length === 2) {
-        destination = { lat: parsed[0], lng: parsed[1] };
-      }
-    } catch (e) {
-      console.error("Failed to parse destination from localStorage:", e);
-    }
-  }
+  const { currentLocation } = useLocationContext();
+  const [radius, setRadius] = useState(50);
+  const [growing, setGrowing] = useState(true);
 
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setCurrentLocation(userLocation);
-          mapRef.current?.panTo(userLocation);
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          setCurrentLocation(fallbackLocation); 
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
+    const interval = setInterval(() => {
+      setRadius((prevRadius) => {
+        if (prevRadius >= 100) {
+          setGrowing(false);
+          return prevRadius - 1;
+        } else if (prevRadius <= 50) {
+          setGrowing(true);
+          return prevRadius + 1;
         }
-      );
-    } else {
-      setCurrentLocation(fallbackLocation); 
-    }
-  }, []);
+        return growing ? prevRadius + 1 : prevRadius - 1;
+      });
+    }, 30);
 
-  useEffect(() => {
-    const fallbackTimeout = setTimeout(() => {
-      if (!isLoaded) {
-        alert("Map failed to load. The page will reload.");
-        window.location.reload();
-      }
-    }, 30000); // 30 seconds
-
-    return () => clearTimeout(fallbackTimeout);
-  }, [isLoaded]);
-
-  const onMapIdle = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      if (currentLocation && mapRef.current) {
-        mapRef.current.panTo(currentLocation);
-      }
-    }, 5000);
-  };
+    return () => clearInterval(interval);
+  }, [growing]);
 
   if (!isLoaded) {
-    return (
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        Loading Map...
-      </div>
-    );
+    return <div style={{ textAlign: "center", marginTop: "2rem" }}>Loading Map...</div>;
   }
-  
-  const center = currentLocation || fallbackLocation;
 
   const blueDotIcon = {
     path: google.maps.SymbolPath.CIRCLE,
@@ -140,21 +93,21 @@ const Map: React.FC = () => {
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}
-      center={center}
-      zoom={15}
+      center={currentLocation ?? fallbackLocation}
+      zoom={zoom ?? 15}
       options={mapOptions}
-      onDragEnd={destination ? undefined : onMapIdle}
-      onZoomChanged={destination ? undefined : onMapIdle}
+      onIdle={onIdle}
       onLoad={(map) => {
         mapRef.current = map;
+        onMapLoad?.(map);
       }}
     >
-      {!destination && (
+      {isHomeScreen && (
         <>
-          <Marker position={center} icon={blueDotIcon} />
+          <Marker position={currentLocation ?? fallbackLocation} icon={blueDotIcon} />
           <Circle
-            center={center}
-            radius={500}
+            center={currentLocation ?? fallbackLocation}
+            radius={radius}
             options={{
               strokeColor: "#4285F4",
               strokeOpacity: 0.6,
@@ -170,7 +123,8 @@ const Map: React.FC = () => {
           />
         </>
       )}
-      {destination && <Directions destination={destination} />}
+
+      {!isHomeScreen && (<Directions map={mapRef.current} />)}
     </GoogleMap>
   );
 };

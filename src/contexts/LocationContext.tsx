@@ -1,7 +1,6 @@
 import React, {
   createContext,
   useContext,
-  useState,
   ReactNode,
 } from "react";
 import { LocationContextType } from "../types/locationContextTypes";
@@ -42,6 +41,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
 
   // Ride Details
   const {
+    destination, _setDestination,
     currentLocation, _setCurrentLocation,
     pickupAddress, _setPickupAddress,
     dropoffAddress, _setDropoffAddress,
@@ -75,6 +75,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   const resetAll = () => {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
     _setCurrentLocation(null);
+    _setDestination(null);
     _setPickupAddress("");
     _setDropoffAddress("");
     _setPickupCoords(null);
@@ -125,6 +126,8 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
 
         currentLocation,
         setCurrentLocation: withStorage("currentLocation", _setCurrentLocation),
+        destination,
+        setDestination: withStorage("destination", _setDestination),
         pickupAddress,
         setPickupAddress: withStorage("pickupAddress", _setPickupAddress),
         dropoffAddress,

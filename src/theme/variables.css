@@ -226,4 +226,29 @@ ion-modal::part(content) {
   border-radius: 12px;
 }
 
+.profile-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+}
+
+.upload-text {
+  margin-top: 10px;
+  color: #888;
+  font-size: 14px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+
 

@@ -70,7 +70,7 @@ const AppContentInner: React.FC = () => {
     enableKeepAwake();
 
     return () => {
-      disableKeepAwake(); // Optional: clean up on unmount
+      disableKeepAwake();
     };
   }, []);
 

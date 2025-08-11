@@ -21,12 +21,11 @@ import {
   IonSelect,
   IonSelectOption,
   IonText,
-  IonTextarea,
+  IonTextarea,  
   IonToast,
   IonToolbar,
 } from "@ionic/react";
 import "@theme/variables.css";
-import "../../theme/Onboarding.css"
 import BackButton from "../../components/BackButton";
 import { cloudUploadSharp } from "ionicons/icons";
 import { UploadService } from "../../services/uploadService";

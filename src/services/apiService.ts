@@ -29,8 +29,11 @@ export const fetchActiveJobs = async (logout: () => void) => {
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`);
     }
+
+    return data; // ✅ Return the fetched data here
   } catch (error) {
     console.error("Error fetching active jobs:", error);
+    throw error; // Optional: rethrow if you want the calling function to handle it
   }
 };
 
