@@ -26,6 +26,7 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import "@theme/variables.css";
+import "../../theme/Onboarding.css"
 import BackButton from "../../components/BackButton";
 import { cloudUploadSharp } from "ionicons/icons";
 import { UploadService } from "../../services/uploadService";
@@ -131,7 +132,7 @@ const PersonlaReq: React.FC = () => {
             type: file.type,
           });
           await uploadService.uploadFile(uploaded);
-          uploadedFiles[fieldName] = { name: file.name, url: file.name }; // Replace `file.name` with real URL if available
+          uploadedFiles[fieldName] = { name: file.name, url: file.name };
         } else if (personalRequirements?.[fieldName]) {
           uploadedFiles[fieldName] = {
             name: personalRequirements[fieldName].name || "",
@@ -204,8 +205,7 @@ const PersonlaReq: React.FC = () => {
       };
 
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT_DRIVER
+        `${import.meta.env.VITE_API_ENDPOINT_DRIVER
         }/Drivers/updatePersonalRequirements/${userId}`,
         {
           method: "PUT",
@@ -222,7 +222,7 @@ const PersonlaReq: React.FC = () => {
       let result: any = {};
       try {
         result = await response.json();
-      } catch (_) {}
+      } catch (_) { }
 
       originalUserRef.current = {
         ...originalUserRef.current,
@@ -243,8 +243,7 @@ const PersonlaReq: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT_DRIVER
+        `${import.meta.env.VITE_API_ENDPOINT_DRIVER
         }/Drivers/getPersonalRequirements/${userId}`,
         {
           method: "GET",
@@ -299,7 +298,7 @@ const PersonlaReq: React.FC = () => {
         fileObj: { name?: string; url?: string } | string | undefined
       ): Promise<string> => {
         const key = typeof fileObj === "string" ? fileObj : fileObj?.url || "";
-        return key ? await uploadService.getFileUrl(key) : "/favicon.png";
+        return key ? await uploadService.getFileUrl(key) : "";
       };
 
       setLicenseFront(
@@ -502,30 +501,26 @@ const PersonlaReq: React.FC = () => {
       {activeTab === "personal" && (
         <IonContent className="ion-padding" fullscreen>
           {/* Profile Picture Section */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              marginTop: "20px",
-              marginBottom: "20px",
-            }}
-          >
-            <IonAvatar
-              style={{ width: "100px", height: "100px", cursor: "pointer" }}
-              onClick={() => handleFileClick(profilePicRef)}
-            >
-              <IonImg src={profilePic} alt="Profile" />
+          <div className="profile-upload-container" onClick={() => handleFileClick(profilePicRef)}>
+            <IonAvatar className="profile-avatar">
+              <IonImg src={profilePic || "/favicon.png"} alt="Profile" />
             </IonAvatar>
+
+            {!profilePic && (
+              <div className="upload-text">
+                Upload Profile
+              </div>
+            )}
+
             <input
               type="file"
               accept="image/*"
               ref={profilePicRef}
-              style={{ display: "none" }}
+              className="hidden-file-input"
               onChange={handleProfileChange}
               disabled={status}
             />
           </div>
-
           {/* Input Field */}
           <IonItem lines="none" className="input-field">
             <IonLabel>Nationality</IonLabel>
@@ -856,7 +851,7 @@ const PersonlaReq: React.FC = () => {
             size="large"
             onClick={handleUpdate}
             disabled={
-              vaccinationCertificateConsent === false || !allAgreementsChecked
+              vaccinationCertificateConsent === false || !allAgreementsChecked || !profilePic
             }
           >
             Submit
