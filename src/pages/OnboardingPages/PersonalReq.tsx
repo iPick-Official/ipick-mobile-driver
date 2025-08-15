@@ -517,7 +517,6 @@ const PersonlaReq: React.FC = () => {
               ref={profilePicRef}
               className="hidden-file-input"
               onChange={handleProfileChange}
-              disabled={status}
             />
           </div>
           {/* Input Field */}

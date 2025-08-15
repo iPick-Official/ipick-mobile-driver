@@ -29,7 +29,7 @@ const BackButton: React.FC<BackButtonProps> = ({ onClick }) => {
     >
       <IonIcon
         slot="start"
-        icon={arrowBackOutline}
+        icon={chevronBackOutline}
         style={{ color: "#008000", fontSize: "2rem" }}
       />
     </IonButton>

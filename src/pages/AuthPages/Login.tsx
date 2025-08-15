@@ -12,6 +12,7 @@ import {
   IonFooter,
   IonHeader,
   IonToolbar,
+  IonIcon,
 } from "@ionic/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useHistory } from "react-router-dom";
@@ -19,6 +20,7 @@ import Loading from "../../components/Loading";
 import OtpModal from "../../components/OtpModal";
 import "@theme/variables.css";
 import { useLocationContext } from "../../contexts/LocationContext";
+import { eyeOffOutline, eyeOutline } from "ionicons/icons";
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -36,6 +38,7 @@ const Login: React.FC = () => {
   const [countdown, setCountdown] = useState(0);
   const mobileRef = useRef<HTMLIonInputElement>(null);
   const passwordRef = useRef<HTMLIonInputElement>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     setUserId, setDriverId,
@@ -141,7 +144,7 @@ const Login: React.FC = () => {
       setCarBrand(user?.transportRequirements?.carColor);
       setCarModel(user?.transportRequirements?.carBrand);
       setCarColor(user?.transportRequirements?.carModel);
-      
+
       localStorage.setItem("driverData", JSON.stringify(user));
       localStorage.setItem("id", user._id);
       localStorage.setItem("userId", user.id);
@@ -330,8 +333,14 @@ const Login: React.FC = () => {
             placeholder="Password"
             label="Password"
             labelPlacement="floating"
-            type="password"
+            type={showPassword ? "text" : "password"}
             className="floating-label-dark"
+          />
+          <IonIcon
+            slot="end"
+            icon={showPassword ? eyeOffOutline : eyeOutline}
+            onClick={() => setShowPassword((prev) => !prev)}
+            style={{ cursor: "pointer", fontSize: "1.4rem" }}
           />
         </IonItem>
 

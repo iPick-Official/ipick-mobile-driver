@@ -47,7 +47,6 @@ const MyProfile: React.FC = () => {
     driverName,
     profilePicture,
     plateNum,
-    carType,
     carBrand,
     carModel,
     carColor,

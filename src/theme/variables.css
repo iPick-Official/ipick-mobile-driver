@@ -175,7 +175,7 @@ ion-modal::part(content) {
 
 .absolute-bottom-bar {
   position: absolute;
-  bottom: 20px;
+  bottom: 30px;
   width: 100%;
   padding: 0 16px;
   display: flex;
@@ -222,7 +222,7 @@ ion-modal::part(content) {
   margin-left: 10px;
   margin-right: 10px;
   margin-bottom: 10px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.10);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
   border-radius: 12px;
 }
 
@@ -249,6 +249,3 @@ ion-modal::part(content) {
 .hidden-file-input {
   display: none;
 }
-
-
-

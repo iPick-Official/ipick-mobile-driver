@@ -426,7 +426,6 @@ const Home: React.FC = () => {
                 onClick={openJobs}
               >
                 Go Online
-                <IonIcon icon={powerOutline} style={{ marginLeft: "10px" }} />
               </IonButton>
             </div>
           </IonHeader>
@@ -651,7 +650,6 @@ const Home: React.FC = () => {
             setIsModalOpen(false);
           }
         }}
-        cssClass="my-custom-action-sheet"
       />
     </IonPage>
   );

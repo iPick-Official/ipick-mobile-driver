@@ -15,14 +15,13 @@ import {
 import {
   fetchActiveJobs,
   fetchBookingDetails,
-  fetchRiderDetails,
 } from "../../services/apiService";
 import React, { useState, useEffect, useRef } from "react";
 import Map from "../../components/Map";
 import { useHistory } from "react-router";
 import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import Loading from "../../components/Loading";
-import { connectSocket, socket } from "../../utils/useSocket";
+import { socket } from "../../utils/useSocket";
 import { chatbubblesSharp, mapOutline, star } from "ionicons/icons";
 import { useLocationContext } from "../../contexts/LocationContext";
 import { Message } from "../../types/messageTypes";
@@ -41,19 +40,12 @@ const DriverTrip: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState<string>("");
 
   const [showActionSheet, setShowActionSheet] = useState(false);
-  const modalRef = useRef<HTMLIonModalElement>(null);
-  const hasSetDestination = useRef(false);
   const [header, setHeader] = useState<any | null>(null);
   const [subHeader, setSubHeader] = useState<any | null>(null);
-  const [currentLocation, setCurrentLocation] =
-    useState<google.maps.LatLngLiteral | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState<any | null>(null);
   const [bookingRatings, setBookingRatings] = useState<any | null>(null);
   const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [paymentType, setPaymentType] = useState<any | null>(null);
-  const [destination, setDestination] =
-    useState<google.maps.LatLngLiteral | null>(null);
   const hasFetchedBooking = useRef(false);
 
   const {
@@ -91,32 +83,33 @@ const DriverTrip: React.FC = () => {
     };
   }, [bookingId, driverId]);
 
-  useEffect(() => {
-    const getJobs = async () => {
-      try {
-        const data = await fetchActiveJobs(logout);
-        console.log("Active jobs response:", data);
-        setBookingData(data);
-        setBookingId(data?._id);
-        setRiderName(data?.riderData.name);
-        setBookingRatings(data?.userRating);
-        setRiderMobile(data?.riderData.mobnum);
-        setDriverId(data?.driverId);
-        setRiderId(data?.riderId);
-        setTripStatus(data?.tripStatus);
-        setPickupCoords({
-          lat: data?.origin.coordinates[0],
-          lng: data?.origin.coordinates[1],
-        });
+  const getJobs = async () => {
+    try {
+      const data = await fetchActiveJobs(logout);
+      console.log("Active jobs response:", data);
+      setBookingData(data);
+      setBookingId(data?._id);
+      setRiderName(data?.riderData.name);
+      setBookingRatings(data?.userRating);
+      setRiderMobile(data?.riderData.mobnum);
+      setDriverId(data?.driverId);
+      setRiderId(data?.riderId);
+      setTripStatus(data?.tripStatus);
+      setPickupCoords({
+        lat: data?.origin.coordinates[0],
+        lng: data?.origin.coordinates[1],
+      });
 
-        setDropoffCoords({
-          lat: data?.destination.coordinates[0],
-          lng: data?.destination.coordinates[1],
-        });
-      } catch (error) {
-        console.error("Error fetching active jobs:", error);
-      }
-    };
+      setDropoffCoords({
+        lat: data?.destination.coordinates[0],
+        lng: data?.destination.coordinates[1],
+      });
+    } catch (error) {
+      console.error("Error fetching active jobs:", error);
+    }
+  };
+
+  useEffect(() => {
     getJobs();
   }, []);
 
@@ -129,37 +122,12 @@ const DriverTrip: React.FC = () => {
         if (booking && booking.length > 0) {
           const payment = booking[0].paymentType.paymentType;
           setPaymentType(payment);
+          getJobs();
         }
       }
     };
     fetchAll();
   }, [bookingData, bookingDetails]);
-
-  useEffect(() => {
-    if (tripStatus === 0 || tripStatus === 4) {
-      history.goBack();
-    }
-  }, []);
-
-  useEffect(() => {
-    modalRef.current?.present();
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCurrentLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          setLocationError("Unable to retrieve your location.");
-          console.error(error);
-        }
-      );
-    } else {
-      setLocationError("Geolocation is not supported by this browser.");
-    }
-  }, []);
 
   const showPrompt = (
     header: string,
@@ -203,28 +171,29 @@ const DriverTrip: React.FC = () => {
     shouldReset = false,
     onSuccess?: (data?: any) => void
   ) => {
-    console.log("updateRideStatus called with:", {
-      status,
-      shouldReset,
-      bookingId: bookingData?._id,
-    });
+    const bookingId = bookingData?._id;
+
+    if (!bookingId) {
+      console.error("No booking ID provided.");
+      return;
+    }
+
+    console.log("Updating ride status:", { status, shouldReset, bookingId });
 
     setLoading(true);
+
     try {
       const endpoint = `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/rideUpdate`;
       const token = localStorage.getItem("accessToken");
 
-      console.log("Sending request to:", endpoint);
-      console.log("Request headers and body:", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: {
-          _id: bookingData?._id,
-          status,
-          action: "driver",
-        },
+      if (!token) {
+        throw new Error("Access token is missing");
+      }
+
+      const body = JSON.stringify({
+        _id: bookingId,
+        status,
+        action: "driver",
       });
 
       const res = await fetch(endpoint, {
@@ -233,50 +202,33 @@ const DriverTrip: React.FC = () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          _id: bookingData?._id,
-          status,
-          action: "driver",
-        }),
+        body,
       });
 
-      console.log("Response status:", res.status);
-
       const data = await res.json();
-      console.log("Response JSON:", data);
+
+      if (!res.ok) {
+        console.error("API error:", data?.message || res.statusText);
+        throw new Error(data?.message || "Failed to update ride status");
+      }
 
       setTripStatus(status);
-      console.log("Trip status updated to:", status);
-
-      if (onSuccess) {
-        console.log("Executing onSuccess callback...");
-        onSuccess(data);
-      }
-
+      console.log("Ride status updated to:", status);
+      onSuccess?.(data);
       if (shouldReset) {
-        console.log("Resetting localStorage and reloading...");
-        localStorage.removeItem("destination");
-        localStorage.removeItem("hasSetDestination");
-        history.goBack();
+        history.replace("/");
       }
-    } catch (err) {
-      console.error("Ride update failed:", err);
+    } catch (error) {
+      console.error("Error updating ride status:", error);
     } finally {
       setLoading(false);
-      console.log("Loading state set to false");
     }
   };
 
+
   const confirmCancelRide = () => updateRideStatus(0, true);
   const arrivedAtPickup = () => updateRideStatus(2);
-  const confirmPassenger = () =>
-    updateRideStatus(3, false, (data) => {
-      setDestination(data?.destination?.coordinates || null);
-      localStorage.setItem(
-        "destination",
-        JSON.stringify(data?.destination?.coordinates)
-      );
-    });
+  const confirmPassenger = () => updateRideStatus(3, false);
   const endTrip = () => updateRideStatus(4, true);
 
   const navigateToLocation = (coordinates: [number, number]) => {
@@ -313,7 +265,7 @@ const DriverTrip: React.FC = () => {
             <div className="driver-details">
               <IonImg src="./favicon.png" className="driver-avatar" />
               <div>
-                <IonText><p className="driver-name">{riderName}</p></IonText>
+                <IonText><p className="driver-name">{bookingData?.riderData?.name}</p></IonText>
                 <IonText color="medium" className="driver-rating">
                   {bookingRatings ?? 5} <IonIcon color="tertiary" icon={star} />
                 </IonText>
@@ -403,7 +355,6 @@ const DriverTrip: React.FC = () => {
             await confirmAction();
           }
         }}
-        cssClass="my-custom-action-sheet"
       />
       <CustomAlert
         isOpen={socketAlerts}

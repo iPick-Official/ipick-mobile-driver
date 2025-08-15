@@ -9,15 +9,18 @@ import {
   IonToast,
   IonHeader,
   IonToolbar,
+  IonIcon,
 } from "@ionic/react";
 import { useHistory } from "react-router-dom";
 import Loading from "../../components/Loading";
 import "@theme/variables.css";
 import bcrypt from "bcryptjs";
+import { eyeOffOutline, eyeOutline } from "ionicons/icons";
 
 const UpdatePassword: React.FC = () => {
   const history = useHistory();
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConPassword, setConShowPassword] = useState(false);
   const passwordRef = useRef<HTMLIonInputElement>(null);
   const conPasswordRef = useRef<HTMLIonInputElement>(null);
   const [error, setError] = useState("");
@@ -70,8 +73,7 @@ const UpdatePassword: React.FC = () => {
       };
 
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT_DRIVER
+        `${import.meta.env.VITE_API_ENDPOINT_DRIVER
         }/Drivers/updateDrivers/${driverId}`,
         {
           method: "PUT", // Backend likely expects full object
@@ -130,8 +132,14 @@ const UpdatePassword: React.FC = () => {
             placeholder="Password"
             label="Password"
             labelPlacement="floating"
-            type="password"
+            type={showPassword ? "text" : "password"}
             className="floating-label-dark"
+          />
+          <IonIcon
+            slot="end"
+            icon={showPassword ? eyeOffOutline : eyeOutline}
+            onClick={() => setShowPassword((prev) => !prev)}
+            style={{ cursor: "pointer", fontSize: "1.4rem" }}
           />
         </IonItem>
 
@@ -139,16 +147,22 @@ const UpdatePassword: React.FC = () => {
           <IonInput
             ref={conPasswordRef}
             color="dark"
-            placeholder="Confirm Password"
-            label="Confirm Password"
+            placeholder="Password"
+            label="Password"
             labelPlacement="floating"
-            type="password"
+            type={showConPassword ? "text" : "password"}
             className="floating-label-dark"
+          />
+          <IonIcon
+            slot="end"
+            icon={showConPassword ? eyeOffOutline : eyeOutline}
+            onClick={() => setConShowPassword((prev) => !prev)}
+            style={{ cursor: "pointer", fontSize: "1.4rem" }}
           />
         </IonItem>
 
         <IonButton
-          className="custom-button"
+          className="custom-button" 
           expand="full"
           shape="round"
           size="large"

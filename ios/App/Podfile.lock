@@ -13,9 +13,9 @@ PODS:
   - CapacitorFilesystem (7.1.4):
     - Capacitor
     - IONFilesystemLib (~> 1.0.1)
-  - CapacitorGeolocation (7.1.4):
+  - CapacitorGeolocation (7.1.5):
     - Capacitor
-    - IONGeolocationLib (~> 1.0)
+    - IONGeolocationLib (= 1.0.1)
   - CapacitorGoogleMaps (7.1.0):
     - Capacitor
     - Google-Maps-iOS-Utils (~> 5.0)
@@ -40,7 +40,7 @@ PODS:
   - GoogleMaps/Maps (8.4.0):
     - GoogleMaps/Base
   - IONFilesystemLib (1.0.1)
-  - IONGeolocationLib (1.0.0)
+  - IONGeolocationLib (1.0.1)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -106,7 +106,7 @@ SPEC CHECKSUMS:
   CapacitorCommunityKeepAwake: 05c75aab989f60e621870cf03b24a144a5544c30
   CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
   CapacitorFilesystem: f9bd850c41e048180e5dc0cbb90f2033ede9d2cc
-  CapacitorGeolocation: 32a1f849c38c72b5071de36a28ebc548ef3bb611
+  CapacitorGeolocation: 84f868bea4c2499aebc3bb3a88fd0a508f87ab87
   CapacitorGoogleMaps: eb09d5bfd61a70d5b31ebb32ff6feb1f09e0e3c1
   CapacitorHaptics: b3fb2869e72c4466e18ce9ccbeb60a3d8723b3d4
   CapacitorKeyboard: a86aa9e4741b6444a802df26440a92ae041b34a6
@@ -117,7 +117,7 @@ SPEC CHECKSUMS:
   Google-Maps-iOS-Utils: 66d6de12be1ce6d3742a54661e7a79cb317a9321
   GoogleMaps: 8939898920281c649150e0af74aa291c60f2e77d
   IONFilesystemLib: 89258b8e3e85465da93127d25d7ce37f977e8a6f
-  IONGeolocationLib: 81f33f88d025846946de2cf63b0c7628e7c6bc9d
+  IONGeolocationLib: 20f9d0248a0b5264511fb57a37e25dd2badf797a
 
 PODFILE CHECKSUM: 9eeb7d49b1c671faba48fce64488f190b0e878f2
 

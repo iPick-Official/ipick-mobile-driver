@@ -17,11 +17,6 @@ interface MapProps {
   zoom?: number;
 }
 
-const containerStyle = {
-  width: "100vw",
-  height: "100vh",
-};
-
 const mapOptions = {
   disableDefaultUI: true,
   zoomControl: false,
@@ -90,13 +85,19 @@ const Map: React.FC<MapProps> = ({
     scale: 8,
   };
 
+  // Dynamically adjust height
+  const containerStyle = {
+    width: "100vw",
+    height: isHomeScreen ? "100vh" : "70vh",
+  };
+
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}
       center={currentLocation ?? fallbackLocation}
       zoom={zoom ?? 15}
       options={mapOptions}
-      onIdle={onIdle}
+      // onIdle={onIdle}
       onLoad={(map) => {
         mapRef.current = map;
         onMapLoad?.(map);
@@ -124,7 +125,7 @@ const Map: React.FC<MapProps> = ({
         </>
       )}
 
-      {!isHomeScreen && (<Directions map={mapRef.current} />)}
+      {!isHomeScreen && <Directions map={mapRef.current} />}
     </GoogleMap>
   );
 };

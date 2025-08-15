@@ -1,31 +1,35 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Circle, DirectionsRenderer, Marker } from "@react-google-maps/api";
+import { DirectionsRenderer, Marker, OverlayView } from "@react-google-maps/api";
 import { useLocationContext } from "../contexts/LocationContext";
 import { postDriverLocation } from "../services/apiService";
+import { calculateHeading, interpolatePosition } from "../utils/interpolate";
 
 interface DirectionsProps {
   map: google.maps.Map | null;
+  autoZoom?: boolean;
 }
 
-const Directions: React.FC<DirectionsProps> = ({ map }) => {
+const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
   const [directions, setDirections] =
     useState<google.maps.DirectionsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [radius, setRadius] = useState(70);
-  const [growing, setGrowing] = useState(true);
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const lastRequestedOrigin = useRef<google.maps.LatLngLiteral | null>(null);
   const lastRequestedDestination = useRef<google.maps.LatLngLiteral | null>(
     null
   );
+  const previousLocationRef = useRef<google.maps.LatLngLiteral | null>(null);
+  const [animatedCarPosition, setAnimatedCarPosition] =
+    useState<google.maps.LatLngLiteral | null>(null);
+  const [carHeading, setCarHeading] = useState<number>(0);
+  const hasZoomedOnce = useRef(false);
 
   const {
     bookingId,
     tripStatus,
-    currentLocation,
+    currentLocation, setCurrentLocation,
     pickupCoords,
     dropoffCoords,
     setDistance: _setDistance,
@@ -37,25 +41,58 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
   const setEtaRef = useRef(_setEta);
   const setDurationInTrafficRef = useRef(_setDurationInTraffic);
 
-  const inTransitRef = useRef(tripStatus);
+  const tripStatusRef = useRef(tripStatus);
   const currentLocationRef = useRef(currentLocation);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRadius((prevRadius) => {
-        if (prevRadius >= 70) {
-          setGrowing(false);
-          return prevRadius - 1;
-        } else if (prevRadius <= 20) {
-          setGrowing(true);
-          return prevRadius + 1;
-        }
-        return growing ? prevRadius + 1 : prevRadius - 1;
-      });
-    }, 30);
+    if (!currentLocation) return;
 
-    return () => clearInterval(interval);
-  }, [growing]);
+    const prev = previousLocationRef.current;
+    previousLocationRef.current = currentLocation;
+
+    if (!prev) {
+      setAnimatedCarPosition(currentLocation);
+      return;
+    }
+
+    const heading = calculateHeading(prev, currentLocation);
+    setCarHeading(heading);
+
+    let frame = 0;
+    const totalFrames = 30;
+
+    const animate = () => {
+      frame++;
+      const progress = frame / totalFrames;
+      const newPos = interpolatePosition(prev, currentLocation, progress);
+      setAnimatedCarPosition(newPos);
+
+      if (frame < totalFrames) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [currentLocation]);
+
+  useEffect(() => {
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
+        const loc = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setCurrentLocation(loc);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(id);
+    };
+  }, []);
 
   useEffect(() => {
     setDistanceRef.current = _setDistance;
@@ -64,7 +101,7 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
   }, [_setDistance, _setEta, _setDurationInTraffic]);
 
   useEffect(() => {
-    inTransitRef.current = tripStatus;
+    tripStatusRef.current = tripStatus;
     currentLocationRef.current = currentLocation;
   }, [tripStatus, currentLocation]);
 
@@ -87,27 +124,29 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
   };
 
   useEffect(() => {
-    if (!pickupCoords || !dropoffCoords || !window.google?.maps) return;
+    if (!pickupCoords || !dropoffCoords || !window.google?.maps || !map) return;
 
     let origin: google.maps.LatLngLiteral;
     let destination: google.maps.LatLngLiteral;
 
     if ((tripStatus === 1 || tripStatus === 2) && currentLocation) {
       origin = currentLocation;
-      destination = pickupCoords!;
+      destination = pickupCoords;
     } else if (tripStatus === 3 && currentLocation) {
       origin = currentLocation;
-      destination = dropoffCoords!;
+      destination = dropoffCoords;
     } else {
-      origin = pickupCoords!;
-      destination = dropoffCoords!;
+      origin = pickupCoords;
+      destination = dropoffCoords;
     }
 
-    if (map) {
+    // Auto-zoom only the first time
+    if (autoZoom && !hasZoomedOnce.current && map) {
       const bounds = new google.maps.LatLngBounds();
       bounds.extend(origin);
       bounds.extend(destination);
       map.fitBounds(bounds);
+      hasZoomedOnce.current = true;
     }
 
     const originChanged =
@@ -141,6 +180,7 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
         },
         (result, status) => {
           setLoading(false);
+
           if (status === google.maps.DirectionsStatus.OK && result) {
             setDirections(result);
             lastRequestedOrigin.current = origin;
@@ -154,12 +194,13 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
                 setDurationInTrafficRef.current(leg.duration_in_traffic.value);
               }
             }
-
-            if (map) {
+            // Auto-zoom only first time after getting directions
+            if (autoZoom && !hasZoomedOnce.current && map) {
               const bounds = new google.maps.LatLngBounds();
               bounds.extend(origin);
               bounds.extend(destination);
               map.fitBounds(bounds);
+              hasZoomedOnce.current = true;
             }
           } else {
             setError("Failed to fetch directions.");
@@ -171,16 +212,7 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [pickupCoords, dropoffCoords, currentLocation, tripStatus]);
-
-  const blueDotIcon = {
-    path: google.maps.SymbolPath.CIRCLE,
-    fillColor: "#4285F4",
-    fillOpacity: 1,
-    strokeColor: "white",
-    strokeWeight: 2,
-    scale: 8,
-  };
+  }, [pickupCoords, dropoffCoords, tripStatus]);
 
   if (error) return <div style={{ color: "red" }}>{error}</div>;
   if (loading && !directions) return <div>Loading route...</div>;
@@ -194,34 +226,25 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
           options={{
             suppressMarkers: true,
             polylineOptions: {
-              strokeColor: "#008000", // green
+              strokeColor: "#008000",
               strokeWeight: 4,
             },
           }}
         />
-        <Marker position={pickupCoords!} icon={blueDotIcon} />
-        <Circle
-          center={pickupCoords!}
-          radius={radius}
-          options={{
-            strokeColor: "#4285F4",
-            strokeOpacity: 0.6,
-            strokeWeight: 2,
-            fillColor: "#4285F4",
-            fillOpacity: 0.2,
-            clickable: false,
-            draggable: false,
-            editable: false,
-            visible: true,
-            zIndex: 1,
+        <Marker
+          position={pickupCoords!}
+          icon={{
+            url: "/assets/markers/user.png",
+            scaledSize: new google.maps.Size(30, 30),
+            anchor: new google.maps.Point(20, 30),
           }}
         />
         <Marker
           position={dropoffCoords!}
           icon={{
-            url: "/assets/icons/destination.gif",
-            scaledSize: new google.maps.Size(40, 40),
-            anchor: new google.maps.Point(20, 40),
+            url: "/assets/markers/placeholder.png",
+            scaledSize: new google.maps.Size(30, 30),
+            anchor: new google.maps.Point(20, 30),
           }}
         />
       </>
@@ -241,15 +264,39 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
             },
           }}
         />
+        {animatedCarPosition && (
+          <OverlayView
+            position={animatedCarPosition}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          >
+            <div
+              style={{
+                transform: `rotate(${carHeading}deg)`,
+                transformOrigin: "center",
+                width: "40px",
+                height: "40px",
+                transition: "transform 0.2s linear",
+              }}
+            >
+              <img
+                src="/assets/markers/hood.png"
+                alt="Car"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
+            </div>
+          </OverlayView>
+        )}
         <Marker
-          position={currentLocation}
+          position={pickupCoords!}
           icon={{
-            url: "/assets/icons/car.svg",
+            url: "/assets/markers/user.png",
             scaledSize: new google.maps.Size(30, 30),
             anchor: new google.maps.Point(20, 30),
           }}
         />
-        <Marker position={pickupCoords!} icon={blueDotIcon} />
       </>
     );
   }
@@ -267,20 +314,37 @@ const Directions: React.FC<DirectionsProps> = ({ map }) => {
             },
           }}
         />
-        <Marker
-          position={currentLocation!}
-          icon={{
-            url: "/assets/icons/car.svg",
-            scaledSize: new google.maps.Size(30, 30),
-            anchor: new google.maps.Point(20, 30),
-          }}
-        />
+        {animatedCarPosition && (
+          <OverlayView
+            position={animatedCarPosition}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          >
+            <div
+              style={{
+                transform: `rotate(${carHeading}deg)`,
+                transformOrigin: "center",
+                width: "40px",
+                height: "40px",
+                transition: "transform 0.2s linear",
+              }}
+            >
+              <img
+                src="/assets/markers/hood.png"
+                alt="Car"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
+            </div>
+          </OverlayView>
+        )}
         <Marker
           position={dropoffCoords!}
           icon={{
-            url: "/assets/icons/destination.gif",
-            scaledSize: new google.maps.Size(40, 40),
-            anchor: new google.maps.Point(20, 40),
+            url: "/assets/markers/placeholder.png",
+            scaledSize: new google.maps.Size(30, 30),
+            anchor: new google.maps.Point(20, 30),
           }}
         />
       </>
