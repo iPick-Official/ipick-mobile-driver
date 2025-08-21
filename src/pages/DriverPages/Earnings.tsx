@@ -24,6 +24,7 @@ import BackButton from "../../components/BackButton";
 import { fetchRideHistory } from "../../services/apiService";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capacitor-community/file-opener";
+import RatingsModal from "../../components/RatingsModal";
 
 const Earnings: React.FC = () => {
   const [rideHistory, setRideHistory] = useState<any[]>([]);
@@ -36,6 +37,11 @@ const Earnings: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
   const [bookingDetails, setBookingDetails] = useState<any | null>(null);
+  const [isRatingsOpen, setIsRatingsOpen] = useState(false);
+
+  const rateDriver = () => {
+    setIsRatingsOpen(true);
+  }
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -167,9 +173,8 @@ const Earnings: React.FC = () => {
       const dataUrl = canvas.toDataURL("image/png");
       const base64Data = dataUrl.split(",")[1];
 
-      const fileName = `receipt-${
-        bookingDetails?.ReferenceNumber || "trip"
-      }.png`;
+      const fileName = `receipt-${bookingDetails?.ReferenceNumber || "trip"
+        }.png`;
 
       // Save to filesystem
       const savedFile = await Filesystem.writeFile({
@@ -216,71 +221,71 @@ const Earnings: React.FC = () => {
           >
             {loading
               ? Array.from({ length: 4 }).map((_, index) => (
-                  <IonCard
-                    key={index}
-                    className="profile-item"
-                    style={{
-                      minWidth: "140px",
-                      background:
-                        "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
-                    }}
-                  >
-                    <IonCardContent>
-                      <IonSkeletonText
-                        animated
-                        style={{ width: "90px", height: "65px" }}
-                      />
-                    </IonCardContent>
-                  </IonCard>
-                ))
+                <IonCard
+                  key={index}
+                  className="profile-item"
+                  style={{
+                    minWidth: "140px",
+                    background:
+                      "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
+                  }}
+                >
+                  <IonCardContent>
+                    <IonSkeletonText
+                      animated
+                      style={{ width: "90px", height: "65px" }}
+                    />
+                  </IonCardContent>
+                </IonCard>
+              ))
               : [
-                  {
-                    label: "This day",
-                    value: `₱${todayIncome.toFixed(2)}`,
-                    icon: "assets/icons/income-daily.gif",
-                  },
-                  {
-                    label: "This Week",
-                    value: `₱${weekIncome.toFixed(2)}`,
-                    icon: "assets/icons/income-weekly.gif",
-                  },
-                  {
-                    label: "This Month",
-                    value: `₱${monthIncome.toFixed(2)}`,
-                    icon: "assets/icons/income-monthly.gif",
-                  },
-                  {
-                    label: "This Year",
-                    value: `₱${yearIncome.toFixed(2)}`,
-                    icon: "assets/icons/income-anually.gif",
-                  },
-                ].map((item, index) => (
-                  <IonCard
-                    key={index}
-                    className="profile-item"
-                    style={{
-                      minWidth: "140px",
-                      background:
-                        "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
-                    }}
-                  >
-                    <IonCardContent>
-                      <img
-                        src={item.icon}
-                        alt="Earnings"
-                        style={{
-                          width: "35px",
-                          height: "35px",
-                          marginBottom: "4px",
-                        }}
-                      />
-                      <IonText color="light">
-                        <h6>{item.label}</h6>
-                        <strong>{item.value}</strong>
-                      </IonText>
-                    </IonCardContent>
-                  </IonCard>
-                ))}
+                {
+                  label: "This day",
+                  value: `₱${todayIncome.toFixed(2)}`,
+                  icon: "assets/icons/income-daily.gif",
+                },
+                {
+                  label: "This Week",
+                  value: `₱${weekIncome.toFixed(2)}`,
+                  icon: "assets/icons/income-weekly.gif",
+                },
+                {
+                  label: "This Month",
+                  value: `₱${monthIncome.toFixed(2)}`,
+                  icon: "assets/icons/income-monthly.gif",
+                },
+                {
+                  label: "This Year",
+                  value: `₱${yearIncome.toFixed(2)}`,
+                  icon: "assets/icons/income-anually.gif",
+                },
+              ].map((item, index) => (
+                <IonCard
+                  key={index}
+                  className="profile-item"
+                  style={{
+                    minWidth: "140px",
+                    background:
+                      "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
+                  }}
+                >
+                  <IonCardContent>
+                    <img
+                      src={item.icon}
+                      alt="Earnings"
+                      style={{
+                        width: "35px",
+                        height: "35px",
+                        marginBottom: "4px",
+                      }}
+                    />
+                    <IonText color="light">
+                      <h6>{item.label}</h6>
+                      <strong>{item.value}</strong>
+                    </IonText>
+                  </IonCardContent>
+                </IonCard>
+              ))}
           </div>
 
           {/* Date Picker */}
@@ -387,7 +392,16 @@ const Earnings: React.FC = () => {
             collapse="fade"
           >
             <IonToolbar>
-              <IonTitle>Receipt</IonTitle>
+              <IonButton
+                fill="outline"
+                shape="round"
+                color="tertiary"
+                onClick={rateDriver}
+                size="small"
+                className="custom-button"
+              >
+                Rate your passenger
+              </IonButton>
               <IonButtons slot="end">
                 <IonIcon
                   color="danger"
@@ -412,7 +426,16 @@ const Earnings: React.FC = () => {
                     {/* Booking Details */}
                     {[
                       {
-                        label: "Reference #",
+                        label: "Date",
+                        value: bookingDetails?.CreatedAt
+                          ? new Date(bookingDetails.CreatedAt).toLocaleString("en-PH", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })
+                          : "",
+                      },
+                      {
+                        label: "Receipt #",
                         value: bookingDetails.ReferenceNumber,
                       },
                       { label: "Driver", value: bookingDetails.Driver },
@@ -524,7 +547,7 @@ const Earnings: React.FC = () => {
                         ₱{bookingDetails.TotalFare.toFixed(2)}
                       </IonText>
                     </IonItem>
-                    {/* {[
+                    {[
                       {
                         label: "Commision",
                         value: "20%",
@@ -559,11 +582,13 @@ const Earnings: React.FC = () => {
                           </div>
                         </div>
                       </IonItem>
-                    ))} */}
+                    ))}
                   </IonList>
                   <IonButton
+                    className="custom-button"
                     expand="block"
-                    fill="default"
+                    fill="outline"
+                    shape="round"
                     color="primary"
                     onClick={captureScreenshot}
                   >
@@ -575,6 +600,14 @@ const Earnings: React.FC = () => {
           </IonContent>
         </IonModal>
       </IonContent>
+      <RatingsModal
+        isOpen={isRatingsOpen}
+        onClose={() => setIsRatingsOpen(false)}
+        bookingId={bookingDetails?._id ?? ""}
+        target="rider"
+        name={bookingDetails?.Passenger}
+        totalFare={bookingDetails?.TotalFare ?? 0} // ✅ always a number
+      />
     </IonPage>
   );
 };

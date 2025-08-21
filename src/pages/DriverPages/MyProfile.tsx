@@ -150,7 +150,7 @@ const MyProfile: React.FC = () => {
                   color: "#292929",
                 }}
               >
-                {myRating}
+                {myRating.toFixed(1)}
               </IonLabel>
               <IonIcon size="small" icon={starSharp} color="warning" />
             </div>

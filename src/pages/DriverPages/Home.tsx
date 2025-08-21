@@ -323,7 +323,6 @@ const Home: React.FC = () => {
       if ((tripStatus ?? 0) > 0 && (tripStatus ?? 0) < 4) {
         await modalRef.current?.dismiss();
         history.push("/driver-trip");
-        window.location.reload();
       }
     };
     handleTripStatus();
@@ -376,7 +375,6 @@ const Home: React.FC = () => {
           body: JSON.stringify(reqBody),
         }
       );
-      window.location.reload();
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         console.error("Booking failed:", errorData || response.statusText);
@@ -385,6 +383,7 @@ const Home: React.FC = () => {
 
       const result = await response.json();
       console.log("Booking successful:", result);
+      window.location.reload();
       const selectedBooking = users.find(
         (user: any) => user._id === bookingId && user.riderId === riderId
       );
@@ -551,7 +550,7 @@ const Home: React.FC = () => {
                             <IonText color="medium">
                               <p className="user-text-small">
                                 <strong>Rating:</strong>{" "}
-                                {user?.userRating ?? 5}
+                                {user?.userRating?.toFixed(1) ?? 5}
                               </p>
                             </IonText>
                             <IonText color="medium">

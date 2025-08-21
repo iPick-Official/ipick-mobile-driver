@@ -27,6 +27,7 @@ import { useLocationContext } from "../../contexts/LocationContext";
 import { Message } from "../../types/messageTypes";
 import CustomAlert from "../../components/CustomAlert";
 import { useAuth } from "../../contexts/AuthContext";
+import RatingsModal from "../../components/RatingsModal";
 
 const DriverTrip: React.FC = () => {
   const history = useHistory();
@@ -38,6 +39,7 @@ const DriverTrip: React.FC = () => {
   const [socketAlerts, setSocketAlerts] = useState(false);
   const [statusHead, setStatusHead] = useState<string>("");
   const [statusMsg, setStatusMsg] = useState<string>("");
+  const [isRatingsOpen, setIsRatingsOpen] = useState(false);
 
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [header, setHeader] = useState<any | null>(null);
@@ -55,7 +57,7 @@ const DriverTrip: React.FC = () => {
     riderName, setRiderName,
     setRiderMobile,
     tripStatus, setTripStatus,
-    setPickupCoords, setDropoffCoords
+    setPickupCoords, setDropoffCoords,
   } = useLocationContext();
 
   useEffect(() => {
@@ -114,6 +116,12 @@ const DriverTrip: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (tripStatus === 4) {
+      setIsRatingsOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchAll = async () => {
       if (!hasFetchedBooking.current) {
         const booking = await fetchBookingDetails();
@@ -163,7 +171,15 @@ const DriverTrip: React.FC = () => {
 
   const promptEndTrip = () => {
     const fare = bookingData.travelFare.toFixed(2);
-    showPrompt("End Trip?", `Please collect payment of ₱${fare}`, endTrip);
+
+    showPrompt(
+      "End Trip?",
+      `Please collect payment of ₱${fare}`,
+      async () => {
+        await endTrip();            
+        setIsRatingsOpen(true);
+      }
+    );
   };
 
   const updateRideStatus = async (
@@ -225,11 +241,10 @@ const DriverTrip: React.FC = () => {
     }
   };
 
-
   const confirmCancelRide = () => updateRideStatus(0, true);
   const arrivedAtPickup = () => updateRideStatus(2);
   const confirmPassenger = () => updateRideStatus(3, false);
-  const endTrip = () => updateRideStatus(4, true);
+  const endTrip = () => updateRideStatus(4);
 
   const navigateToLocation = (coordinates: [number, number]) => {
     if (!coordinates) {
@@ -267,7 +282,7 @@ const DriverTrip: React.FC = () => {
               <div>
                 <IonText><p className="driver-name">{bookingData?.riderData?.name}</p></IonText>
                 <IonText color="medium" className="driver-rating">
-                  {bookingRatings ?? 5} <IonIcon color="tertiary" icon={star} />
+                  {bookingRatings?.toFixed(1) ?? 5} <IonIcon color="tertiary" icon={star} />
                 </IonText>
               </div>
             </div>
@@ -361,6 +376,15 @@ const DriverTrip: React.FC = () => {
         onClose={() => { setSocketAlerts(false) }}
         header={statusHead}
         message={statusMsg}
+      />
+      <RatingsModal
+        isOpen={isRatingsOpen}
+        onClose={() => setIsRatingsOpen(false)}
+        bookingId={bookingId}
+        target="rider"
+        name={riderName}
+        totalFare={bookingData?.travelFare ? bookingData.travelFare : 0}
+        redirectOnClose
       />
     </IonPage>
   );
