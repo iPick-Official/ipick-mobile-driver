@@ -50,7 +50,6 @@ const Home: React.FC = () => {
     bookingId, setBookingId,
     riderId, setRiderId,
     currentLocation, setCurrentLocation,
-
   } = useLocationContext();
 
   const modalRef = useRef<HTMLIonModalElement>(null);
@@ -82,6 +81,10 @@ const Home: React.FC = () => {
 
   const DISABLE_TIME = 30;
   const STORAGE_KEY = "refresh_disabled_until";
+
+  const coords: [number, number] | null = currentLocation
+    ? [currentLocation.lat, currentLocation.lng]
+    : null;
 
   useEffect(() => {
     const disabledUntil = localStorage.getItem(STORAGE_KEY);
@@ -218,15 +221,40 @@ const Home: React.FC = () => {
     });
   };
 
-  useEffect(() => {
+  const handleRiderUpdates = ({
+    users,
+    currentLocation,
+    driverData,
+    distanceLimit,
+    riderDistances,
+    prevUsersRef,
+    prevRiderDistancesRef,
+    fetchRiderDistances,
+    setRiderDistances,
+  }: {
+    users: any[];
+    currentLocation: [number, number] | null;
+    driverData: any;
+    distanceLimit: number | string;
+    riderDistances: any[];
+    prevUsersRef: React.RefObject<any[] | null>;
+    prevRiderDistancesRef: React.RefObject<any[] | null>;
+    fetchRiderDistances: Function;
+    setRiderDistances: Function;
+  }) => {
     if (!users || !Array.isArray(users) || !currentLocation) return;
+
     const prevUsers = prevUsersRef.current;
-    const currentUserIds = users.map((u: { riderId: string }) => u?.riderId);
+    const currentUserIds = users.map((u) => u?.riderId);
     const prevUserIds = (prevUsers || []).map((u) => u?.riderId);
+
     const hasNewUsers =
       currentUserIds.length > prevUserIds.length &&
       currentUserIds.some((id: string) => !prevUserIds.includes(id));
-    const riderDistancesChanged = JSON.stringify(riderDistances ?? []) !== JSON.stringify(prevRiderDistancesRef.current ?? []);
+
+    const riderDistancesChanged =
+      JSON.stringify(riderDistances ?? []) !==
+      JSON.stringify(prevRiderDistancesRef.current ?? []);
 
     if (!hasNewUsers && !riderDistancesChanged) return;
 
@@ -240,7 +268,7 @@ const Home: React.FC = () => {
     const filteredUsersByCarType = filterByCarType(users, allowedSeatTypes);
 
     const ridersPickupCoordinates = filteredUsersByCarType
-      .map((rider: { riderId: any; origin: { coordinates: any } }) => ({
+      .map((rider: { riderId: string; origin: { coordinates: any } }) => ({
         riderId: rider?.riderId,
         coordinates: rider?.origin?.coordinates,
       }))
@@ -266,8 +294,27 @@ const Home: React.FC = () => {
     prevUsersRef.current = users;
     prevRiderDistancesRef.current = riderDistances;
 
-    return () => clearTimeout(timeout); // cleanup debounce
+    return timeout; // return so we can cleanup
+  };
+
+  useEffect(() => {
+    const timeout = handleRiderUpdates({
+      users,
+      currentLocation: coords,
+      driverData,
+      distanceLimit,
+      riderDistances: riderDistances || [],
+      prevUsersRef,
+      prevRiderDistancesRef,
+      fetchRiderDistances,
+      setRiderDistances,
+    });
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   }, [users, currentLocation, driverData, distanceLimit, riderDistances]);
+
 
   const checkWallet = async (): Promise<boolean> => {
     try {

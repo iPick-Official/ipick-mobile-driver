@@ -1,30 +1,42 @@
 // utils/fetchRiderDistances.ts
+export interface RiderDistance {
+  riderId: string;
+  distance: number;
+}
+
+export interface RiderPickup {
+  riderId: string;
+  coordinates: [number, number];
+}
+
+export interface FetchRiderDistancesParams {
+  currentLocation: { lat: number; lng: number } | [number, number];
+  ridersPickupCoordinates: RiderPickup[];
+  distanceLimit: number;
+  callback: (distances: RiderDistance[]) => void;
+}
 
 export const fetchRiderDistances = ({
   currentLocation,
   ridersPickupCoordinates,
   distanceLimit,
   callback,
-}: {
-  currentLocation: { lat: number; lng: number };
-  ridersPickupCoordinates: { riderId: string; coordinates: [number, number] }[];
-  distanceLimit: number;
-  callback: (distances: { riderId: string; distance: number }[]) => void;
-}) => {
+}: FetchRiderDistancesParams) => {
   if (!window.google || !google.maps) {
     console.error("Google Maps JS API not loaded.");
     return;
   }
 
-  const service = new google.maps.DistanceMatrixService();
+  const origin =
+    Array.isArray(currentLocation)
+      ? new google.maps.LatLng(currentLocation[0], currentLocation[1])
+      : new google.maps.LatLng(currentLocation.lat, currentLocation.lng);
 
-  const origin = new google.maps.LatLng(
-    currentLocation.lat,
-    currentLocation.lng
-  );
   const destinations = ridersPickupCoordinates.map(
     (r) => new google.maps.LatLng(r.coordinates[0], r.coordinates[1])
   );
+
+  const service = new google.maps.DistanceMatrixService();
 
   service.getDistanceMatrix(
     {
@@ -35,23 +47,24 @@ export const fetchRiderDistances = ({
     (response, status) => {
       if (status !== "OK" || !response?.rows?.length) {
         console.error("❌ DistanceMatrix request failed:", status);
+        callback([]);
         return;
       }
 
       const elements = response.rows[0].elements;
-      const distances = ridersPickupCoordinates.map((rider, idx) => {
-        const element = elements[idx];
-        const distanceText = element?.distance?.text ?? "0 km";
-        const numericDistance = parseFloat(distanceText.replace(/[^\d.]/g, ""));
-        return {
-          riderId: rider.riderId,
-          distance: numericDistance,
-        };
-      });
+      const distances: RiderDistance[] = ridersPickupCoordinates.map(
+        (rider, idx) => {
+          const element = elements[idx];
+          const numericDistance = element?.distance
+            ? parseFloat(element.distance.text.replace(/[^\d.]/g, ""))
+            : 0;
+          return { riderId: rider.riderId, distance: numericDistance };
+        }
+      );
 
       const filtered = distances
         .sort((a, b) => a.distance - b.distance)
-        .filter((d) => d.distance <= Number(distanceLimit));
+        .filter((d) => d.distance <= distanceLimit);
 
       console.log(`✅ Riders within ${distanceLimit} km:`, filtered);
       callback(filtered);

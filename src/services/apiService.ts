@@ -301,30 +301,6 @@ export const fetchRiderDetails = async (riderId: any) => {
   }
 };
 
-export const fetchVersion = async () => {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT}/api/AppVersion`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching rider details:", error);
-    return null;
-  }
-};
-
 export const sendMsg = async (
   riderId: string,
   bookingId: string,
