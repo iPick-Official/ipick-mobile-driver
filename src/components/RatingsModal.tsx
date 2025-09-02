@@ -55,12 +55,12 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
 
   const submitRatings = async () => {
     if (!rating || rating <= 0) {
-      setToastMessage("⚠️ Please provide a rating.");
+      setToastMessage("Please provide a rating.");
       return;
     }
 
     if (!token) {
-      setToastMessage("⚠️ Missing authentication token.");
+      setToastMessage("Missing authentication token.");
       return;
     }
 
@@ -81,11 +81,11 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
         throw new Error("Failed to submit rating");
       }
 
-      setToastMessage("✅ Rating submitted successfully!");
+      setToastMessage("Rating submitted successfully!");
       handleClose();
     } catch (err) {
       console.error(err);
-      setToastMessage("❌ Error submitting rating.");
+      setToastMessage("Error submitting rating.");
     }
   };
 

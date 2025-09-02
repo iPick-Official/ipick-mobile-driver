@@ -227,7 +227,23 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
             suppressMarkers: true,
             polylineOptions: {
               strokeColor: "#008000",
-              strokeWeight: 4,
+              strokeWeight: 6,
+              strokeOpacity: 1,
+              zIndex: 10,
+            },
+          }}
+        />
+
+        {/* Outline layer for shadow effect */}
+        <DirectionsRenderer
+          directions={directions}
+          options={{
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: "#000000",
+              strokeWeight: 8,
+              strokeOpacity: 0.8,
+              zIndex: 5,
             },
           }}
         />
@@ -260,7 +276,23 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
             suppressMarkers: true,
             polylineOptions: {
               strokeColor: "#008000",
-              strokeWeight: 4,
+              strokeWeight: 6,
+              strokeOpacity: 1,
+              zIndex: 10,
+            },
+          }}
+        />
+
+        {/* Outline layer for shadow effect */}
+        <DirectionsRenderer
+          directions={directions}
+          options={{
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: "#000000",
+              strokeWeight: 8,
+              strokeOpacity: 0.8,
+              zIndex: 5,
             },
           }}
         />
@@ -309,8 +341,24 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
           options={{
             suppressMarkers: true,
             polylineOptions: {
-              strokeColor: "#008000", // orange
-              strokeWeight: 4,
+              strokeColor: "#008000",
+              strokeWeight: 6,
+              strokeOpacity: 1,
+              zIndex: 10,
+            },
+          }}
+        />
+
+        {/* Outline layer for shadow effect */}
+        <DirectionsRenderer
+          directions={directions}
+          options={{
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: "#000000",
+              strokeWeight: 8,
+              strokeOpacity: 0.8,
+              zIndex: 5,
             },
           }}
         />

@@ -58,6 +58,7 @@ const DriverTrip: React.FC = () => {
     setRiderMobile,
     tripStatus, setTripStatus,
     setPickupCoords, setDropoffCoords,
+    notes, setNotes,
   } = useLocationContext();
 
   useEffect(() => {
@@ -106,6 +107,7 @@ const DriverTrip: React.FC = () => {
         lat: data?.destination.coordinates[0],
         lng: data?.destination.coordinates[1],
       });
+      setNotes(data?.notes);
     } catch (error) {
       console.error("Error fetching active jobs:", error);
     }
@@ -176,7 +178,7 @@ const DriverTrip: React.FC = () => {
       "End Trip?",
       `Please collect payment of ₱${fare}`,
       async () => {
-        await endTrip();            
+        await endTrip();
         setIsRatingsOpen(true);
       }
     );
@@ -280,7 +282,7 @@ const DriverTrip: React.FC = () => {
             <div className="driver-details">
               <IonImg src="./favicon.png" className="driver-avatar" />
               <div>
-                <IonText><p className="driver-name">{bookingData?.riderData?.name}</p></IonText>
+                <IonText><p className="driver-name">{bookingData?.riderData.name}</p></IonText>
                 <IonText color="medium" className="driver-rating">
                   {bookingRatings?.toFixed(1) ?? 5} <IonIcon color="tertiary" icon={star} />
                 </IonText>
@@ -312,6 +314,13 @@ const DriverTrip: React.FC = () => {
               </IonLabel>
               <IonIcon slot="end" icon={mapOutline} size="small" color="dark" />
             </IonItem>
+            {notes &&
+              <IonItem lines="none">
+                <IonLabel color="dark">
+                  <strong>Notes</strong>
+                  <p>{bookingData?.notes}</p>
+                </IonLabel>
+              </IonItem>}
           </IonList>
 
           {/* Fare & Payment */}

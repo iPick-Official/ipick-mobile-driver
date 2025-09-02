@@ -66,7 +66,7 @@ export const fetchRiderDistances = ({
         .sort((a, b) => a.distance - b.distance)
         .filter((d) => d.distance <= distanceLimit);
 
-      console.log(`✅ Riders within ${distanceLimit} km:`, filtered);
+      // console.log(`✅ Riders within ${distanceLimit} km:`, filtered);
       callback(filtered);
     }
   );

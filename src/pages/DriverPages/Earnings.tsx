@@ -547,7 +547,7 @@ const Earnings: React.FC = () => {
                         ₱{bookingDetails.TotalFare.toFixed(2)}
                       </IonText>
                     </IonItem>
-                    {[
+                    {/* {[
                       {
                         label: "Commision",
                         value: "20%",
@@ -582,7 +582,7 @@ const Earnings: React.FC = () => {
                           </div>
                         </div>
                       </IonItem>
-                    ))}
+                    ))} */}
                   </IonList>
                   <IonButton
                     className="custom-button"
@@ -606,7 +606,7 @@ const Earnings: React.FC = () => {
         bookingId={bookingDetails?._id ?? ""}
         target="rider"
         name={bookingDetails?.Passenger}
-        totalFare={bookingDetails?.TotalFare ?? 0} // ✅ always a number
+        totalFare={bookingDetails?.TotalFare ?? 0}
       />
     </IonPage>
   );

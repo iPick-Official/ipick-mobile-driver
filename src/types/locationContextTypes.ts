@@ -70,5 +70,7 @@ export interface LocationContextType {
   setBookingId: (bookingId: string) => void;
   riderId: string;
   setRiderId: (riderId: string) => void;
+  notes: string;
+  setNotes: (notes: string) => void;
   resetAll: () => void;
 }

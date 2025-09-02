@@ -64,6 +64,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     riderRatings, _setRiderRatings,
     bookingId, _setBookingId,
     riderId, _setRiderId,
+    notes, _setNotes,
   } = useRideState(initialState);
 
   const updateStorage = (key: string, value: any) => {
@@ -93,6 +94,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     _setRiderRatings(5);
     _setBookingId("");
     _setRiderId("");
+    _setNotes("");
   };
 
   const withStorage = (key: string, setter: React.Dispatch<any>) => {
@@ -170,6 +172,8 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
         setBookingId: withStorage("bookingId", _setBookingId),
         riderId,
         setRiderId: withStorage("riderId", _setRiderId),
+        notes,
+        setNotes: withStorage("notes", _setNotes),
         resetAll,
       }}
     >

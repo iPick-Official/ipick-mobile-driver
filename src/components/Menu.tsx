@@ -103,6 +103,7 @@ const Menu: React.FC = () => {
                 }
                 routerLink={action ? undefined : url}
                 className={location.pathname === url ? "selected" : ""}
+                style={{ fontWeight: "600" }}
                 lines="none"
                 detail={false}
               >

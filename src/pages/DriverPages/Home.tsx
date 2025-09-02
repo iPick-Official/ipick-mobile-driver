@@ -579,6 +579,14 @@ const Home: React.FC = () => {
                                   ?.map((part: string) => part.trim())
                                   ?.join(", ") || "Unknown destination"}
                               </p>
+                              {user?.notes && (
+                                <p className="user-text">
+                                  <strong>Notes:</strong>{" "}
+                                  {user.notes.length > 20
+                                    ? `${user.notes.slice(0, 20)}...`
+                                    : user.notes}
+                                </p>
+                              )}
                             </IonText>
                           </div>
 
