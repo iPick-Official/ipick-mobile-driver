@@ -72,5 +72,7 @@ export interface LocationContextType {
   setRiderId: (riderId: string) => void;
   notes: string;
   setNotes: (notes: string) => void;
+  finalFare: number | undefined;
+  setFinalFare: (finalFare: number) => void;
   resetAll: () => void;
 }

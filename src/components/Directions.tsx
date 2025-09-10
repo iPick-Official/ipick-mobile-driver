@@ -164,7 +164,10 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
 
     debounceRef.current = setTimeout(() => {
       const directionsService = new google.maps.DirectionsService();
-      postDriverLocation(bookingId);
+      postDriverLocation(bookingId, {
+        latitude: currentLocation!.lat,
+        longitude: currentLocation!.lng,
+      });
       setLoading(true);
       setError(null);
 

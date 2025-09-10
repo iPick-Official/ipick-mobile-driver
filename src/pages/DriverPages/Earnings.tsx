@@ -6,6 +6,8 @@ import {
   IonContent,
   IonHeader,
   IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonInput,
   IonItem,
   IonLabel,
@@ -38,10 +40,18 @@ const Earnings: React.FC = () => {
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
   const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [isRatingsOpen, setIsRatingsOpen] = useState(false);
+  const ITEMS_PER_PAGE = 15;
+  const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
 
-  const rateDriver = () => {
-    setIsRatingsOpen(true);
-  }
+  const loadMoreData = (event: CustomEvent<void>) => {
+    setTimeout(() => {
+      setItemsToShow((prev) => {
+        const newCount = prev + ITEMS_PER_PAGE;
+        return newCount > rideHistory.length ? rideHistory.length : newCount;
+      });
+      (event.target as HTMLIonInfiniteScrollElement).complete();
+    }, 500);
+  };
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -53,6 +63,10 @@ const Earnings: React.FC = () => {
 
     loadHistory();
   }, []);
+
+  const rateDriver = () => {
+    setIsRatingsOpen(true);
+  }
 
   const selected = new Date(selectedDate);
   const selectedYear = selected.getFullYear();
@@ -100,15 +114,6 @@ const Earnings: React.FC = () => {
       return d.getFullYear() === selectedYear;
     })
     .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
-
-  const filteredTrips = rideHistory.filter((ride) => {
-    const d = new Date(ride.updatedAt);
-    return (
-      d.getFullYear() === selectedYear &&
-      d.getMonth() === selectedMonth &&
-      d.getDate() === selectedDay
-    );
-  });
 
   const openReceipt = async (trip: any) => {
     setSelectedTrip(trip);
@@ -287,21 +292,6 @@ const Earnings: React.FC = () => {
                 </IonCard>
               ))}
           </div>
-
-          {/* Date Picker */}
-          <IonItem lines="none" className="input-field">
-            <IonInput
-              color="dark"
-              inputMode="numeric"
-              placeholder="Select Date"
-              label="Filter Trips By Date"
-              labelPlacement="floating"
-              type="date"
-              value={selectedDate}
-              onIonChange={(e) => setSelectedDate(e.detail.value || "")}
-              className="floating-label-dark"
-            />
-          </IonItem>
         </IonToolbar>
       </IonHeader>
 
@@ -322,7 +312,7 @@ const Earnings: React.FC = () => {
                 />
               </IonItem>
             ))
-          ) : filteredTrips.length === 0 ? (
+          ) : rideHistory.length === 0 ? (
             <div
               className="ion-no-border ion-text-center ion-padding"
               style={{
@@ -330,8 +320,7 @@ const Earnings: React.FC = () => {
                 flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
-              }}
-            >
+              }}>
               <IonText>
                 <p>No Trips today.</p>
               </IonText>
@@ -342,43 +331,56 @@ const Earnings: React.FC = () => {
               />
             </div>
           ) : (
-            filteredTrips
-              .sort(
-                (a, b) =>
-                  new Date(b.updatedAt).getTime() -
-                  new Date(a.updatedAt).getTime()
-              )
-              .map((trip, idx) => (
-                <IonItem
-                  lines="none"
-                  className="card-style"
-                  button
-                  key={trip._id || idx}
-                  onClick={() => {
-                    setSelectedTrip(trip);
-                    setShowModal(true);
-                    openReceipt(trip);
-                  }}
-                >
-                  <IonLabel>
-                    <h6>Trip Earnings</h6>
-                    <p>
-                      {new Date(trip.updatedAt).toLocaleString()}
-                      <br />
-                      <small>
-                        From: {trip.origin?.name || "Unknown"} <br />
-                        To: {trip.destination?.name || "Unknown"}
-                      </small>
-                    </p>
-                  </IonLabel>
-                  <IonText color="primary" slot="end">
-                    <strong>₱{(trip.travelFare || 0).toFixed(2)}</strong>
-                  </IonText>
-                </IonItem>
-              ))
+            <>
+              {rideHistory
+                .sort(
+                  (a, b) =>
+                    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                )
+                .slice(0, itemsToShow)
+                .map((trip, idx) => (
+                  <IonItem
+                    lines="none"
+                    className="card-style"
+                    button
+                    key={trip._id || idx}
+                    onClick={() => {
+                      setSelectedTrip(trip);
+                      setShowModal(true);
+                      openReceipt(trip);
+                    }}
+                  >
+                    <IonLabel>
+                      <h6>Trip Earnings</h6>
+                      <p>
+                        {new Date(trip.updatedAt).toLocaleString()}
+                        <br />
+                        <small>
+                          From: {trip.origin?.name || "Unknown"} <br />
+                          To: {trip.destination?.name || "Unknown"}
+                        </small>
+                      </p>
+                    </IonLabel>
+                    <IonText color="primary" slot="end">
+                      <strong>₱{(trip.travelFare || 0).toFixed(2)}</strong>
+                    </IonText>
+                  </IonItem>
+                ))}
+
+              {/* Load More button */}
+              <IonInfiniteScroll
+                onIonInfinite={loadMoreData}
+                threshold="100px"
+                disabled={itemsToShow >= rideHistory.length}
+              >
+                <IonInfiniteScrollContent
+                  loadingSpinner="crescent"
+                  loadingText="Loading more rides..."
+                />
+              </IonInfiniteScroll>
+            </>
           )}
         </IonList>
-
         {/* Modal for trip receipt */}
         <IonModal
           trigger="open-modal"
@@ -547,42 +549,6 @@ const Earnings: React.FC = () => {
                         ₱{bookingDetails.TotalFare.toFixed(2)}
                       </IonText>
                     </IonItem>
-                    {/* {[
-                      {
-                        label: "Commision",
-                        value: "20%",
-                        total: `₱-${(bookingDetails.TotalFare * 0.2).toFixed(
-                          2
-                        )}`,
-                        color: "medium",
-                      },
-                      {
-                        label: "Earnings",
-                        total: `₱${(
-                          bookingDetails.TotalFare -
-                          bookingDetails.TotalFare * 0.2
-                        ).toFixed(2)}`,
-                        color: "medium",
-                      },
-                    ].map((f, idx) => (
-                      <IonItem
-                        key={`fare-${idx}`}
-                        lines="full"
-                        style={{ fontSize: "0.9rem", fontWeight: "bolder" }}
-                      >
-                        <div style={{ display: "flex", width: "100%" }}>
-                          <div style={{ flex: 2 }}>
-                            <IonLabel color={f.color}>{f.label}</IonLabel>
-                          </div>
-                          <div style={{ flex: 2 }}>
-                            <IonText color={f.color}>{f.value}</IonText>
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <IonText color={f.color}>{f.total}</IonText>
-                          </div>
-                        </div>
-                      </IonItem>
-                    ))} */}
                   </IonList>
                   <IonButton
                     className="custom-button"

@@ -19,6 +19,8 @@ import {
   IonImg,
   IonSelect,
   IonSelectOption,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from "@ionic/react";
 import BackButton from "../../components/BackButton";
 import { searchOutline, closeOutline } from "ionicons/icons";
@@ -32,9 +34,6 @@ const Wallet: React.FC = () => {
   const userId = localStorage.getItem("userId");
   const usertType = localStorage.getItem("userType");
   const history = useHistory();
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
   const [loading, setLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -50,7 +49,6 @@ const Wallet: React.FC = () => {
     undefined
   );
 
-  // transferMethod can be either "cashin" or "cashout"
   const [transferMethod, setTransferMethod] = useState<
     "cashin" | "cashout" | undefined
   >(undefined);
@@ -58,6 +56,19 @@ const Wallet: React.FC = () => {
   const [bankDetails, setBankDetails] = useState<
     { bankCode: string; bankName: string }[]
   >([]);
+
+  const ITEMS_PER_PAGE = 15;
+  const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
+
+  const loadMoreData = (event: CustomEvent<void>) => {
+    setTimeout(() => {
+      setItemsToShow((prev) => {
+        const newCount = prev + ITEMS_PER_PAGE;
+        return newCount > transactions.length ? transactions.length : newCount;
+      });
+      (event.target as HTMLIonInfiniteScrollElement).complete();
+    }, 500);
+  };
 
   useEffect(() => {
     const banks = [
@@ -82,8 +93,8 @@ const Wallet: React.FC = () => {
     const amount = cashInAmountRef.current;
     const method = selectedMethodRef.current;
 
-    if (!amount || amount <= 100) {
-      alert("Please enter a valid amount greater than 100.");
+    if (!amount || amount < 100) {
+      alert("Please enter a valid amount of at least 100.");
       return;
     }
 
@@ -93,9 +104,8 @@ const Wallet: React.FC = () => {
         return;
       }
 
-      const url = `${import.meta.env.VITE_2C2P_URL}=${
-        amount * 100
-      }&user_id=${userId}&channel=${method}&user_type=${usertType}`;
+      const url = `${import.meta.env.VITE_2C2P_URL}=${amount * 100
+        }&user_id=${userId}&channel=${method}&user_type=${usertType}`;
 
       // Redirect logic
       if (isPlatform("android") || isPlatform("ios")) {
@@ -138,10 +148,6 @@ const Wallet: React.FC = () => {
 
     loadData();
   }, []);
-
-  const filteredTransactions = transactions.filter((tx) =>
-    tx.createdAt?.startsWith(selectedDate)
-  );
 
   return (
     <IonPage>
@@ -203,20 +209,6 @@ const Wallet: React.FC = () => {
           </IonButton> */}
         </IonItem>
 
-        <IonItem lines="none" className="input-field">
-          <IonInput
-            color="dark"
-            inputMode="numeric"
-            placeholder="Select Date"
-            label="Filter Transactions By Date"
-            labelPlacement="floating"
-            type="date"
-            value={selectedDate}
-            onIonChange={(e) => setSelectedDate(e.detail.value!)}
-            className="floating-label-dark"
-          />
-        </IonItem>
-
         <IonList>
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
@@ -231,30 +223,40 @@ const Wallet: React.FC = () => {
                 />
               </IonItem>
             ))
-          ) : filteredTransactions.length > 0 ? (
-            filteredTransactions
-              .sort(
-                (a, b) =>
-                  new Date(b.updatedAt).getTime() -
-                  new Date(a.updatedAt).getTime()
-              )
-              .map((tx) => (
-                <IonItem lines="none" className="card-style" key={tx._id}>
-                  <IonLabel>
-                    <h2>{tx.description}</h2>
-                    <p>{new Date(tx.createdAt).toLocaleString()}</p>
-                  </IonLabel>
-                  <IonText color={tx.amount > 0 ? "primary" : "secondary"}>
-                    <strong>
-                      {tx.amount > 0 ? "+" : "-"}₱
-                      {Math.abs(tx.amount).toLocaleString("en-PH", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </strong>
-                  </IonText>
-                </IonItem>
-              ))
+          ) : transactions.length > 0 ? (
+            <>
+              {transactions
+                .sort(
+                  (a, b) =>
+                    new Date(b.updatedAt).getTime() -
+                    new Date(a.updatedAt).getTime()
+                )
+                .slice(0, itemsToShow) // Show limited items
+                .map((tx) => (
+                  <IonItem lines="none" className="card-style" key={tx._id}>
+                    <IonLabel>
+                      <h2>{tx.description}</h2>
+                      <p>{new Date(tx.createdAt).toLocaleString()}</p>
+                    </IonLabel>
+                    <IonText color={tx.amount > 0 ? "primary" : "secondary"}>
+                      <strong>
+                        {tx.amount > 0 ? "+" : "-"}₱
+                        {Math.abs(tx.amount).toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </strong>
+                    </IonText>
+                  </IonItem>
+                ))}
+              <IonInfiniteScroll
+                onIonInfinite={loadMoreData}
+                threshold="100px"
+                disabled={itemsToShow >= transactions.length}
+              >
+                <IonInfiniteScrollContent loadingText="Loading more transactions..." />
+              </IonInfiniteScroll>
+            </>
           ) : (
             <div
               className="ion-no-border ion-text-center ion-padding"

@@ -249,5 +249,7 @@ ion-modal::part(content) {
 .hidden-file-input {
   display: none;
 }
-
-
+.custom-refresher {
+  background: white;
+  z-index: 10; /* Make sure it's not hidden */
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router";
 import {
   IonPage,
@@ -8,7 +8,6 @@ import {
   IonMenuButton,
   IonIcon,
   IonButton,
-  IonModal,
   IonText,
   IonToolbar,
   IonTitle,
@@ -20,18 +19,17 @@ import {
   IonToast,
   IonSelect,
   IonSelectOption,
-  IonLabel,
+  IonToggle,
+  IonImg,
+  RefresherCustomEvent,
 } from "@ionic/react";
 import {
-  powerOutline,
   searchOutline,
   menuOutline,
-  powerSharp,
-  refreshOutline,
+  star,
 } from "ionicons/icons";
 import {
-  fetchBookingDetails,
-  postDriverLocation,
+  fetchBookingDetails, postDriverLocation,
 } from "../../services/apiService";
 import Map from "../../components/Map";
 import { connectSocket, socket } from "../../utils/useSocket";
@@ -39,10 +37,10 @@ import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import "@theme/variables.css";
 import "../../theme/Home.css";
 import Loading from "../../components/Loading";
-import { watchLocation } from "../../utils/locationHelpers";
 import { fetchDriverWallet } from "../../services/apiService";
 import { fetchRiderDistances } from "../../utils/fetchRiderDistances";
 import { useLocationContext } from "../../contexts/LocationContext";
+import Refresher from "../../components/Refresher";
 
 const Home: React.FC = () => {
   const {
@@ -52,18 +50,13 @@ const Home: React.FC = () => {
     currentLocation, setCurrentLocation,
   } = useLocationContext();
 
-  const modalRef = useRef<HTMLIonModalElement>(null);
   const history = useHistory();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [riderDistances, setRiderDistances] = useState<
-    { riderId: string; distance: number }[] | null
-  >(null);
+  const [riderDistances, setRiderDistances] = useState<{ riderId: string; distance: number }[] | null>(null);
   const prevUsersRef = useRef<any[]>([]);
   const prevRiderDistancesRef = useRef<{ riderId: string; distance: number }[] | null>(null);
 
-  const [isWorking, setIsWorking] = useState(false);
   const [acceptBooking, setAcceptBooking] = useState(false);
   const [header, setHeader] = useState<any | null>(null);
   const [subHeader, setSubHeader] = useState<any | null>(null);
@@ -76,69 +69,16 @@ const Home: React.FC = () => {
     const stored = localStorage.getItem("distanceLimit");
     return stored ? Number(stored) : 10;
   });
-  const [disabled, setDisabled] = useState(false);
-  const [countdown, setCountdown] = useState(0);
 
-  const DISABLE_TIME = 30;
-  const STORAGE_KEY = "refresh_disabled_until";
+  const active = useRef<HTMLIonToggleElement>(null);
+  const [isChecked, setIsChecked] = useState<boolean>(false);
 
   const coords: [number, number] | null = currentLocation
     ? [currentLocation.lat, currentLocation.lng]
     : null;
 
   useEffect(() => {
-    const disabledUntil = localStorage.getItem(STORAGE_KEY);
-    if (disabledUntil) {
-      const now = Date.now();
-      const target = parseInt(disabledUntil, 10);
-      const diff = Math.floor((target - now) / 1000);
-
-      if (diff > 0) {
-        setDisabled(true);
-        setCountdown(diff);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-    } else if (disabled) {
-      setDisabled(false);
-      localStorage.removeItem(STORAGE_KEY);
-    }
-    return () => clearTimeout(timer);
-  }, [countdown]);
-
-  const handleRefresh = () => {
-    const now = Date.now();
-    const disabledUntil = now + DISABLE_TIME * 1000;
-    localStorage.setItem(STORAGE_KEY, disabledUntil.toString());
-
-    setDisabled(true);
-    setCountdown(DISABLE_TIME);
-
-    window.location.reload();
-  };
-
-  // Countdown logic
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-    } else if (disabled) {
-      setDisabled(false);
-    }
-    return () => clearTimeout(timer);
-  }, [countdown]);
-
-  useEffect(() => {
-    const id = watchLocation(
+    const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const loc = {
           lat: position.coords.latitude,
@@ -150,11 +90,8 @@ const Home: React.FC = () => {
         console.error("Geolocation error:", error);
       }
     );
-    return () => {
-      if (id !== null) {
-        navigator.geolocation.clearWatch(id);
-      }
-    };
+
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   useEffect(() => {
@@ -186,6 +123,43 @@ const Home: React.FC = () => {
       }
     });
   }, []);
+
+  const handleSocketEvents = () => {
+    if (userId) {
+      connectSocket(userId);
+    }
+
+    socket?.off("all_users");
+
+    socket?.on("all_users", (data: any) => {
+      if (Array.isArray(data.users)) {
+        // Optional: Debug info
+        data.users.forEach((user: any, index: number) => {
+          const baseFare = user?.computations?.baseFare || "Unnamed Rider";
+          const seatType = getSeatType(baseFare);
+          // console.log(`User ${index + 1} origin: ${baseFare} and seat type: ${seatType}`);
+        });
+
+        setUsers(data.users);
+      } else {
+        console.warn("Expected 'users' to be an array.");
+        setUsers([]);
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (!socket || !userId) return;
+    handleSocketEvents();
+    return () => {
+      socket?.off("all_users");
+    };
+  }, [userId, socket, setUsers]);
+
+  const handleRefresh = (event: RefresherCustomEvent) => {
+    window.location.reload();
+    event.detail.complete();
+  };
 
   const getSeatType = (baseFare: number) => {
     if (baseFare === 45) {
@@ -282,7 +256,7 @@ const Home: React.FC = () => {
     if (ridersPickupCoordinates.length === 0) return;
 
     const timeout = setTimeout(() => {
-      console.log("🆕 New users or distances detected. Fetching distances...");
+      console.log("New users or distances detected. Fetching distances...");
       fetchRiderDistances({
         currentLocation,
         ridersPickupCoordinates,
@@ -294,11 +268,11 @@ const Home: React.FC = () => {
     prevUsersRef.current = users;
     prevRiderDistancesRef.current = riderDistances;
 
-    return timeout; // return so we can cleanup
+    return timeout;
   };
 
   useEffect(() => {
-    const timeout = handleRiderUpdates({
+    handleRiderUpdates({
       users,
       currentLocation: coords,
       driverData,
@@ -309,12 +283,17 @@ const Home: React.FC = () => {
       fetchRiderDistances,
       setRiderDistances,
     });
-
-    return () => {
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [users, currentLocation, driverData, distanceLimit, riderDistances]);
-
+  }, [
+    users,
+    coords,
+    driverData,
+    distanceLimit,
+    riderDistances,
+    prevUsersRef,
+    prevRiderDistancesRef,
+    fetchRiderDistances,
+    setRiderDistances,
+  ]);
 
   const checkWallet = async (): Promise<boolean> => {
     try {
@@ -322,36 +301,57 @@ const Home: React.FC = () => {
 
       if (!walletData || walletData.walletBalance < 100) {
         setError("Please top up at least ₱100 to continue accepting jobs!");
-        setIsWorking(false);
-        await modalRef.current?.dismiss();
+        setIsChecked(false);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error("❌ Error checking wallet:", error);
+      console.error("Error checking wallet:", error);
       alert("Something went wrong while checking your wallet.");
       return false;
     }
   };
 
-  const openJobs = async () => {
-    const isWalletOk = await checkWallet();
-    if (!isWalletOk) return;
-    await modalRef.current?.present();
-    setIsModalOpen(true);
-    postDriverLocation(bookingId);
-    setIsWorking(true);
-    localStorage.setItem("working", "true");
+  const onlineJobs = async () => {
+    try {
+      setLoading(true);
+      const isWalletOk = await checkWallet();
+      if (!isWalletOk) return;
+
+      if (!currentLocation || currentLocation.lat == null || currentLocation.lng == null) {
+        console.error("Current location is missing or invalid.");
+        return;
+      }
+
+      await postDriverLocation(bookingId, {
+        latitude: currentLocation.lat,
+        longitude: currentLocation.lng,
+      });
+
+      setIsChecked(true);
+      localStorage.setItem("isWorking", "true");
+    } catch (error) {
+      console.error("Error sending driver location:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const closeJobs = async () => {
+  const offlineJobs = async () => {
     setShowActionSheet(true);
     setHeader("Go Offline");
     setSubHeader("Are you sure you want to go offline?");
-    setIsWorking(false);
-    localStorage.setItem("working", "false");
   };
+
+  useEffect(() => {
+    const storedWorkingStatus = localStorage.getItem("isWorking");
+    if (storedWorkingStatus === "true") {
+      setIsChecked(true);
+    } else if (storedWorkingStatus === "false") {
+      setIsChecked(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (userId) {
@@ -368,26 +368,11 @@ const Home: React.FC = () => {
   useEffect(() => {
     const handleTripStatus = async () => {
       if ((tripStatus ?? 0) > 0 && (tripStatus ?? 0) < 4) {
-        await modalRef.current?.dismiss();
         history.push("/driver-trip");
       }
     };
     handleTripStatus();
   }, [tripStatus]);
-
-  useEffect(() => {
-    const checkWorking = async () => {
-      const storedWorking = localStorage.getItem("working");
-      if (storedWorking === "true") {
-        await modalRef.current?.present();
-        setIsModalOpen(true);
-      } else {
-        await modalRef.current?.dismiss();
-        setIsModalOpen(false);
-      }
-    };
-    checkWorking();
-  }, []);
 
   const handleAcceptBooking = (bookingId: string, riderId: string) => {
     setAcceptBooking(true);
@@ -462,74 +447,76 @@ const Home: React.FC = () => {
 
       <IonContent fullscreen scrollY={false}>
         <Map isHomeScreen={true} />
-        {!isModalOpen && (
-          <IonHeader>
-            <div className="absolute-bottom-bar">
-              <IonButton
-                color="medium"
-                id="open-modal"
-                shape="round"
-                onClick={openJobs}
-              >
-                Go Online
-              </IonButton>
-            </div>
-          </IonHeader>
-        )}
-
-        {/* Modal */}
       </IonContent>
-      <IonModal
-        ref={modalRef}
-        trigger="open-modal"
-        initialBreakpoint={0.75}
-        breakpoints={[0.25, 0.75, 1]}
-        backdropDismiss={false}
-        backdropBreakpoint={0.25}
-        onWillDismiss={() => setIsModalOpen(false)}
-      >
-        <IonHeader className="no-ion-border transparent-header" collapse="fade">
-          <IonToolbar>
-            <IonTitle color="primary" slot="start">
-              Online
-            </IonTitle>
-            <IonSelect
-              interface="action-sheet"
-              slot="start"
-              value={String(distanceLimit)}
-              placeholder="Set Distance"
-              onIonChange={(e) => {
-                const selectedValue = Number(e.detail.value);
-                setDistanceLimit(selectedValue);
-                localStorage.setItem("distanceLimit", String(selectedValue));
-              }}
-            >
-              <IonSelectOption value="5">5km</IonSelectOption>
-              <IonSelectOption value="10">10km</IonSelectOption>
-              <IonSelectOption value="20">20km</IonSelectOption>
-              <IonSelectOption value="30">30km</IonSelectOption>
-            </IonSelect>
+      <IonToolbar>
+        {isChecked ? (
+          <IonTitle color="primary" slot="start">
+            Online
+          </IonTitle>
+        ) : (
+          <IonTitle color="medium" slot="start">
+            Oflline
+          </IonTitle>
+        )}
+        <IonSelect
+          interface="action-sheet"
+          slot="start"
+          value={String(distanceLimit)}
+          placeholder="Set Distance"
+          onIonChange={(e) => {
+            const selectedValue = Number(e.detail.value);
+            setDistanceLimit(selectedValue);
+            localStorage.setItem("distanceLimit", String(selectedValue));
+          }}
+        >
+          <IonSelectOption value="5">5km</IonSelectOption>
+          <IonSelectOption value="10">10km</IonSelectOption>
+          <IonSelectOption value="20">20km</IonSelectOption>
+          <IonSelectOption value="30">30km</IonSelectOption>
+        </IonSelect>
 
-            <IonButtons slot="end">
-              <IonButton
-                onClick={handleRefresh}
-                color="primary"
-                disabled={disabled}
-              >
-                {disabled ? (
-                  <IonLabel>{countdown}s</IonLabel>
-                ) : (
-                  <IonIcon icon={refreshOutline} slot="icon-only" />
-                )}
-              </IonButton>
+        <IonButtons slot="end">
+          <IonToggle
+            ref={active}
+            justify="space-between"
+            checked={isChecked}
+            onIonChange={async (event) => {
+              const checked = event.detail.checked;
+              if (checked) {
+                await onlineJobs();
+              } else {
+                await offlineJobs();
+              }
+            }}
+          />
+        </IonButtons>
+      </IonToolbar>
 
-              <IonButton onClick={closeJobs} color="danger">
-                <IonIcon icon={powerSharp} slot="icon-only" />
-              </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
+      {!isChecked ? (
+        <IonContent scrollY={false}>
+          <div
+            className="ion-no-border ion-text-center ion-padding"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <IonImg
+              src="/assets/offline-mode.png" // Replace with your actual image path
+              alt="Offline mode"
+
+            />
+          </div>
+        </IonContent>
+      ) : (
+        <IonContent scrollY={false} style={{ height: '80vh', backgroundColor: '#fff' }}>
+          <Refresher onRefresh={handleRefresh} />
           {users && users.length > 0 ? (
             (() => {
               const filteredUsers = users.filter((user: any) =>
@@ -542,8 +529,7 @@ const Home: React.FC = () => {
                     <IonCard key={user._id || index} className="user-card">
                       <IonCardHeader
                         className="user-card-header"
-                        color="primary"
-                      >
+                        color="primary">
                         <IonCardTitle className="user-card-title">
                           <div className="user-card-title-row">
                             <span className="rider-name">
@@ -593,19 +579,23 @@ const Home: React.FC = () => {
                           <div className="user-card-right">
                             <IonText color="primary" className="user-text-bold">
                               <p>
-                                {user?.computations?.fareDistanceInKM?.toFixed(
-                                  2
-                                ) || "0"}{" "}
-                                km
+                                <strong>
+                                  {user?.computations?.fareDistanceInKM?.toFixed(
+                                    2
+                                  ) || "0"}{" "}
+                                  km
+                                </strong>
                               </p>
                               <p className="user-text-bold">
-                                ₱ {user?.travelFare?.toFixed(2) || "0.00"}
+                                <strong>
+                                  ₱{user?.travelFare?.toFixed(2)}-₱{(user?.travelFare ? (user.travelFare + 97).toFixed(2) : "0.00")}
+                                </strong>
                               </p>
                             </IonText>
                             <IonText color="medium">
                               <p className="user-text-small">
-                                <strong>Rating:</strong>{" "}
-                                {user?.userRating?.toFixed(1) ?? 5}
+                                <strong>{user?.userRating?.toFixed(1) ?? 5}</strong>{" "}
+                                <IonIcon icon={star} color="tertiary" />
                               </p>
                             </IonText>
                             <IonText color="medium">
@@ -673,7 +663,7 @@ const Home: React.FC = () => {
             </div>
           )}
         </IonContent>
-      </IonModal>
+      )}
       <Loading isOpen={loading} message="Processing..." />
       <IonToast
         isOpen={!!error}
@@ -690,22 +680,23 @@ const Home: React.FC = () => {
         subHeader={subHeader}
         onConfirm={async () => {
           setShowActionSheet(false);
+          setIsChecked(false);
+          postDriverLocation(bookingId, null);
+          localStorage.setItem("isWorking", "false");
 
           if (acceptBooking) {
             setAcceptBooking(false);
-            await modalRef.current?.dismiss();
-            setIsModalOpen(false);
             bookAccepted();
             fetchBookingDetails();
-            postDriverLocation(bookingId);
+            postDriverLocation(bookingId, {
+              latitude: currentLocation!.lat,
+              longitude: currentLocation!.lng,
+            });
             history.push("/driver-trip");
-          } else {
-            await modalRef.current?.dismiss();
-            setIsModalOpen(false);
           }
         }}
       />
-    </IonPage>
+    </IonPage >
   );
 };
 

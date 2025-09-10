@@ -49,6 +49,7 @@ const DriverTrip: React.FC = () => {
   const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [paymentType, setPaymentType] = useState<any | null>(null);
   const hasFetchedBooking = useRef(false);
+  const [isCooldown, setIsCooldown] = useState<boolean>(false);
 
   const {
     driverId,
@@ -325,7 +326,20 @@ const DriverTrip: React.FC = () => {
 
           {/* Fare & Payment */}
           <IonList>
-            <IonItem lines="none">
+            <IonItem
+              button
+              lines="none"
+              onClick={() => {
+                if (!isCooldown) {
+                  getJobs();
+                  setIsCooldown(true);
+                  setTimeout(() => {
+                    setIsCooldown(false);
+                  }, 10000);
+                }
+              }}
+              detail={false}
+            >
               <IonLabel color="primary"><strong>Fare</strong></IonLabel>
               <IonText slot="end">
                 <LoadingText><strong>₱{bookingData?.travelFare?.toFixed(2)}</strong></LoadingText>

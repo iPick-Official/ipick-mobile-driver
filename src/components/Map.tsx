@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Circle,
   GoogleMap,
@@ -16,21 +16,6 @@ interface MapProps {
   isHomeScreen?: boolean;
   zoom?: number;
 }
-
-const mapOptions = {
-  disableDefaultUI: true,
-  zoomControl: false,
-  mapTypeControl: false,
-  scaleControl: false,
-  streetViewControl: false,
-  rotateControl: false,
-  fullscreenControl: false,
-  styles: customMapStyle,
-  restriction: {
-    latLngBounds: philippinesBounds,
-    strictBounds: true,
-  },
-};
 
 const fallbackLocation: google.maps.LatLngLiteral = {
   lat: 14.5995,
@@ -55,6 +40,22 @@ const Map: React.FC<MapProps> = ({
   const [radius, setRadius] = useState(50);
   const [growing, setGrowing] = useState(true);
 
+  const mapOptions: google.maps.MapOptions = useMemo(() => ({
+    disableDefaultUI: true,
+    zoomControl: false,
+    mapTypeControl: false,
+    scaleControl: false,
+    streetViewControl: false,
+    rotateControl: true,
+    fullscreenControl: false,
+    mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
+    gestureHandling: "greedy",
+    restriction: {
+      latLngBounds: philippinesBounds,
+      strictBounds: true,
+    },
+  }), []);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setRadius((prevRadius) => {
@@ -73,10 +74,15 @@ const Map: React.FC<MapProps> = ({
   }, [growing]);
 
   if (!isLoaded) {
-    return <div style={{ textAlign: "center", marginTop: "2rem" }}>Loading Map...</div>;
+    return (
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        Loading Map...
+      </div>
+    );
   }
 
-  const blueDotIcon = {
+  // 👇 Safe to define this here since isLoaded is true
+  const blueDotIcon: google.maps.Symbol = {
     path: google.maps.SymbolPath.CIRCLE,
     fillColor: "#4285F4",
     fillOpacity: 1,
@@ -85,10 +91,9 @@ const Map: React.FC<MapProps> = ({
     scale: 8,
   };
 
-  // Dynamically adjust height
   const containerStyle = {
     width: "100vw",
-    height: isHomeScreen ? "100vh" : "70vh",
+    height: "70vh",
   };
 
   return (
@@ -97,15 +102,18 @@ const Map: React.FC<MapProps> = ({
       center={currentLocation ?? fallbackLocation}
       zoom={zoom ?? 15}
       options={mapOptions}
-      // onIdle={onIdle}
       onLoad={(map) => {
         mapRef.current = map;
         onMapLoad?.(map);
       }}
+      onIdle={onIdle}
     >
       {isHomeScreen && (
         <>
-          <Marker position={currentLocation ?? fallbackLocation} icon={blueDotIcon} />
+          <Marker
+            position={currentLocation ?? fallbackLocation}
+            icon={blueDotIcon}
+          />
           <Circle
             center={currentLocation ?? fallbackLocation}
             radius={radius}
@@ -125,7 +133,9 @@ const Map: React.FC<MapProps> = ({
         </>
       )}
 
-      {!isHomeScreen && <Directions map={mapRef.current} />}
+      {!isHomeScreen && mapRef.current && (
+        <Directions map={mapRef.current} />
+      )}
     </GoogleMap>
   );
 };

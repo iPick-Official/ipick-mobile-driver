@@ -211,9 +211,10 @@ export const fetchMyRatings = async () => {
   }
 };
 
-import { watchLocation } from "../utils/locationHelpers";
-
-export const postDriverLocation = async (bookingId: string) => {
+export const postDriverLocation = async (
+  bookingId: string,
+  location: { latitude: number; longitude: number } | null
+) => {
   const userId = localStorage.getItem("userId");
   const accessToken = localStorage.getItem("accessToken");
   const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
@@ -223,56 +224,36 @@ export const postDriverLocation = async (bookingId: string) => {
     return;
   }
 
-  let lastSentTime = 0; // Timestamp of last successful send
+  const loc = location
+    ? { lat: location.latitude, lng: location.longitude }
+    : null;
 
-  const watchId = watchLocation(
-    async (position: { coords: { latitude: number; longitude: number } }) => {
-      const now = Date.now();
-      if (now - lastSentTime < 30000) {
-        return;
-      }
+  const reqBody = {
+    bookingId,
+    id: userId,
+    location: loc,
+  };
 
-      const { latitude, longitude } = position.coords;
-      const reqBody = {
-        bookingId,
-        id: userId,
-        location: {
-          lat: latitude,
-          lng: longitude,
-        },
-      };
+  try {
+    const response = await fetch(`${apiEndpoint}/ride-hail/driverLocation`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reqBody),
+    });
 
-      try {
-        const response = await fetch(
-          `${apiEndpoint}/ride-hail/driverLocation`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(reqBody),
-          }
-        );
-
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({}));
-          console.error(
-            "Failed to send location:",
-            error || response.statusText
-          );
-        } else {
-          const result = await response.json();
-          lastSentTime = now; // Update timestamp on success
-          console.log("Driver location sent successfully:", result);
-        }
-      } catch (err) {
-        console.error("Error sending driver location:", err);
-      }
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      console.error("Failed to send location:", error || response.statusText);
+    } else {
+      const result = await response.json();
+      console.log("Driver location sent successfully:", result);
     }
-  );
-
-  return watchId;
+  } catch (err) {
+    console.error("Error sending driver location:", err);
+  }
 };
 
 export const fetchRiderDetails = async (riderId: any) => {

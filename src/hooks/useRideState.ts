@@ -27,6 +27,7 @@ export const useRideState = (initialState: any) => {
   const [bookingId, _setBookingId] = useState<string>(initialState.bookingId ?? "");
   const [riderId, _setRiderId] = useState<string>(initialState.riderId ?? "");
   const [notes, _setNotes] = useState<string>(initialState.notes ?? "");
+  const [finalFare, _setFinalFare] = useState<number | undefined>(initialState.finalFare ?? 0);
 
   return {
     currentLocation, _setCurrentLocation,
@@ -53,5 +54,6 @@ export const useRideState = (initialState: any) => {
     bookingId, _setBookingId,
     riderId, _setRiderId,
     notes, _setNotes,
+    finalFare, _setFinalFare,
   };
 };
