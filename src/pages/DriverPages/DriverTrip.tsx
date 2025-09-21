@@ -292,7 +292,7 @@ const DriverTrip: React.FC = () => {
 
             {/* Cancel button */}
             {(tripStatus ?? 0) < 3 && (
-              <IonButton color="danger" fill="clear" onClick={promptCancelRide} disabled={!bookingData}>
+              <IonButton color="medium" size="small" fill="outline" shape="round" onClick={promptCancelRide} disabled={!bookingData}>
                 Cancel
               </IonButton>
             )}

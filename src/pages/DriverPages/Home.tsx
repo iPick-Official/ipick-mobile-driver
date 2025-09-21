@@ -324,10 +324,7 @@ const Home: React.FC = () => {
         return;
       }
 
-      await postDriverLocation(bookingId, {
-        latitude: currentLocation.lat,
-        longitude: currentLocation.lng,
-      });
+      await postDriverLocation(bookingId);
 
       setIsChecked(true);
       localStorage.setItem("isWorking", "true");
@@ -339,9 +336,9 @@ const Home: React.FC = () => {
   };
 
   const offlineJobs = async () => {
-    setShowActionSheet(true);
-    setHeader("Go Offline");
-    setSubHeader("Are you sure you want to go offline?");
+    setIsChecked(false);
+    postDriverLocation(bookingId);
+    localStorage.setItem("isWorking", "false");
   };
 
   useEffect(() => {
@@ -515,8 +512,8 @@ const Home: React.FC = () => {
           </div>
         </IonContent>
       ) : (
-        <IonContent scrollY={false} style={{ height: '80vh', backgroundColor: '#fff' }}>
-          <Refresher onRefresh={handleRefresh} />
+        <IonContent scrollY={true} style={{ height: '80vh', backgroundColor: '#fff' }}>
+          {/* <Refresher onRefresh={handleRefresh} /> */}
           {users && users.length > 0 ? (
             (() => {
               const filteredUsers = users.filter((user: any) =>
@@ -680,18 +677,12 @@ const Home: React.FC = () => {
         subHeader={subHeader}
         onConfirm={async () => {
           setShowActionSheet(false);
-          setIsChecked(false);
-          postDriverLocation(bookingId, null);
-          localStorage.setItem("isWorking", "false");
 
           if (acceptBooking) {
             setAcceptBooking(false);
             bookAccepted();
             fetchBookingDetails();
-            postDriverLocation(bookingId, {
-              latitude: currentLocation!.lat,
-              longitude: currentLocation!.lng,
-            });
+            postDriverLocation(bookingId);
             history.push("/driver-trip");
           }
         }}

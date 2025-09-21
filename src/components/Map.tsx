@@ -5,7 +5,6 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import customMapStyle from "../theme/MapStyle.json";
 import Directions from "./Directions";
 import { useLocationContext } from "../contexts/LocationContext";
 import { philippinesBounds } from "../utils/bounds";
@@ -81,7 +80,7 @@ const Map: React.FC<MapProps> = ({
     );
   }
 
-  // 👇 Safe to define this here since isLoaded is true
+  // Safe to define this here since isLoaded is true
   const blueDotIcon: google.maps.Symbol = {
     path: google.maps.SymbolPath.CIRCLE,
     fillColor: "#4285F4",
