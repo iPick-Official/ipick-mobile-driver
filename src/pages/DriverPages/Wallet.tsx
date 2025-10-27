@@ -233,7 +233,7 @@ const Wallet: React.FC = () => {
                 )
                 .slice(0, itemsToShow) // Show limited items
                 .map((tx) => (
-                  <IonItem lines="none" className="card-style" key={tx._id}>
+                  <IonItem lines="none" className="card-payment" key={tx._id}>
                     <IonLabel>
                       <h2>{tx.description}</h2>
                       <p>{new Date(tx.createdAt).toLocaleString()}</p>

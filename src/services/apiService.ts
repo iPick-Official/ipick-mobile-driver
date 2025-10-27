@@ -370,3 +370,72 @@ export const fetchMsgs = async (riderId: string, driverId: string) => {
     throw error;
   }
 };
+
+export const postTransaction = async (
+  amount: number,
+  bookingId: string,
+  description: string
+) => {
+  try {
+    const timestamp = new Date().toISOString();
+    const userId = localStorage.getItem("id");
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/api/Wallet`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          bookingId,
+          userId: userId,
+          userType: "driver",
+          description: description,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Request failed: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error posting transaction:", error);
+    throw error;
+  }
+};
+
+export const updateWallet = async (Amount: number) => {
+  try {
+    const userId = localStorage.getItem("id");
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/api/WalletInfo/${userId}`,
+      {
+        method: "PUT", // Changed from POST to PATCH
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          Id: userId,
+          WalletBalance: Amount,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating wallet:", error);
+    throw error;
+  }
+};

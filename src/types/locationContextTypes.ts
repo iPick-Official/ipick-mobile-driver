@@ -68,11 +68,19 @@ export interface LocationContextType {
   setRiderRatings: (riderRatings: number) => void;
   bookingId: string;
   setBookingId: (bookingId: string) => void;
+  bookingRef: string;
+  setBookingRef: (bookingId: string) => void;
   riderId: string;
   setRiderId: (riderId: string) => void;
   notes: string;
   setNotes: (notes: string) => void;
   finalFare: number | undefined;
   setFinalFare: (finalFare: number) => void;
+  systemShare: number | undefined;
+  setSystemShare: (systemShare: number) => void;
+  incentives: number | undefined;
+  setIncentives: (incentives: number) => void;
+  walletBalance: number | undefined;
+  setWalletBalance: (walletBalance: number) => void;
   resetAll: () => void;
 }

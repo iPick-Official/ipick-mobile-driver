@@ -63,9 +63,13 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     riderMobile, _setRiderMobile,
     riderRatings, _setRiderRatings,
     bookingId, _setBookingId,
+    bookingRef, _setBookingRef,
     riderId, _setRiderId,
     notes, _setNotes,
-    finalFare, _setFinalFare
+    finalFare, _setFinalFare,
+    systemShare, _setSystemShare,
+    incentives, _setIncentives,
+    walletBalance, _setWalletBalance
   } = useRideState(initialState);
 
   const updateStorage = (key: string, value: any) => {
@@ -94,9 +98,13 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     _setRiderMobile(undefined);
     _setRiderRatings(5);
     _setBookingId("");
+    _setBookingRef("");
     _setRiderId("");
     _setNotes("");
     _setFinalFare(0);
+    _setSystemShare(0);
+    _setIncentives(0);
+    _setWalletBalance(0);
   };
 
   const withStorage = (key: string, setter: React.Dispatch<any>) => {
@@ -172,12 +180,20 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
         setRiderRatings: withStorage("riderRatings", _setRiderRatings),
         bookingId,
         setBookingId: withStorage("bookingId", _setBookingId),
+        bookingRef,
+        setBookingRef: withStorage("bookingRef", _setBookingRef),
         riderId,
         setRiderId: withStorage("riderId", _setRiderId),
         notes,
         setNotes: withStorage("notes", _setNotes),
         finalFare,
         setFinalFare: withStorage("finalFare", _setFinalFare),
+        systemShare,
+        setSystemShare: withStorage("systemShare", _setSystemShare),
+        incentives,
+        setIncentives: withStorage("incentives", _setIncentives),
+        walletBalance,
+        setWalletBalance: withStorage("walletBalance", _setWalletBalance),
         resetAll,
       }}
     >

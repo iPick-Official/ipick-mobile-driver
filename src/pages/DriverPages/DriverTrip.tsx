@@ -1,6 +1,5 @@
 import {
   IonButton,
-  IonCard,
   IonContent,
   IonFooter,
   IonIcon,
@@ -15,6 +14,8 @@ import {
 import {
   fetchActiveJobs,
   fetchBookingDetails,
+  postTransaction,
+  updateWallet,
 } from "../../services/apiService";
 import React, { useState, useEffect, useRef } from "react";
 import Map from "../../components/Map";
@@ -54,12 +55,15 @@ const DriverTrip: React.FC = () => {
   const {
     driverId,
     bookingId, setBookingId,
+    bookingRef, setBookingRef,
     setRiderId, setDriverId,
     riderName, setRiderName,
     setRiderMobile,
     tripStatus, setTripStatus,
     setPickupCoords, setDropoffCoords,
     notes, setNotes,
+    systemShare, setSystemShare,
+    walletBalance, setWalletBalance
   } = useLocationContext();
 
   useEffect(() => {
@@ -129,14 +133,23 @@ const DriverTrip: React.FC = () => {
       if (!hasFetchedBooking.current) {
         const booking = await fetchBookingDetails();
         setBookingDetails(booking);
-        hasFetchedBooking.current = true;
+
         if (booking && booking.length > 0) {
-          const payment = booking[0].paymentType.paymentType;
+          const firstBooking = booking[0];
+
+          // Set system share as negative
+          setSystemShare(firstBooking.systemShare ?? 0);
+          setBookingRef(firstBooking.referenceNumber);
+          const payment = firstBooking.paymentType.paymentType;
           setPaymentType(payment);
+
           getJobs();
         }
+
+        hasFetchedBooking.current = true;
       }
     };
+
     fetchAll();
   }, [bookingData, bookingDetails]);
 
@@ -173,14 +186,42 @@ const DriverTrip: React.FC = () => {
     );
 
   const promptEndTrip = () => {
-    const fare = bookingData.travelFare.toFixed(2);
+    const fare = bookingData?.travelFare?.toFixed(2);
+    if (!fare || !bookingId || systemShare == null || walletBalance == null) {
+      console.error("Missing required data to end trip.");
+      return;
+    }
 
     showPrompt(
       "End Trip?",
       `Please collect payment of ₱${fare}`,
       async () => {
-        await endTrip();
-        setIsRatingsOpen(true);
+        try {
+          await endTrip();
+          const systemShareValue = Math.abs(Number(systemShare)) || 0;
+          const newWallet = walletBalance - systemShareValue;
+
+          await postTransaction(
+            -systemShareValue,
+            bookingId,
+            `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}), Prev bal. ₱${walletBalance.toFixed(2)}`
+          );
+
+          const systemShare8 = systemShareValue * 0.4;
+          const newBalance = newWallet + systemShare8;
+
+          await postTransaction(
+            systemShare8,
+            bookingId,
+            `Incentive of ₱${systemShare8.toFixed(2)} credited to driver (Ref: ${bookingRef}), Prev bal. ₱${newWallet.toFixed(2)}`
+          );
+
+          await updateWallet(newBalance);
+          setIsRatingsOpen(true);
+
+        } catch (error) {
+          console.error("Failed to complete end trip process:", error);
+        }
       }
     );
   };

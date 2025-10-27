@@ -48,6 +48,7 @@ const Home: React.FC = () => {
     bookingId, setBookingId,
     riderId, setRiderId,
     currentLocation, setCurrentLocation,
+    setWalletBalance
   } = useLocationContext();
 
   const history = useHistory();
@@ -299,16 +300,26 @@ const Home: React.FC = () => {
     try {
       const walletData = await fetchDriverWallet();
 
-      if (!walletData || walletData.walletBalance < 100) {
+      if (!walletData || typeof walletData.walletBalance !== 'number') {
+        setError("Unable to retrieve wallet balance.");
+        setIsChecked(false);
+        return false;
+      }
+
+      if (walletData.walletBalance < 100) {
         setError("Please top up at least ₱100 to continue accepting jobs!");
         setIsChecked(false);
         return false;
       }
 
+      setWalletBalance(walletData.walletBalance);
+      setIsChecked(true); // Assuming you want to mark it as checked when valid
       return true;
+
     } catch (error) {
       console.error("Error checking wallet:", error);
-      alert("Something went wrong while checking your wallet.");
+      setError("Something went wrong while checking your wallet.");
+      setIsChecked(false);
       return false;
     }
   };
