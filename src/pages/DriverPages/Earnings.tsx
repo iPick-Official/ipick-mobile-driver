@@ -27,6 +27,7 @@ import { fetchRideHistory } from "../../services/apiService";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capacitor-community/file-opener";
 import RatingsModal from "../../components/RatingsModal";
+import { BookingDetail, Trip } from "../../types/bookingDetailsTypes";
 
 const Earnings: React.FC = () => {
   const [rideHistory, setRideHistory] = useState<any[]>([]);
@@ -115,35 +116,55 @@ const Earnings: React.FC = () => {
     })
     .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
 
-  const openReceipt = async (trip: any) => {
-    setSelectedTrip(trip);
-    const detail = await fetchBookingDetails(trip._id);
-    setBookingDetails(detail?.[0] ?? null);
-    setShowModal(true);
-  };
+  async function fetchBookingDetails(id: string): Promise<BookingDetail | null> {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.error("Access token not found");
+      return null;
+    }
 
-  async function fetchBookingDetails(id: string) {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BOOKING_ENDPOINT}/SearchBookingDetails`,
+        `${import.meta.env.VITE_API_ENDPOINT}/mobile/SearchBookingDetails/${id}`,
         {
-          method: "POST",
+          method: "GET",
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id }),
         }
       );
-      if (!res.ok) throw new Error("Failed");
-      return await res.json();
-    } catch {
-      console.error("Error fetching booking details");
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Error fetching booking details:", res.status, errorText);
+        return null;
+      }
+
+      const data: BookingDetail = await res.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching booking details:", error);
       return null;
     }
   }
 
+  //  Open receipt modal
+  const openReceipt = async (trip: Trip) => {
+    try {
+      if (!trip?._id) return;
+      setSelectedTrip(trip);
+
+      const detail = await fetchBookingDetails(trip._id);
+      setBookingDetails(detail);
+      setShowModal(true);
+    } catch (error) {
+      console.error("Error opening receipt:", error);
+    }
+  };
+
   const getSurgeCharge = () => {
-    const { Computations, TotalFare } = bookingDetails;
+    const { Computations, TotalFare, PickupFare } = bookingDetails;
 
     if (!Computations) return 0;
 
@@ -154,11 +175,12 @@ const Earnings: React.FC = () => {
     const serviceFee = Computations.serviceFee ?? 0;
     const baseFare = Computations.baseFare ?? 0;
     const travelFare = TotalFare ?? 0;
+    const pickupFare = PickupFare ?? 0;
 
     const totalKm = distance * costPerKM;
     const totalDur = duration * costPerMin;
 
-    const totalFare = totalKm + totalDur + serviceFee + baseFare;
+    const totalFare = totalKm + totalDur + serviceFee + baseFare + pickupFare;
     const surge = travelFare - totalFare;
     return parseFloat(surge.toFixed(2));
   };
@@ -394,7 +416,7 @@ const Earnings: React.FC = () => {
             collapse="fade"
           >
             <IonToolbar>
-              <IonButton
+              <IonButton slot="end"
                 fill="outline"
                 shape="round"
                 color="tertiary"
@@ -402,16 +424,8 @@ const Earnings: React.FC = () => {
                 size="small"
                 className="custom-button"
               >
-                Rate your passenger
+                Rate
               </IonButton>
-              <IonButtons slot="end">
-                <IonIcon
-                  color="danger"
-                  icon={closeOutline}
-                  slot="icon-only"
-                  onClick={() => setShowModal(false)}
-                />
-              </IonButtons>
             </IonToolbar>
           </IonHeader>
           <IonContent className="ion-padding">
@@ -512,6 +526,13 @@ const Earnings: React.FC = () => {
                         color: "medium",
                       },
                       {
+                        label: "Pick-up Fare",
+                        total: `₱${bookingDetails.PickupFare.toFixed(
+                          2
+                        )}`,
+                        color: "medium",
+                      },
+                      {
                         label: "Surge Charge",
                         total: `₱${getSurgeCharge().toFixed(2)}`,
                         color: "medium",
@@ -543,7 +564,7 @@ const Earnings: React.FC = () => {
                       </IonLabel>
                       <IonText
                         slot="end"
-                        color="primary"
+                        color="dark"
                         style={{ fontWeight: 700, fontSize: "1.1em" }}
                       >
                         ₱{bookingDetails.TotalFare.toFixed(2)}

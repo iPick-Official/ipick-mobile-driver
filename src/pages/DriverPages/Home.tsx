@@ -537,12 +537,18 @@ const Home: React.FC = () => {
                     <IonCard key={user._id || index} className="user-card">
                       <IonCardHeader
                         className="user-card-header"
-                        color="primary">
+                        color="dark">
                         <IonCardTitle className="user-card-title">
                           <div className="user-card-title-row">
                             <span className="rider-name">
-                              {user?.riderData?.name || "Unnamed"}
+                              {user?.seatType || "Unnamed"} Seater
                             </span>
+                            <IonText>
+                              <p className="user-text-small">
+                                <strong>{user?.userRating?.toFixed(1) ?? 5}</strong>{" "}
+                                <IonIcon icon={star} color="tertiary" />
+                              </p>
+                            </IonText>
                             <IonText className="rider-distance" slot="end">
                               {riderDistances
                                 ?.find((d) => d.riderId === user.riderId)
@@ -585,7 +591,7 @@ const Home: React.FC = () => {
                           </div>
 
                           <div className="user-card-right">
-                            <IonText color="primary" className="user-text-bold">
+                            <IonText color="dark" className="user-text-bold">
                               <p>
                                 <strong>
                                   {user?.computations?.fareDistanceInKM?.toFixed(
@@ -602,14 +608,8 @@ const Home: React.FC = () => {
                             </IonText>
                             <IonText color="medium">
                               <p className="user-text-small">
-                                <strong>{user?.userRating?.toFixed(1) ?? 5}</strong>{" "}
-                                <IonIcon icon={star} color="tertiary" />
-                              </p>
-                            </IonText>
-                            <IonText color="medium">
-                              <p className="user-text-small">
                                 <strong>
-                                  {getSeatType(user?.computations.baseFare)}
+                                  {user?.paymentMethod}
                                 </strong>
                               </p>
                             </IonText>

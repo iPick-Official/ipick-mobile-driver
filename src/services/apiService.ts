@@ -30,7 +30,7 @@ export const fetchActiveJobs = async (logout: () => void) => {
       throw new Error(`Request failed with status ${response.status}`);
     }
 
-    return data; // ✅ Return the fetched data here
+    return data; // Return the fetched data here
   } catch (error) {
     console.error("Error fetching active jobs:", error);
     throw error; // Optional: rethrow if you want the calling function to handle it
@@ -42,6 +42,7 @@ import { connectSocket, fetchAllUserIds } from "../utils/useSocket";
 
 export const fetchBookingDetails = async (): Promise<any | null> => {
   const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("accessToken");
   if (!userId) return null;
 
   try {
@@ -49,13 +50,13 @@ export const fetchBookingDetails = async (): Promise<any | null> => {
     const id = await fetchAllUserIds(); // fetch latest all_users IDs
 
     const response = await fetch(
-      `${import.meta.env.VITE_API_BOOKING_ENDPOINT}/GetBookingDetails`,
+      `${import.meta.env.VITE_API_ENDPOINT}/mobile/${id}`,
       {
-        method: "POST",
+        method: "GET",
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id }),
       }
     );
 
@@ -104,16 +105,17 @@ export const fetchRideHistory = async () => {
 
 export const fetchDriverWallet = async () => {
   const userId = localStorage.getItem("id");
-
+  const token = localStorage.getItem("accessToken");
   if (!userId) return null;
 
   try {
     // await new Promise((resolve) => setTimeout(resolve, 2000));
     const response = await fetch(
-      `${import.meta.env.VITE_API_BOOKING_ENDPOINT}/GetUserWallet`,
+      `${import.meta.env.VITE_API_ENDPOINT}/mobile/GetUserWallet`,
       {
         method: "POST",
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -128,7 +130,7 @@ export const fetchDriverWallet = async () => {
     }
 
     const data = await response.json();
-    return data; // will include _id and walletBalance
+    return data;
   } catch (error) {
     console.error("Error fetching driver wallet:", error);
     return null;
@@ -137,16 +139,17 @@ export const fetchDriverWallet = async () => {
 
 export const fetchDriverTransactions = async () => {
   const userId = localStorage.getItem("id");
-
+  const token = localStorage.getItem("accessToken");
   if (!userId) return null;
 
   try {
     // await new Promise((resolve) => setTimeout(resolve, 2000));
     const response = await fetch(
-      `${import.meta.env.VITE_API_BOOKING_ENDPOINT}/GetUserTransactions`,
+      `${import.meta.env.VITE_API_ENDPOINT}/mobile/GetUserTransactions`,
       {
         method: "POST",
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

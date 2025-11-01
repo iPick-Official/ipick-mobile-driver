@@ -113,6 +113,9 @@ const DriverTrip: React.FC = () => {
         lng: data?.destination.coordinates[1],
       });
       setNotes(data?.notes);
+      setPaymentType(data?.paymentMethod)
+      setSystemShare(data?.systemShare);
+      setBookingRef(data?.referenceNumber);
     } catch (error) {
       console.error("Error fetching active jobs:", error);
     }
@@ -127,31 +130,6 @@ const DriverTrip: React.FC = () => {
       setIsRatingsOpen(true);
     }
   }, []);
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      if (!hasFetchedBooking.current) {
-        const booking = await fetchBookingDetails();
-        setBookingDetails(booking);
-
-        if (booking && booking.length > 0) {
-          const firstBooking = booking[0];
-
-          // Set system share as negative
-          setSystemShare(firstBooking.systemShare ?? 0);
-          setBookingRef(firstBooking.referenceNumber);
-          const payment = firstBooking.paymentType.paymentType;
-          setPaymentType(payment);
-
-          getJobs();
-        }
-
-        hasFetchedBooking.current = true;
-      }
-    };
-
-    fetchAll();
-  }, [bookingData, bookingDetails]);
 
   const showPrompt = (
     header: string,
@@ -204,7 +182,7 @@ const DriverTrip: React.FC = () => {
           await postTransaction(
             -systemShareValue,
             bookingId,
-            `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}), Prev bal. ₱${walletBalance.toFixed(2)}`
+            `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef})`
           );
 
           const systemShare8 = systemShareValue * 0.4;
@@ -213,7 +191,7 @@ const DriverTrip: React.FC = () => {
           await postTransaction(
             systemShare8,
             bookingId,
-            `Incentive of ₱${systemShare8.toFixed(2)} credited to driver (Ref: ${bookingRef}), Prev bal. ₱${newWallet.toFixed(2)}`
+            `An incentive of ₱${systemShare8.toFixed(2)} has been credited to your wallet (Ref: ${bookingRef}).`
           );
 
           await updateWallet(newBalance);
@@ -399,7 +377,7 @@ const DriverTrip: React.FC = () => {
           <div className="footer-actions">
             <div className="action-button">
               {tripStatus === 1 && (
-                <IonButton expand="block" shape="round" disabled={!bookingData || !bookingDetails} onClick={promptArrived}>
+                <IonButton expand="block" shape="round" disabled={!bookingData} onClick={promptArrived}>
                   I've arrived
                 </IonButton>
               )}
