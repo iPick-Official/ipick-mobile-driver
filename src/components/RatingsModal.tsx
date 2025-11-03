@@ -33,9 +33,9 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
   totalFare,
   redirectOnClose,
 }) => {
-   const {
-      tripStatus, setTripStatus,
-    } = useLocationContext();
+  const {
+    tripStatus, setTripStatus,
+  } = useLocationContext();
   const token = localStorage.getItem("accessToken");
   const history = useHistory();
 
@@ -134,7 +134,7 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
                 />
               </div>
 
-              <IonItem lines="none">
+              <IonItem lines="full">
                 <IonLabel position="stacked">Comments</IonLabel>
                 <IonTextarea
                   placeholder="Share your thoughts..."
@@ -144,7 +144,7 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
                 />
               </IonItem>
 
-              <div style={{ marginTop: "1.5rem" }}>
+              <div className="button-row">
                 <IonButton expand="block" shape="round" onClick={submitRatings}>
                   Submit
                 </IonButton>
@@ -157,18 +157,6 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
                 >
                   Skip
                 </IonButton>
-              </div>
-              <div className="ion-text-center">
-                <h3
-                  style={{
-                    fontSize: "1.8rem",
-                    fontWeight: "900",
-                    margin: "0.5rem 0",
-                    color: "#3e3e3eff",
-                  }}
-                >
-                  Total Fare: ₱{totalFare.toFixed(2) ?? 0.00}
-                </h3>
               </div>
             </IonCardContent>
           </IonCard>

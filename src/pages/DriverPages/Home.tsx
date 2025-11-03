@@ -37,7 +37,7 @@ import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import "@theme/variables.css";
 import "../../theme/Home.css";
 import Loading from "../../components/Loading";
-import { fetchDriverWallet } from "../../services/apiService";
+import { fetchWallet } from "../../services/apiService";
 import { fetchRiderDistances } from "../../utils/fetchRiderDistances";
 import { useLocationContext } from "../../contexts/LocationContext";
 import Refresher from "../../components/Refresher";
@@ -298,7 +298,7 @@ const Home: React.FC = () => {
 
   const checkWallet = async (): Promise<boolean> => {
     try {
-      const walletData = await fetchDriverWallet();
+      const walletData = await fetchWallet(driverData._id, "driver");
 
       if (!walletData || typeof walletData.walletBalance !== 'number') {
         setError("Unable to retrieve wallet balance.");

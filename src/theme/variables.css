@@ -285,3 +285,15 @@ ion-modal::part(content) {
   background: white;
   z-index: 10; /* Make sure it's not hidden */
 }
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem; /* spacing between buttons */
+  margin-top: 1.5rem;
+}
+
+.button-row ion-button {
+  flex: 1; /* make buttons equal width */
+}

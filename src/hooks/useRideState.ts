@@ -82,6 +82,10 @@ export const useRideState = (initialState: any) => {
     initialState.walletBalance ?? 0
   );
 
+  const [riderBalance, _setRiderBalance] = useState<number | undefined>(
+    initialState.riderBalance ?? 0
+  );
+
   return {
     currentLocation,
     _setCurrentLocation,
@@ -141,5 +145,7 @@ export const useRideState = (initialState: any) => {
     _setIncentives,
     walletBalance,
     _setWalletBalance,
+    riderBalance,
+    _setRiderBalance,
   };
 };

@@ -82,5 +82,7 @@ export interface LocationContextType {
   setIncentives: (incentives: number) => void;
   walletBalance: number | undefined;
   setWalletBalance: (walletBalance: number) => void;
+  riderBalance: number | undefined;
+  setRiderBalance: (riderBalance: number) => void;
   resetAll: () => void;
 }

@@ -21,16 +21,18 @@ import {
   IonSelect,
   IonSelectOption,
   IonText,
-  IonTextarea,  
+  IonTextarea,
   IonToast,
   IonToolbar,
 } from "@ionic/react";
 import "@theme/variables.css";
-import BackButton from "../../components/BackButton";
+
 import { cloudUploadSharp } from "ionicons/icons";
 import { UploadService } from "../../services/uploadService";
 import { capitalizeWords } from "../../utils/textUtils";
+
 import Loading from "../../components/Loading";
+import BackButton from "../../components/BackButton";
 
 const PersonlaReq: React.FC = () => {
   const [activeTab, setActiveTab] = useState("personal");

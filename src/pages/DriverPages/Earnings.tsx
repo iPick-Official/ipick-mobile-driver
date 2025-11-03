@@ -19,6 +19,7 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
+import "../../theme/DriverEarningsToolbar.css";
 import { searchOutline, closeOutline } from "ionicons/icons";
 import html2canvas from "html2canvas";
 import { useEffect, useRef, useState } from "react";
@@ -33,9 +34,6 @@ const Earnings: React.FC = () => {
   const [rideHistory, setRideHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const receiptRef = useRef(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
 
   const [showModal, setShowModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
@@ -43,6 +41,32 @@ const Earnings: React.FC = () => {
   const [isRatingsOpen, setIsRatingsOpen] = useState(false);
   const ITEMS_PER_PAGE = 15;
   const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
+
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const todayIncome = rideHistory
+    .filter((ride) => {
+      const d = new Date(ride.updatedAt);
+      return (
+        d.getFullYear() === today.getFullYear() &&
+        d.getMonth() === today.getMonth() &&
+        d.getDate() === today.getDate()
+      );
+    })
+    .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
+
+  const yesterdayIncome = rideHistory
+    .filter((ride) => {
+      const d = new Date(ride.updatedAt);
+      return (
+        d.getFullYear() === yesterday.getFullYear() &&
+        d.getMonth() === yesterday.getMonth() &&
+        d.getDate() === yesterday.getDate()
+      );
+    })
+    .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
 
   const loadMoreData = (event: CustomEvent<void>) => {
     setTimeout(() => {
@@ -68,53 +92,6 @@ const Earnings: React.FC = () => {
   const rateDriver = () => {
     setIsRatingsOpen(true);
   }
-
-  const selected = new Date(selectedDate);
-  const selectedYear = selected.getFullYear();
-  const selectedMonth = selected.getMonth();
-  const selectedDay = selected.getDate();
-
-  const getWeekStart = (date: Date) => {
-    const d = new Date(date);
-    d.setDate(d.getDate() - d.getDay());
-    d.setHours(0, 0, 0, 0);
-    return d;
-  };
-
-  const todayIncome = rideHistory
-    .filter((ride) => {
-      const d = new Date(ride.updatedAt);
-      return (
-        d.getFullYear() === selectedYear &&
-        d.getMonth() === selectedMonth &&
-        d.getDate() === selectedDay
-      );
-    })
-    .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
-
-  const weekIncome = rideHistory
-    .filter((ride) => {
-      const d = new Date(ride.updatedAt);
-      const weekStart = getWeekStart(selected);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 7);
-      return d >= weekStart && d < weekEnd;
-    })
-    .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
-
-  const monthIncome = rideHistory
-    .filter((ride) => {
-      const d = new Date(ride.updatedAt);
-      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
-    })
-    .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
-
-  const yearIncome = rideHistory
-    .filter((ride) => {
-      const d = new Date(ride.updatedAt);
-      return d.getFullYear() === selectedYear;
-    })
-    .reduce((sum, ride) => sum + (ride.travelFare || 0), 0);
 
   async function fetchBookingDetails(id: string): Promise<BookingDetail | null> {
     const token = localStorage.getItem("accessToken");
@@ -236,76 +213,30 @@ const Earnings: React.FC = () => {
 
         {/* Earnings Summary Cards */}
         <IonToolbar>
-          <div
-            style={{
-              display: "flex",
-              overflowX: "auto",
-              paddingBottom: "1rem",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
-            className="no-scrollbar"
-          >
+          <div className="earnings-toolbar">
             {loading
-              ? Array.from({ length: 4 }).map((_, index) => (
-                <IonCard
-                  key={index}
-                  className="profile-item"
-                  style={{
-                    minWidth: "140px",
-                    background:
-                      "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
-                  }}
-                >
+              ? Array.from({ length: 2 }).map((_, index) => (
+                <IonCard key={index} className="earnings-card skeleton-card">
                   <IonCardContent>
-                    <IonSkeletonText
-                      animated
-                      style={{ width: "90px", height: "65px" }}
-                    />
+                    <IonSkeletonText animated className="skeleton-box" />
                   </IonCardContent>
                 </IonCard>
               ))
               : [
                 {
-                  label: "This day",
-                  value: `₱${todayIncome.toFixed(2)}`,
+                  label: "Today",
+                  value: `₱${todayIncome?.toFixed(2) ?? "0.00"}`,
                   icon: "assets/icons/income-daily.gif",
                 },
                 {
-                  label: "This Week",
-                  value: `₱${weekIncome.toFixed(2)}`,
+                  label: "Previous Day",
+                  value: `₱${yesterdayIncome?.toFixed(2) ?? "0.00"}`,
                   icon: "assets/icons/income-weekly.gif",
                 },
-                {
-                  label: "This Month",
-                  value: `₱${monthIncome.toFixed(2)}`,
-                  icon: "assets/icons/income-monthly.gif",
-                },
-                {
-                  label: "This Year",
-                  value: `₱${yearIncome.toFixed(2)}`,
-                  icon: "assets/icons/income-anually.gif",
-                },
               ].map((item, index) => (
-                <IonCard
-                  key={index}
-                  className="profile-item"
-                  style={{
-                    minWidth: "140px",
-                    background:
-                      "linear-gradient(135deg, #008000 0%,rgb(0, 83, 0) 100%)",
-                  }}
-                >
-                  <IonCardContent>
-                    <img
-                      src={item.icon}
-                      alt="Earnings"
-                      style={{
-                        width: "35px",
-                        height: "35px",
-                        marginBottom: "4px",
-                      }}
-                    />
+                <IonCard key={index} className="earnings-card">
+                  <IonCardContent className="earnings-content">
+                    <img src={item.icon} alt={item.label} className="earnings-icon" />
                     <IonText color="light">
                       <h6>{item.label}</h6>
                       <strong>{item.value}</strong>

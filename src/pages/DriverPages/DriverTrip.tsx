@@ -14,21 +14,24 @@ import {
 import {
   fetchActiveJobs,
   fetchBookingDetails,
+  fetchWallet,
   postTransaction,
   updateWallet,
 } from "../../services/apiService";
 import React, { useState, useEffect, useRef } from "react";
-import Map from "../../components/Map";
+
 import { useHistory } from "react-router";
-import ConfirmActionSheet from "../../components/ConfirmActionSheet";
-import Loading from "../../components/Loading";
 import { socket } from "../../utils/useSocket";
 import { chatbubblesSharp, mapOutline, star } from "ionicons/icons";
 import { useLocationContext } from "../../contexts/LocationContext";
 import { Message } from "../../types/messageTypes";
-import CustomAlert from "../../components/CustomAlert";
 import { useAuth } from "../../contexts/AuthContext";
+
 import RatingsModal from "../../components/RatingsModal";
+import CustomAlert from "../../components/CustomAlert";
+import ConfirmActionSheet from "../../components/ConfirmActionSheet";
+import Loading from "../../components/Loading";
+import Map from "../../components/Map";
 
 const DriverTrip: React.FC = () => {
   const history = useHistory();
@@ -47,9 +50,7 @@ const DriverTrip: React.FC = () => {
   const [subHeader, setSubHeader] = useState<any | null>(null);
   const [bookingData, setBookingData] = useState<any | null>(null);
   const [bookingRatings, setBookingRatings] = useState<any | null>(null);
-  const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [paymentType, setPaymentType] = useState<any | null>(null);
-  const hasFetchedBooking = useRef(false);
   const [isCooldown, setIsCooldown] = useState<boolean>(false);
 
   const {
@@ -63,7 +64,7 @@ const DriverTrip: React.FC = () => {
     setPickupCoords, setDropoffCoords,
     notes, setNotes,
     systemShare, setSystemShare,
-    walletBalance, setWalletBalance
+    walletBalance, riderBalance,
   } = useLocationContext();
 
   useEffect(() => {
@@ -164,44 +165,44 @@ const DriverTrip: React.FC = () => {
     );
 
   const promptEndTrip = () => {
-    const fare = bookingData?.travelFare?.toFixed(2);
-    if (!fare || !bookingId || systemShare == null || walletBalance == null) {
-      console.error("Missing required data to end trip.");
+
+    const userId = localStorage.getItem("id");
+    const fare = Number(bookingData?.travelFare || 0);
+    const systemShareValue = Math.abs(Number(systemShare)) || 0;
+    const incentive = systemShareValue * 0.4;
+
+    if (!fare || !bookingId || systemShare == null || walletBalance == null || riderBalance == null) {
+      console.error("Missing required data to end trip.", { fare, bookingId, systemShare, walletBalance, riderBalance });
       return;
     }
 
-    showPrompt(
-      "End Trip?",
-      `Please collect payment of ₱${fare}`,
-      async () => {
-        try {
-          await endTrip();
-          const systemShareValue = Math.abs(Number(systemShare)) || 0;
-          const newWallet = walletBalance - systemShareValue;
+    showPrompt("End Trip?", `Please collect payment of ₱${fare.toFixed(2)}`, async () => {
+      try {
+        await endTrip();
 
-          await postTransaction(
-            -systemShareValue,
-            bookingId,
-            `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef})`
-          );
-
-          const systemShare8 = systemShareValue * 0.4;
-          const newBalance = newWallet + systemShare8;
-
-          await postTransaction(
-            systemShare8,
-            bookingId,
-            `An incentive of ₱${systemShare8.toFixed(2)} has been credited to your wallet (Ref: ${bookingRef}).`
-          );
-
-          await updateWallet(newBalance);
-          setIsRatingsOpen(true);
-
-        } catch (error) {
-          console.error("Failed to complete end trip process:", error);
+        let newWallet = walletBalance;
+        if (paymentType === "Cash") {
+          newWallet -= systemShareValue;
+          await postTransaction(-systemShareValue, bookingId, userId!, "driver", `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}).`);
+        } else {
+          newWallet += fare - systemShareValue;
+          const riderBalance = await fetchWallet(bookingData?.riderData._id, "rider");
+          const riderWallet = riderBalance.walletBalance - fare;
+          await postTransaction(fare, bookingId, userId!, "driver", `₱${fare.toFixed(2)} earnings credited (Ref: ${bookingRef}).`);
+          await postTransaction(-systemShareValue, bookingId, userId!, "driver", `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}).`);
+          await postTransaction(fare, bookingId, bookingData?.riderData._id, "rider", `₱${fare.toFixed(2)} payments to driver (Ref: ${bookingRef}).`);
+          await updateWallet(riderWallet, bookingData?.riderData._id);
         }
+
+        // Incentive
+        newWallet += incentive;
+        await postTransaction(incentive, bookingId, userId!, "driver", `An incentive of ₱${incentive.toFixed(2)} has been credited (Ref: ${bookingRef}).`);
+        await updateWallet(newWallet, userId!);
+        setIsRatingsOpen(true);
+      } catch (error) {
+        console.error("Failed to complete end trip process:", error);
       }
-    );
+    });
   };
 
   const updateRideStatus = async (

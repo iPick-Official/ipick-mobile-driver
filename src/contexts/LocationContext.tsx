@@ -69,7 +69,8 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     finalFare, _setFinalFare,
     systemShare, _setSystemShare,
     incentives, _setIncentives,
-    walletBalance, _setWalletBalance
+    walletBalance, _setWalletBalance,
+    riderBalance, _setRiderBalance
   } = useRideState(initialState);
 
   const updateStorage = (key: string, value: any) => {
@@ -105,6 +106,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     _setSystemShare(0);
     _setIncentives(0);
     _setWalletBalance(0);
+    _setRiderBalance(0);
   };
 
   const withStorage = (key: string, setter: React.Dispatch<any>) => {
@@ -194,6 +196,8 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
         setIncentives: withStorage("incentives", _setIncentives),
         walletBalance,
         setWalletBalance: withStorage("walletBalance", _setWalletBalance),
+        riderBalance,
+        setRiderBalance: withStorage("riderBalance", _setRiderBalance),
         resetAll,
       }}
     >

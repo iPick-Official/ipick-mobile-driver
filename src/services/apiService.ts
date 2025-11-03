@@ -103,8 +103,7 @@ export const fetchRideHistory = async () => {
   }
 };
 
-export const fetchDriverWallet = async () => {
-  const userId = localStorage.getItem("id");
+export const fetchWallet = async (userId: string, userType: string) => {
   const token = localStorage.getItem("accessToken");
   if (!userId) return null;
 
@@ -120,7 +119,7 @@ export const fetchDriverWallet = async () => {
         },
         body: JSON.stringify({
           id: userId,
-          type: "driver",
+          type: userType,
         }),
       }
     );
@@ -377,11 +376,12 @@ export const fetchMsgs = async (riderId: string, driverId: string) => {
 export const postTransaction = async (
   amount: number,
   bookingId: string,
+  userId: string,
+  userType: string,
   description: string
 ) => {
   try {
     const timestamp = new Date().toISOString();
-    const userId = localStorage.getItem("id");
     const response = await fetch(
       `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/api/Wallet`,
       {
@@ -395,7 +395,7 @@ export const postTransaction = async (
           updatedAt: timestamp,
           bookingId,
           userId: userId,
-          userType: "driver",
+          userType: userType,
           description: description,
         }),
       }
@@ -414,19 +414,18 @@ export const postTransaction = async (
   }
 };
 
-export const updateWallet = async (Amount: number) => {
+export const updateWallet = async (amount: number, userId: string) => {
   try {
-    const userId = localStorage.getItem("id");
     const response = await fetch(
       `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/api/WalletInfo/${userId}`,
       {
-        method: "PUT", // Changed from POST to PATCH
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           Id: userId,
-          WalletBalance: Amount,
+          WalletBalance: amount,
         }),
       }
     );
