@@ -190,7 +190,7 @@ const DriverTrip: React.FC = () => {
           const riderWallet = riderBalance.walletBalance - fare;
           await postTransaction(fare, bookingId, userId!, "driver", `₱${fare.toFixed(2)} earnings credited (Ref: ${bookingRef}).`);
           await postTransaction(-systemShareValue, bookingId, userId!, "driver", `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}).`);
-          await postTransaction(fare, bookingId, bookingData?.riderData._id, "rider", `₱${fare.toFixed(2)} payments to driver (Ref: ${bookingRef}).`);
+          await postTransaction(-fare, bookingId, bookingData?.riderData._id, "rider", `₱${fare.toFixed(2)} payments to driver (Ref: ${bookingRef}).`);
           await updateWallet(riderWallet, bookingData?.riderData._id);
         }
 
