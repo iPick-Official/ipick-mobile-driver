@@ -64,7 +64,8 @@ const DriverTrip: React.FC = () => {
     setPickupCoords, setDropoffCoords,
     notes, setNotes,
     systemShare, setSystemShare,
-    walletBalance, riderBalance,
+    walletBalance,
+    riderBalance, setRiderBalance,
   } = useLocationContext();
 
   useEffect(() => {
@@ -117,6 +118,8 @@ const DriverTrip: React.FC = () => {
       setPaymentType(data?.paymentMethod)
       setSystemShare(data?.systemShare);
       setBookingRef(data?.referenceNumber);
+      const riderWallet = await fetchWallet(data?.riderData._id, "rider");
+      setRiderBalance(riderWallet.walletBalance);
     } catch (error) {
       console.error("Error fetching active jobs:", error);
     }
@@ -181,23 +184,23 @@ const DriverTrip: React.FC = () => {
         await endTrip();
 
         let newWallet = walletBalance;
+        let newRiderWallet = riderBalance
         if (paymentType === "Cash") {
           newWallet -= systemShareValue;
           await postTransaction(-systemShareValue, bookingId, userId!, "driver", `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}).`);
         } else {
           newWallet += fare - systemShareValue;
-          const riderBalance = await fetchWallet(bookingData?.riderData._id, "rider");
-          const riderWallet = riderBalance.walletBalance - fare;
+          newRiderWallet = riderBalance - fare;
           await postTransaction(fare, bookingId, userId!, "driver", `₱${fare.toFixed(2)} earnings credited (Ref: ${bookingRef}).`);
           await postTransaction(-systemShareValue, bookingId, userId!, "driver", `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}).`);
           await postTransaction(-fare, bookingId, bookingData?.riderData._id, "rider", `₱${fare.toFixed(2)} payments to driver (Ref: ${bookingRef}).`);
-          await updateWallet(riderWallet, bookingData?.riderData._id);
+          await updateWallet(newRiderWallet, "rider", bookingData?.riderData._id);
         }
 
         // Incentive
         newWallet += incentive;
         await postTransaction(incentive, bookingId, userId!, "driver", `An incentive of ₱${incentive.toFixed(2)} has been credited (Ref: ${bookingRef}).`);
-        await updateWallet(newWallet, userId!);
+        await updateWallet(newWallet, "driver", userId!);
         setIsRatingsOpen(true);
       } catch (error) {
         console.error("Failed to complete end trip process:", error);

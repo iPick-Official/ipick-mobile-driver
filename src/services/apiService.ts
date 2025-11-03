@@ -103,73 +103,6 @@ export const fetchRideHistory = async () => {
   }
 };
 
-export const fetchWallet = async (userId: string, userType: string) => {
-  const token = localStorage.getItem("accessToken");
-  if (!userId) return null;
-
-  try {
-    // await new Promise((resolve) => setTimeout(resolve, 2000));
-    const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT}/mobile/GetUserWallet`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: userId,
-          type: userType,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching driver wallet:", error);
-    return null;
-  }
-};
-
-export const fetchDriverTransactions = async () => {
-  const userId = localStorage.getItem("id");
-  const token = localStorage.getItem("accessToken");
-  if (!userId) return null;
-
-  try {
-    // await new Promise((resolve) => setTimeout(resolve, 2000));
-    const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT}/mobile/GetUserTransactions`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: userId,
-          type: "driver",
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data; // will include _id and walletBalance
-  } catch (error) {
-    console.error("Error fetching driver wallet:", error);
-    return null;
-  }
-};
-
 export const fetchMyRatings = async () => {
   const user = JSON.parse(localStorage.getItem("driverData") || "{}");
   const token = localStorage.getItem("accessToken");
@@ -373,6 +306,73 @@ export const fetchMsgs = async (riderId: string, driverId: string) => {
   }
 };
 
+export const fetchWallet = async (userId: string, userType: string) => {
+  const token = localStorage.getItem("accessToken");
+  if (!userId) return null;
+
+  try {
+    // await new Promise((resolve) => setTimeout(resolve, 2000));
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/mobile/GetUserWallet`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: userId,
+          type: userType,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching driver wallet:", error);
+    return null;
+  }
+};
+
+export const fetchDriverTransactions = async () => {
+  const userId = localStorage.getItem("id");
+  const token = localStorage.getItem("accessToken");
+  if (!userId) return null;
+
+  try {
+    // await new Promise((resolve) => setTimeout(resolve, 2000));
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/mobile/GetUserTransactions`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: userId,
+          type: "driver",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // will include _id and walletBalance
+  } catch (error) {
+    console.error("Error fetching driver wallet:", error);
+    return null;
+  }
+};
+
 export const postTransaction = async (
   amount: number,
   bookingId: string,
@@ -414,18 +414,25 @@ export const postTransaction = async (
   }
 };
 
-export const updateWallet = async (amount: number, userId: string) => {
+export const updateWallet = async (
+  amount: number,
+  type: string,
+  userId: string
+) => {
+  const token = localStorage.getItem("accessToken");
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/api/WalletInfo/${userId}`,
+      `${import.meta.env.VITE_API_ENDPOINT}/mobile/UpdateUserWallet`,
       {
         method: "PUT",
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          Id: userId,
-          WalletBalance: amount,
+          id: userId,
+          type: type,
+          amount: amount,
         }),
       }
     );

@@ -422,51 +422,39 @@ const Earnings: React.FC = () => {
                       },
                       {
                         label: "Base Fare",
-                        total: `₱${bookingDetails.Computations.baseFare.toFixed(
-                          2
-                        )}`,
-                        color: "medium",
+                        total: `₱${bookingDetails.Computations.baseFare.toFixed(2)}`,
+                        color: "dark",
                       },
                       {
                         label: `Distance (₱${bookingDetails.Computations.costPerKM})`,
-                        value: `${bookingDetails.Computations.fareDistanceInKM.toFixed(
-                          2
-                        )}km`,
+                        value: `${bookingDetails.Computations.fareDistanceInKM.toFixed(2)}km`,
                         total: `₱${(
                           bookingDetails.Computations.fareDistanceInKM *
-                          bookingDetails.Computations.costPerKM
-                        ).toFixed(2)}`,
-                        color: "medium",
+                          bookingDetails.Computations.costPerKM).toFixed(2)}`,
+                        color: "dark",
                       },
                       {
                         label: `Duration (₱${bookingDetails.Computations.costPerMin})`,
-                        value: `${bookingDetails.Computations.fareDurationInMins.toFixed(
-                          2
-                        )}mins`,
+                        value: `${bookingDetails.Computations.fareDurationInMins.toFixed()}mins`,
                         total: `₱${(
                           bookingDetails.Computations.fareDurationInMins *
-                          bookingDetails.Computations.costPerMin
-                        ).toFixed(2)}`,
-                        color: "medium",
+                          bookingDetails.Computations.costPerMin).toFixed(2)}`,
+                        color: "dark",
                       },
                       {
                         label: "Service Fee",
-                        total: `₱${bookingDetails.Computations.serviceFee.toFixed(
-                          2
-                        )}`,
-                        color: "medium",
+                        total: `₱${bookingDetails.Computations.serviceFee.toFixed(2)}`,
+                        color: "dark",
                       },
                       {
                         label: "Pick-up Fare",
-                        total: `₱${bookingDetails.PickupFare.toFixed(
-                          2
-                        )}`,
-                        color: "medium",
+                        total: `₱${(bookingDetails.PickupFare ?? 0).toFixed(2)}`,
+                        color: "dark",
                       },
                       {
                         label: "Surge Charge",
                         total: `₱${getSurgeCharge().toFixed(2)}`,
-                        color: "medium",
+                        color: "dark",
                       },
                     ].map((f, idx) => (
                       <IonItem
