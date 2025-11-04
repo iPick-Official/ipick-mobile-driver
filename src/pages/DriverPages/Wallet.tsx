@@ -31,6 +31,8 @@ import {
 import { useHistory } from "react-router";
 
 const Wallet: React.FC = () => {
+  const userId = localStorage.getItem("userId");
+  const userType = localStorage.getItem("userType");
   const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
   const history = useHistory();
   const [loading, setLoading] = useState(true);
@@ -98,13 +100,13 @@ const Wallet: React.FC = () => {
     }
 
     try {
-      if (!driverData.userId) {
+      if (!userId) {
         alert("User ID not found.");
         return;
       }
 
       const url = `${import.meta.env.VITE_2C2P_URL}=${amount * 100
-        }&user_id=${driverData.userId}&channel=${method}&user_type=${driverData.usertType}`;
+        }&user_id=${userId}&channel=${method}&user_type=${userType}`;
 
       // Redirect logic
       if (isPlatform("android") || isPlatform("ios")) {
@@ -131,7 +133,7 @@ const Wallet: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const walletData = await fetchWallet(driverData._id, "driver")
+      const walletData = await fetchWallet(driverData._id, "driver");
       const transactionData = await fetchDriverTransactions();
 
       if (walletData?.walletBalance !== undefined) {
