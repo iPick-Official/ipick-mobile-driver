@@ -38,6 +38,7 @@ import { enableKeepAwake, disableKeepAwake } from "./utils/KeepAwake";
 import { fetchActiveJobs } from "./services/apiService";
 import VersionCheck from "./components/VersionCheck";
 import { LocationProvider } from "./contexts/LocationContext";
+import PhoneAuth from "./pages/AuthPages/PhoneAuth";
 
 setupIonicReact();
 
@@ -100,6 +101,9 @@ const AppContentInner: React.FC = () => {
         </Route>
         <Route path="/new-password" exact>
           <UpdatePassword />
+        </Route>
+        <Route path="/phone-auth" exact>
+          <PhoneAuth />
         </Route>
 
         {/* Protected Routes */}

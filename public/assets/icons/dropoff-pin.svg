@@ -1,0 +1,8 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="map-icon pickup-icon"
+    viewBox="0 0 24 24"
+>
+    <circle cx="12" cy="12" r="8" fill="#EA4335" />
+    <circle cx="12" cy="12" r="3" fill="#fff" />
+</svg>

@@ -250,17 +250,17 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
         <Marker
           position={pickupCoords!}
           icon={{
-            url: "/assets/markers/user.png",
-            scaledSize: new google.maps.Size(30, 30),
-            anchor: new google.maps.Point(20, 30),
+            url: "/assets/icons/pickup-pin.svg",
+            scaledSize: new google.maps.Size(40, 40),
+            anchor: new google.maps.Point(20, 40),
           }}
         />
         <Marker
           position={dropoffCoords!}
           icon={{
-            url: "/assets/markers/placeholder.png",
-            scaledSize: new google.maps.Size(30, 30),
-            anchor: new google.maps.Point(20, 30),
+            url: "/assets/icons/dropoff-pin.svg",
+            scaledSize: new google.maps.Size(40, 40),
+            anchor: new google.maps.Point(20, 40),
           }}
         />
       </>
@@ -324,9 +324,9 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
         <Marker
           position={pickupCoords!}
           icon={{
-            url: "/assets/markers/user.png",
-            scaledSize: new google.maps.Size(30, 30),
-            anchor: new google.maps.Point(20, 30),
+            url: "/assets/icons/pickup-pin.svg",
+            scaledSize: new google.maps.Size(40, 40),
+            anchor: new google.maps.Point(20, 40),
           }}
         />
       </>
@@ -390,9 +390,9 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
         <Marker
           position={dropoffCoords!}
           icon={{
-            url: "/assets/markers/placeholder.png",
-            scaledSize: new google.maps.Size(30, 30),
-            anchor: new google.maps.Point(20, 30),
+            url: "/assets/icons/dropoff-pin.svg",
+            scaledSize: new google.maps.Size(40, 40),
+            anchor: new google.maps.Point(20, 40),
           }}
         />
       </>

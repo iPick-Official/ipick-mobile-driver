@@ -29,7 +29,7 @@ import {
   star,
 } from "ionicons/icons";
 import {
-  fetchBookingDetails, postDriverLocation,
+  postDriverLocation,
 } from "../../services/apiService";
 import Map from "../../components/Map";
 import { connectSocket, socket } from "../../utils/useSocket";
@@ -692,7 +692,6 @@ const Home: React.FC = () => {
           if (acceptBooking) {
             setAcceptBooking(false);
             bookAccepted();
-            fetchBookingDetails();
             postDriverLocation(bookingId);
             history.push("/driver-trip");
           }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   IonButton,
   IonContent,
@@ -7,38 +7,30 @@ import {
   IonToast,
   IonItem,
   IonImg,
-  IonText,
   IonLabel,
-  IonFooter,
   IonHeader,
   IonToolbar,
   IonIcon,
 } from "@ionic/react";
+import { useLocationContext } from "../../contexts/LocationContext";
+import { eyeOffOutline, eyeOutline } from "ionicons/icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useHistory } from "react-router-dom";
 import Loading from "../../components/Loading";
-import OtpModal from "../../components/OtpModal";
+
 import "@theme/variables.css";
-import { useLocationContext } from "../../contexts/LocationContext";
-import { eyeOffOutline, eyeOutline } from "ionicons/icons";
+
 
 const Login: React.FC = () => {
   const { login } = useAuth();
   const history = useHistory();
-  const modalRef = useRef<HTMLIonModalElement>(
-    null!
-  ) as React.RefObject<HTMLIonModalElement>;
-  const otpRef = useRef<HTMLIonInputElement>(
-    null!
-  ) as React.RefObject<HTMLIonInputElement>;
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingOtp, setLoadingOtp] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
-  const [countdown, setCountdown] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+
   const mobileRef = useRef<HTMLIonInputElement>(null);
   const passwordRef = useRef<HTMLIonInputElement>(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   const {
     setUserId, setDriverId,
@@ -50,27 +42,11 @@ const Login: React.FC = () => {
     setUserCarType,
     setCarColor } = useLocationContext();
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isDisabled && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            setIsDisabled(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isDisabled, countdown]);
-
   const handleLogin = async () => {
     const mobile = String(mobileRef.current?.value ?? "").trim();
     const password = String(passwordRef.current?.value ?? "").trim();
     const lastTenDigits = mobile.slice(-10);
+    localStorage.setItem("mobileNumber", lastTenDigits);
 
     if (!/^\d{10}$/.test(lastTenDigits)) {
       setError("Enter a valid 11-digit mobile number");
@@ -115,12 +91,11 @@ const Login: React.FC = () => {
         return;
       }
 
-      // Warn on default password usage
       if (password === "ipick@2025") {
         alert(
           "You are using the default password. Please change it immediately for security reasons."
         );
-        setTimeout(handleRequestOtp, 100);
+        history.push("/new-password");
         return;
       }
 
@@ -144,7 +119,6 @@ const Login: React.FC = () => {
       setCarBrand(user?.transportRequirements?.carColor);
       setCarModel(user?.transportRequirements?.carBrand);
       setCarColor(user?.transportRequirements?.carModel);
-
       localStorage.setItem("driverData", JSON.stringify(user));
       localStorage.setItem("id", user._id);
       localStorage.setItem("userId", user.id);
@@ -152,11 +126,9 @@ const Login: React.FC = () => {
       localStorage.setItem("isLogged", "true");
       localStorage.setItem("userType", user.type);
       localStorage.setItem("status", user.status);
-      localStorage.setItem("accountStatus", accountStatus);
+      localStorage.setItem("accountStatus", user.accountStatus);
       localStorage.setItem("profilePicture", profilePictureUrl);
-
       login();
-
       const userStatus = user.status?.toLowerCase();
       history.replace(userStatus === "approved" ? "/home" : "/checklist");
     } catch (err) {
@@ -164,124 +136,6 @@ const Login: React.FC = () => {
       setError("An error occurred while logging in.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleRequestOtp = async () => {
-    const normalizedMobile = String(mobileRef.current?.value ?? "").trim();
-    const lastTenDigits = normalizedMobile.slice(-10);
-
-    if (!/^\d{10}$/.test(lastTenDigits)) {
-      setError("Enter a valid 11-digit mobile number");
-      return;
-    }
-
-    setLoadingOtp(true);
-    setError("");
-
-    try {
-      const otpResponse = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT
-        }/otp/requestOtpReset/${lastTenDigits}`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (otpResponse.status === 201) {
-        localStorage.setItem("otpMobile", lastTenDigits);
-        const driverInfoResponse = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT_DRIVER
-          }/Drivers/${lastTenDigits}`,
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
-        if (driverInfoResponse.ok) {
-          const driverData = await driverInfoResponse.json();
-
-          if (driverData && driverData._id) {
-            localStorage.setItem("driverData", JSON.stringify(driverData));
-            localStorage.setItem("driverObjectId", driverData._id);
-          } else {
-            console.warn("Driver data is missing _id field.");
-          }
-        } else {
-          console.warn(
-            "Failed to fetch driver info. Status:",
-            driverInfoResponse.status
-          );
-        }
-        modalRef.current?.present();
-        setIsDisabled(true);
-        setCountdown(60);
-      } else if (otpResponse.status === 404) {
-        setError("Mobile number not registered. Please register first.");
-      } else {
-        setError("Failed to send OTP. Please try again.");
-      }
-    } catch (err) {
-      console.error("OTP request error:", err);
-      setError("An error occurred while requesting OTP.");
-    } finally {
-      setLoadingOtp(false);
-    }
-  };
-
-  const handleVerify = async () => {
-    const mobile = String(mobileRef.current?.value ?? "")
-      .trim()
-      .slice(-10);
-    const otp = otpRef.current?.value?.toString().trim();
-    if (!otp || otp.length < 6) {
-      setError("Please enter a valid OTP.");
-      return;
-    }
-    setLoadingOtp(true);
-    setError("");
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}/otp/validate/${mobile}/${otp}`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.status === 201) {
-        const data = await response.json();
-        if (
-          data?.messages &&
-          Array.isArray(data.messages) &&
-          data.messages.length > 0 &&
-          typeof data.messages[0].msg === "string"
-        ) {
-          modalRef.current?.dismiss(); // ✅ dismiss modal after success
-          history.push("/new-password");
-        } else {
-          setError(
-            "Verification succeeded but response format was unexpected."
-          );
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Verification failed:", errorData);
-        setError("Failed to verify OTP. Please try again.");
-      }
-    } catch (err) {
-      console.error("OTP verification error:", err);
-      setError("Incorrect OTP. Please try again.");
-    } finally {
-      setLoadingOtp(false);
     }
   };
 
@@ -295,19 +149,19 @@ const Login: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding" fullscreen>
-        <div className="ion-text-center">
+        <div className="ion-text-center" style={{ marginBottom: "2rem" }}>
           <IonImg src="/assets/logo-word.png" className="logo-image" />
-        </div>
-        <div
-          style={{
-            color: "#008000",
-            textAlign: "center",
-            marginBottom: "30px",
-            fontWeight: 600,
-            fontSize: "1.3rem",
-          }}
-        >
-          Driver's App
+          <div
+            style={{
+              color: "#008000",
+              textAlign: "center",
+              marginBottom: "30px",
+              fontWeight: 600,
+              fontSize: "1.3rem",
+            }}
+          >
+            Driver's App
+          </div>
         </div>
 
         {/* Mobile Input */}
@@ -359,31 +213,29 @@ const Login: React.FC = () => {
           <IonButton
             fill="clear"
             size="default"
-            onClick={() => history.push("/register")}
+            onClick={() =>
+              history.push("/phone-auth", { mode: "signup" })
+            }
           >
-            Become a Driver
+            Sign-up
           </IonButton>
           <IonButton
             fill="clear"
             size="default"
-            onClick={handleRequestOtp}
+            onClick={() =>
+              history.push("/phone-auth", { mode: "login" })
+            }
             disabled={isDisabled}
           >
-            {isDisabled ? `Retry in ${countdown}s` : "Forgot Password?"}
+            Forgot Password?
           </IonButton>
         </div>
-
-        <OtpModal modalRef={modalRef} otpRef={otpRef} onVerify={handleVerify} />
-
-        {/* Loading Spinner */}
         <Loading isOpen={loading} message="Logging in..." />
-        <Loading isOpen={loadingOtp} message="Requesting Otp..." />
-        {/* Error Toast */}
+
         <IonToast
           isOpen={!!error}
           message={error}
           duration={3000}
-          color="danger"
           position="top"
           onDidDismiss={() => setError("")}
         />

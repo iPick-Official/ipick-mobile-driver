@@ -14,19 +14,19 @@ import {
 import { useHistory } from "react-router-dom";
 import Loading from "../../components/Loading";
 import "@theme/variables.css";
-import bcrypt from "bcryptjs";
 import { eyeOffOutline, eyeOutline } from "ionicons/icons";
+import bcrypt from "bcryptjs";
 
 const UpdatePassword: React.FC = () => {
   const history = useHistory();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConPassword, setConShowPassword] = useState(false);
   const passwordRef = useRef<HTMLIonInputElement>(null);
   const conPasswordRef = useRef<HTMLIonInputElement>(null);
+  const mobileNumber = localStorage.getItem("mobileNumber");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConPassword, setConShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const driverId = localStorage.getItem("driverObjectId");
 
   const handleSubmit = async () => {
     const newPassword = String(passwordRef.current?.value ?? "").trim();
@@ -42,21 +42,15 @@ const UpdatePassword: React.FC = () => {
       return;
     }
 
-    if (!driverId) {
-      setError("Driver ID not found. Please try again.");
+    if (!mobileNumber) {
+      setError("Mobile number not found. Please try again.");
       return;
     }
 
     if (newPassword === "ipick@2025") {
       setError(
-        "You cannot set the default password. Please choose a different password."
+        "You cannot set the default password. Please choose a different one."
       );
-      return;
-    }
-
-    const storedDriver = localStorage.getItem("driverData");
-    if (!storedDriver) {
-      setError("Driver data missing. Please log in again.");
       return;
     }
 
@@ -64,38 +58,36 @@ const UpdatePassword: React.FC = () => {
     setError("");
 
     try {
-      const driverPayload = JSON.parse(storedDriver);
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      // Hash the password using bcryptjs
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-      const updatedDriver = {
-        ...driverPayload,
+      const payload = {
         password: hashedPassword,
+        mobnum: mobileNumber,
       };
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT_DRIVER
-        }/Drivers/updateDrivers/${driverId}`,
+        `${import.meta.env.VITE_API_ENDPOINT}/auth/updatepass`,
         {
-          method: "PUT", // Backend likely expects full object
+          method: "POST",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(updatedDriver),
+          body: JSON.stringify(payload),
         }
       );
 
       if (!response.ok) {
-        const errData = await response.json();
+        const errData = await response.json().catch(() => ({}));
         console.error("Password update failed:", errData);
-        setError(
-          errData.message || "Failed to update password. Please try again."
-        );
+        setError(errData.message || "Failed to update password.");
         return;
       }
 
       alert("Password updated successfully!");
-      history.goBack();
+      history.push("/");
     } catch (err) {
       console.error("Password update error:", err);
       setError("An error occurred while updating the password.");
@@ -110,19 +102,8 @@ const UpdatePassword: React.FC = () => {
         <IonToolbar />
       </IonHeader>
       <IonContent className="ion-padding" fullscreen>
-        <div className="ion-text-center" style={{ marginTop: "40px" }}>
+        <div className="ion-text-center" style={{ marginBottom: "40px" }}>
           <IonImg src="/assets/logo-word.png" className="logo-image" />
-        </div>
-        <div
-          style={{
-            color: "#008000",
-            textAlign: "center",
-            marginBottom: "30px",
-            fontWeight: 600,
-            fontSize: "1.3rem",
-          }}
-        >
-          Driver's App
         </div>
 
         <IonItem lines="none" className="input-field">
@@ -147,8 +128,8 @@ const UpdatePassword: React.FC = () => {
           <IonInput
             ref={conPasswordRef}
             color="dark"
-            placeholder="Password"
-            label="Password"
+            placeholder="Confirm Password"
+            label="Confirm Password"
             labelPlacement="floating"
             type={showConPassword ? "text" : "password"}
             className="floating-label-dark"
@@ -162,7 +143,7 @@ const UpdatePassword: React.FC = () => {
         </IonItem>
 
         <IonButton
-          className="custom-button" 
+          className="custom-button"
           expand="full"
           shape="round"
           size="large"

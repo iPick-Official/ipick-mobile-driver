@@ -95,22 +95,13 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
         isOpen={isOpen}
         onDidDismiss={handleClose}
         trigger="open-modal"
-        initialBreakpoint={0.75}
-        breakpoints={[0.25, 0.5, 0.75]}
+        initialBreakpoint={0.55}
+        breakpoints={[0.4, 0.5, 0.75]}
         backdropDismiss={true}
       >
         <IonContent className="ion-padding" scrollY={false}>
           <div className="ion-text-center" style={{ marginBottom: "1rem" }}>
-            <h2
-              style={{
-                fontSize: "1.4rem",
-                fontWeight: "600",
-                margin: 0,
-                padding: 0,
-              }}
-            >
-              Rate your {target}
-            </h2>
+
             <h2
               style={{
                 fontSize: "1rem",
@@ -134,7 +125,7 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
                 />
               </div>
 
-              <IonItem lines="full">
+              <IonItem lines="full" className="input-square">
                 <IonLabel position="stacked">Comments</IonLabel>
                 <IonTextarea
                   placeholder="Share your thoughts..."

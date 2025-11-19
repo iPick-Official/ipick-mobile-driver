@@ -92,7 +92,7 @@ const Map: React.FC<MapProps> = ({
 
   const containerStyle = {
     width: "100vw",
-    height: "70vh",
+    height: "90vh",
   };
 
   return (

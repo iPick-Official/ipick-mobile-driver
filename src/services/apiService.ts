@@ -37,20 +37,57 @@ export const fetchActiveJobs = async (logout: () => void) => {
   }
 };
 
-import { watchLocation } from "../utils/locationHelpers";
-import { connectSocket, fetchAllUserIds } from "../utils/useSocket";
+export const bookAcceptedService = async (
+  riderId: string,
+  bookingId: string
+) => {
+  const reqBody = {
+    id: riderId,
+    status: "booked",
+    timestamp: new Date().toISOString().substring(0, 10),
+    driverId: localStorage.getItem("userId"),
+    tripStatus: 1,
+    _id: bookingId,
+  };
 
-export const fetchBookingDetails = async (): Promise<any | null> => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/ride-hail/bookAccepted`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reqBody),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || response.statusText);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error in bookAcceptedService:", error);
+    throw error;
+  }
+};
+
+import { watchLocation } from "../utils/locationHelpers";
+
+export const fetchBookingDetails = async (
+  bookingId: string
+): Promise<any | null> => {
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("accessToken");
   if (!userId) return null;
 
   try {
-    connectSocket(userId); // ensures socket is connected
-    const id = await fetchAllUserIds(); // fetch latest all_users IDs
-
     const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT}/mobile/${id}`,
+      `${import.meta.env.VITE_API_ENDPOINT}/mobile/${bookingId}`,
       {
         method: "GET",
         headers: {
@@ -366,7 +403,7 @@ export const fetchDriverTransactions = async () => {
     }
 
     const data = await response.json();
-    return data; // will include _id and walletBalance
+    return data;
   } catch (error) {
     console.error("Error fetching driver wallet:", error);
     return null;

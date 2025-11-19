@@ -8,7 +8,6 @@ import {
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonInput,
   IonItem,
   IonLabel,
   IonList,
@@ -19,16 +18,18 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import "../../theme/DriverEarningsToolbar.css";
-import { searchOutline, closeOutline } from "ionicons/icons";
-import html2canvas from "html2canvas";
+import { closeOutline, searchOutline } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
-import BackButton from "../../components/BackButton";
 import { fetchRideHistory } from "../../services/apiService";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileOpener } from "@capacitor-community/file-opener";
-import RatingsModal from "../../components/RatingsModal";
 import { BookingDetail, Trip } from "../../types/bookingDetailsTypes";
+
+import BackButton from "../../components/BackButton";
+import RatingsModal from "../../components/RatingsModal";
+import html2canvas from "html2canvas";
+
+import "../../theme/DriverEarningsToolbar.css";
 
 const Earnings: React.FC = () => {
   const [rideHistory, setRideHistory] = useState<any[]>([]);
@@ -39,6 +40,8 @@ const Earnings: React.FC = () => {
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
   const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [isRatingsOpen, setIsRatingsOpen] = useState(false);
+  const [incentives, setIncentives] = useState(0);
+  const [earnings, setEarnings] = useState(0);
   const ITEMS_PER_PAGE = 15;
   const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
 
@@ -89,7 +92,7 @@ const Earnings: React.FC = () => {
     loadHistory();
   }, []);
 
-  const rateDriver = () => {
+  const rateRider = () => {
     setIsRatingsOpen(true);
   }
 
@@ -161,6 +164,18 @@ const Earnings: React.FC = () => {
     const surge = travelFare - totalFare;
     return parseFloat(surge.toFixed(2));
   };
+
+  useEffect(() => {
+    if (!bookingDetails) return;
+
+    const { TotalFare = 0, PickupFare = 0, SystemShare = 0 } = bookingDetails;
+    const basicFare = TotalFare - PickupFare;
+    const incentiveAmount = basicFare * 0.08;
+    const totalEarnings = PickupFare + basicFare + incentiveAmount - SystemShare;
+
+    setIncentives(parseFloat(incentiveAmount.toFixed(2)));
+    setEarnings(parseFloat(totalEarnings.toFixed(2)));
+  }, [bookingDetails]);
 
   const captureScreenshot = async () => {
     const input = receiptRef.current;
@@ -347,16 +362,24 @@ const Earnings: React.FC = () => {
             collapse="fade"
           >
             <IonToolbar>
-              <IonButton slot="end"
+              <IonButton slot="start"
                 fill="outline"
                 shape="round"
                 color="tertiary"
-                onClick={rateDriver}
+                onClick={rateRider}
                 size="small"
                 className="custom-button"
               >
                 Rate
               </IonButton>
+              <IonButtons slot="end">
+                <IonIcon
+                  color="danger"
+                  icon={closeOutline}
+                  slot="icon-only"
+                  onClick={() => setShowModal(false)}
+                />
+              </IonButtons>
             </IonToolbar>
           </IonHeader>
           <IonContent className="ion-padding">
@@ -454,6 +477,21 @@ const Earnings: React.FC = () => {
                       {
                         label: "Surge Charge",
                         total: `₱${getSurgeCharge().toFixed(2)}`,
+                        color: "dark",
+                      },
+                      {
+                        label: "Commissions",
+                        total: `-₱${bookingDetails.SystemShare.toFixed(2)}`,
+                        color: "dark",
+                      },
+                      {
+                        label: "Incentives",
+                        total: `₱${incentives}`,
+                        color: "dark",
+                      },
+                      {
+                        label: "Your Earnings",
+                        total: `₱${earnings}`,
                         color: "dark",
                       },
                     ].map((f, idx) => (

@@ -67,6 +67,17 @@
   transition: transform 0.3s ease;
 }
 
+.input-square {
+  --background: var(--ion-color-light);
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  --border-radius: 8px;
+  --padding-start: 20px;
+  --padding-end: 20px;
+  border: 1.5px solid #008000;
+  border-radius: 10px;
+}
+
 .custom-card:hover {
   transform: translateY(-5px);
 }
@@ -96,8 +107,8 @@
 
 ion-modal::part(content) {
   --height: 70%;
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
