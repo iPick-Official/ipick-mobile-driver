@@ -21,12 +21,9 @@ import { useHistory, useLocation } from "react-router";
 const PhoneAuth: React.FC = () => {
     const location = useLocation();
     const history = useHistory();
-
     const mode = (location.state as any)?.mode || "login";
-
-    const [phone, setPhone] = useState("");
     const mobileRef = useRef<HTMLIonInputElement>(null);
-
+    const [phone, setPhone] = useState("");
     const [otp, setOtp] = useState("");
     const [confirmation, setConfirmation] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -40,50 +37,93 @@ const PhoneAuth: React.FC = () => {
     /* ------------------- SEND OTP ------------------- */
     const sendOtp = async () => {
         const normalizedMobile = String(mobileRef.current?.value ?? "").trim();
-        const lastTenDigits = normalizedMobile.slice(-10);
-        localStorage.setItem("mobileNumber", lastTenDigits);
-        let formattedPhone = phone;
+        const lastTenDigits = normalizedMobile.replace(/\D/g, "").slice(-10);
 
-        if (!confirmation) {
-            const mobileValue = mobileRef.current?.value?.toString() || "";
-            if (!mobileValue.startsWith("09") || mobileValue.length !== 11) {
-                setToastMsg("Enter a valid PH number (09xxxxxxxxx)");
-                setShowToast(true);
-                return;
-            }
-            formattedPhone = "+63" + mobileValue.slice(1);
-            setPhone(formattedPhone);
+        if (lastTenDigits.length !== 10) {
+            setToastMsg("Please enter a valid 11-digit mobile number");
+            setShowToast(true);
+            return;
         }
+
+        setPhone(lastTenDigits);
+        localStorage.setItem("mobileNumber", lastTenDigits);
 
         try {
             setLoading(true);
             setOtp("");
             setHasError(false);
 
-            // Choose endpoint based on mode
             const endpoint =
-                mode === "login" ? "/auth/send-otp/existing" : "/auth/send-otp/new";
+                mode === "login"
+                    ? `/otp/requestOtpReset/${lastTenDigits}`
+                    : `/otp/requestOtp/${lastTenDigits}`;
 
             const res = await fetch(
                 `${import.meta.env.VITE_API_ENDPOINT}${endpoint}`,
                 {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone: formattedPhone }),
+                    headers: { "Content-Type": "application/json" }
                 }
             );
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to send OTP");
+
+            if (!res.ok) {
+                const message =
+                    data?.message || "Failed to send OTP. Please try again.";
+                throw new Error(message);
+            }
 
             if (!confirmation) setConfirmation(true);
-
             setToastMsg("OTP sent!");
             setShowToast(true);
             setTimer(60);
+
         } catch (err: any) {
-            console.error(err);
+            console.error("OTP Error:", err);
             setToastMsg(err.message);
+            setShowToast(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /* ------------------- RESEND OTP ------------------- */
+    const resendOtp = async () => {
+        const mobnum = localStorage.getItem("mobileNumber") || "";
+        try {
+            setLoading(true);
+            setOtp("");
+            setHasError(false);
+
+            const endpoint =
+                mode === "login"
+                    ? `/otp/requestOtpReset/${mobnum}`
+                    : `/otp/requestOtp/${mobnum}`;
+
+            const res = await fetch(
+                `${import.meta.env.VITE_API_ENDPOINT}${endpoint}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                const message =
+                    data?.message || "Failed to resend OTP. Please try again.";
+                throw new Error(message);
+            }
+
+            setToastMsg("OTP resent!");
+            setShowToast(true);
+            setTimer(60);
+
+        } catch (err: any) {
+            console.error("Resend OTP Error:", err);
+            setToastMsg(err.message || "Failed to resend OTP");
             setShowToast(true);
         } finally {
             setLoading(false);
@@ -92,41 +132,51 @@ const PhoneAuth: React.FC = () => {
 
     /* ------------------- VERIFY OTP ------------------- */
     const verifyOtp = async () => {
-        if (otp.length !== 6) return;
+        const mobnum = localStorage.getItem("mobileNumber") || "";
+
+        // Basic validation
+        if (otp.length !== 6 || mobnum.length !== 10) return;
 
         try {
             setLoading(true);
             setHasError(false);
 
             const res = await fetch(
-                `${import.meta.env.VITE_API_ENDPOINT}/auth/verify-otp`,
+                `${import.meta.env.VITE_API_ENDPOINT}/otp/validate/${mobnum}/${otp}`,
                 {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone, code: otp }),
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                    },
                 }
             );
 
             const data = await res.json();
 
-            if (!res.ok || data.success === false) {
-                throw new Error(data.message || "Invalid OTP");
-            }
+            if (res.ok) {
+                setConfirmation(false);
+                if (res.ok) {
+                    setConfirmation(false);
+                    history.push(mode === "login" ? "/new-password" : "/register");
+                }
 
-            setToastMsg("OTP verified! Redirecting...");
-            setShowToast(true);
-            setConfirmation(false);
-            if (mode === "login") {
-                history.push("/new-password");
-            } else if (mode === "signup") {
-                history.push("/register");
+            } else {
+                console.error("OTP verification failed:", data || res.statusText);
+                setHasError(true);
+                setShake(true);
+                setTimeout(() => setShake(false), 600);
+                setOtp("");
+                setToastMsg(data?.message || "Incorrect OTP. Please try again.");
+                setShowToast(true);
             }
         } catch (err: any) {
+            console.error("OTP verify error:", err);
             setHasError(true);
             setShake(true);
             setTimeout(() => setShake(false), 600);
             setOtp("");
-            setToastMsg(err.message || "Invalid OTP.");
+            setToastMsg("Incorrect OTP. Please try again.");
             setShowToast(true);
         } finally {
             setLoading(false);
@@ -156,6 +206,17 @@ const PhoneAuth: React.FC = () => {
             <IonContent className="ion-padding">
                 <div className="ion-text-center" style={{ marginBottom: "3rem" }}>
                     <IonImg src="/assets/logo-word.png" className="logo-image" />
+                    <div
+                        style={{
+                            color: "#008000",
+                            textAlign: "center",
+                            marginBottom: "30px",
+                            fontWeight: 600,
+                            fontSize: "1.3rem",
+                        }}
+                    >
+                        Driver's App
+                    </div>
                 </div>
 
                 {/* PHONE INPUT */}
@@ -165,7 +226,7 @@ const PhoneAuth: React.FC = () => {
                             <p style={{ textAlign: "center", marginLeft: "2rem", marginRight: "2rem" }}>
                                 {mode === "login"
                                     ? "Enter your phone number to reset your password."
-                                    : "Let's get started! Enter your phone number for verification."}
+                                    : "Enter your phone number for verification."}
                             </p>
                         </IonText>
                         <IonItem lines="none" className="input-field">
@@ -198,7 +259,7 @@ const PhoneAuth: React.FC = () => {
                         <IonText>
                             <p style={{ textAlign: "center", marginBottom: "1rem" }}>
                                 Enter the 6-digit code sent to <br />
-                                <strong>{phone}</strong>
+                                <strong>+63{phone}</strong>
                             </p>
                         </IonText>
 
@@ -229,7 +290,7 @@ const PhoneAuth: React.FC = () => {
                         ) : (
                             <p style={{ textAlign: "center", marginTop: "1rem" }}>
                                 <a
-                                    onClick={sendOtp}
+                                    onClick={resendOtp}
                                     style={{
                                         cursor: "pointer",
                                         textDecoration: "underline",
@@ -255,6 +316,7 @@ const PhoneAuth: React.FC = () => {
 
                 {/* TOAST */}
                 <IonToast
+                    position="top"
                     color="dark"
                     isOpen={showToast}
                     message={toastMsg}
