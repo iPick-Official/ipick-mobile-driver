@@ -15,7 +15,6 @@ import {
   IonIcon,
   IonSkeletonText,
   IonModal,
-  isPlatform,
   IonImg,
   IonSelect,
   IonSelectOption,
@@ -99,33 +98,17 @@ const Wallet: React.FC = () => {
       return;
     }
 
+    const url = `${import.meta.env.VITE_2C2P_URL}=${amount * 1
+      }&user_id=${userId}&channel=${method}&user_type=${userType}`;
+
     try {
-      if (!userId) {
-        alert("User ID not found.");
-        return;
-      }
+      window.location.href = url
 
-      const url = `${import.meta.env.VITE_2C2P_URL}=${amount * 100
-        }&user_id=${userId}&channel=${method}&user_type=${userType}`;
-
-      // Redirect logic
-      if (isPlatform("android") || isPlatform("ios")) {
-        // Cordova/Capacitor platform - use InAppBrowser
-        const InAppBrowser =
-          (window as any).cordova?.InAppBrowser || (window as any).InAppBrowser;
-
-        if (InAppBrowser) {
-          InAppBrowser.open(url, "_system");
-        } else {
-          window.open(url, "_blank");
-        }
-      } else {
-        window.location.href = url;
-      }
     } catch (error) {
       console.error("Error initiating payment:", error);
       alert("Failed to initiate payment. Please try again.");
     }
+
     modalRef.current?.dismiss();
     history.push("/");
   };
