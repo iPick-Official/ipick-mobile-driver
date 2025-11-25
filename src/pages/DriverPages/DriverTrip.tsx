@@ -12,20 +12,16 @@ import {
   IonText,
 } from "@ionic/react";
 import {
-  fetchActiveJobs,
-  fetchBookingDetails,
-  fetchWallet,
-  postTransaction,
-  updateWallet,
+  fetchActiveJobs, fetchWallet, postTransaction, updateWallet,
 } from "../../services/apiService";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
-import { useHistory } from "react-router";
-import { socket } from "../../utils/useSocket";
 import { chatbubblesSharp, mapOutline, star } from "ionicons/icons";
 import { useLocationContext } from "../../contexts/LocationContext";
 import { Message } from "../../types/messageTypes";
 import { useAuth } from "../../contexts/AuthContext";
+import { useHistory } from "react-router";
+import { socket } from "../../utils/useSocket";
 
 import RatingsModal from "../../components/RatingsModal";
 import CustomAlert from "../../components/CustomAlert";
@@ -67,6 +63,18 @@ const DriverTrip: React.FC = () => {
     walletBalance,
     riderBalance, setRiderBalance,
   } = useLocationContext();
+  const [t, setT] = useState(10);
+
+  useEffect(() => {
+    const i = setInterval(() => {
+      setT(s => {
+        if (s === 1) getJobs();
+        return Math.max(0, s - 1);
+      });
+    }, 1000);
+
+    return () => clearInterval(i);
+  }, []);
 
   useEffect(() => {
     socket?.emit("iAmDriver", driverId);
@@ -315,7 +323,7 @@ const DriverTrip: React.FC = () => {
 
             {/* Cancel button */}
             {(tripStatus ?? 0) < 3 && (
-              <IonButton color="medium" size="small" fill="outline" shape="round" onClick={promptCancelRide} disabled={!bookingData}>
+              <IonButton color="medium" size="small" fill="outline" shape="round" onClick={promptCancelRide} disabled={t > 0 || !bookingData}>
                 Cancel
               </IonButton>
             )}
@@ -381,8 +389,8 @@ const DriverTrip: React.FC = () => {
           <div className="footer-actions">
             <div className="action-button">
               {tripStatus === 1 && (
-                <IonButton expand="block" shape="round" disabled={!bookingData} onClick={promptArrived}>
-                  I've arrived
+                <IonButton expand="block" shape="round" disabled={t > 0 || !bookingData} onClick={promptArrived}>
+                  {t > 0 ? `Wait ${t}s` : "I've arrived"}
                 </IonButton>
               )}
               {tripStatus === 2 && (
@@ -414,6 +422,7 @@ const DriverTrip: React.FC = () => {
           setShowActionSheet(false)
           if (confirmAction) {
             await confirmAction();
+            getJobs();
           }
         }}
       />
