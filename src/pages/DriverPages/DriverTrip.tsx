@@ -28,6 +28,7 @@ import CustomAlert from "../../components/CustomAlert";
 import ConfirmActionSheet from "../../components/ConfirmActionSheet";
 import Loading from "../../components/Loading";
 import Map from "../../components/Map";
+import { startBackgroundDriverLocation } from "../../services/backgroundLocation";
 
 const DriverTrip: React.FC = () => {
   const history = useHistory();
@@ -301,6 +302,14 @@ const DriverTrip: React.FC = () => {
     ) : (
       <IonSkeletonText animated style={{ width: "80%", height: "1.2em" }} />
     );
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      startBackgroundDriverLocation(bookingId);
+    }, 15000);
+
+    return () => clearInterval(intervalId);
+  }, [bookingId]);
 
   return (
     <IonPage>

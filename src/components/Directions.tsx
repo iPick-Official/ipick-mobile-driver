@@ -15,7 +15,7 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRequestedOrigin = useRef<google.maps.LatLngLiteral | null>(null);
   const lastRequestedDestination = useRef<google.maps.LatLngLiteral | null>(
     null
@@ -129,6 +129,7 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
     let origin: google.maps.LatLngLiteral;
     let destination: google.maps.LatLngLiteral;
 
+    // Determine which route to show
     if ((tripStatus === 1 || tripStatus === 2) && currentLocation) {
       origin = currentLocation;
       destination = pickupCoords;
@@ -140,8 +141,8 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
       destination = dropoffCoords;
     }
 
-    // Auto-zoom only the first time
-    if (autoZoom && !hasZoomedOnce.current && map) {
+    // Auto-zoom only once
+    if (autoZoom && !hasZoomedOnce.current) {
       const bounds = new google.maps.LatLngBounds();
       bounds.extend(origin);
       bounds.extend(destination);
@@ -149,6 +150,7 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
       hasZoomedOnce.current = true;
     }
 
+    // Prevent unnecessary directions requests
     const originChanged =
       !lastRequestedOrigin.current ||
       calculateDistance(origin, lastRequestedOrigin.current) >= 500;
@@ -160,10 +162,12 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
 
     if (!originChanged && !destinationChanged) return;
 
+    // Debounce
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
       const directionsService = new google.maps.DirectionsService();
+
       postDriverLocation(bookingId);
       setLoading(true);
       setError(null);
@@ -183,24 +187,17 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
 
           if (status === google.maps.DirectionsStatus.OK && result) {
             setDirections(result);
+
             lastRequestedOrigin.current = origin;
             lastRequestedDestination.current = destination;
 
             const leg = result.routes[0]?.legs[0];
             if (leg) {
-              setDistanceRef.current(leg.distance?.value || 0);
-              setEtaRef.current(leg.duration?.value || 0);
+              setDistanceRef.current(leg.distance?.value ?? 0);
+              setEtaRef.current(leg.duration?.value ?? 0);
               if (leg.duration_in_traffic?.value) {
                 setDurationInTrafficRef.current(leg.duration_in_traffic.value);
               }
-            }
-            // Auto-zoom only first time after getting directions
-            if (autoZoom && !hasZoomedOnce.current && map) {
-              const bounds = new google.maps.LatLngBounds();
-              bounds.extend(origin);
-              bounds.extend(destination);
-              map.fitBounds(bounds);
-              hasZoomedOnce.current = true;
             }
           } else {
             setError("Failed to fetch directions.");
@@ -212,7 +209,15 @@ const Directions: React.FC<DirectionsProps> = ({ map, autoZoom = true }) => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [pickupCoords, dropoffCoords, tripStatus]);
+  }, [
+    pickupCoords,
+    dropoffCoords,
+    tripStatus,
+    currentLocation,
+    autoZoom,
+    map
+  ]);
+
 
   if (error) return <div style={{ color: "red" }}>{error}</div>;
   if (loading && !directions) return <div>Loading route...</div>;

@@ -98,7 +98,7 @@ const Wallet: React.FC = () => {
       return;
     }
 
-    const url = `${import.meta.env.VITE_2C2P_URL}=${amount * 1
+    const url = `${import.meta.env.VITE_2C2P_URL}=${amount * 100
       }&user_id=${userId}&channel=${method}&user_type=${userType}`;
 
     try {
