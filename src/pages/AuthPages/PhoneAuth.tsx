@@ -234,6 +234,7 @@ const PhoneAuth: React.FC = () => {
                                 ref={mobileRef}
                                 type="tel"
                                 inputMode="numeric"
+                                minlength={11}
                                 maxlength={11}
                                 placeholder="09xxxxxxxxx"
                                 label="Mobile Number"

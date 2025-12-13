@@ -20,6 +20,7 @@ import {
   IonSelectOption,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
+  useIonAlert,
 } from "@ionic/react";
 import BackButton from "../../components/BackButton";
 import { searchOutline, closeOutline } from "ionicons/icons";
@@ -28,15 +29,18 @@ import {
   fetchDriverTransactions,
 } from "../../services/apiService";
 import { useHistory } from "react-router";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from '@capacitor/browser';
 
 const Wallet: React.FC = () => {
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem("id");
   const userType = localStorage.getItem("userType");
   const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
   const history = useHistory();
   const [loading, setLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [presentAlert] = useIonAlert();
 
   const modalRef = useRef<HTMLIonModalElement>(null);
   const cashInAmountRef = useRef<number>(0);
@@ -94,19 +98,57 @@ const Wallet: React.FC = () => {
     const method = selectedMethodRef.current;
 
     if (!amount || amount < 100) {
-      alert("Please enter a valid amount of at least 100.");
+      presentAlert({
+        header: "Invalid Amount",
+        message: "Please enter a valid amount of at least 100.",
+        buttons: ["OK"],
+      });
       return;
     }
 
-    const url = `${import.meta.env.VITE_2C2P_URL}=${amount * 100
-      }&user_id=${userId}&channel=${method}&user_type=${userType}`;
+    const payload = {
+      amount: amount.toString(),
+      user_id: userId?.toString(),
+      channel: method,
+      user_type: userType,
+    };
 
     try {
-      window.location.href = url
+      // Step 1: POST to preflight API
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}/payments/preflight`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Preflight failed:", response.status, text);
+        throw new Error("Failed to initiate payment");
+      }
+
+      const data = await response.json(); // { paymentUrl, fields }
+
+      // Step 2: Encode JSON and open backend redirect page
+      const encoded = encodeURIComponent(JSON.stringify(data));
+      const redirectUrl = `${import.meta.env.VITE_API_ENDPOINT}/payments/redirect?data=${encoded}`;
+
+      if (Capacitor.isNativePlatform()) {
+        await Browser.open({ url: redirectUrl });
+      } else {
+        window.open(redirectUrl, "_blank");
+      }
 
     } catch (error) {
       console.error("Error initiating payment:", error);
-      alert("Failed to initiate payment. Please try again.");
+      presentAlert({
+        header: "Payment Error",
+        message: "Failed to initiate payment. Please try again.",
+        buttons: ["OK"],
+      });
     }
 
     modalRef.current?.dismiss();
