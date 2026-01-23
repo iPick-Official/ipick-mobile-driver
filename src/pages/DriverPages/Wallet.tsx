@@ -45,8 +45,10 @@ const Wallet: React.FC = () => {
   const modalRef = useRef<HTMLIonModalElement>(null);
   const cashInAmountRef = useRef<number>(0);
   const cashOutAmountRef = useRef<number>(0);
-  const bankAccountRef = useRef<string | null>(null);
-  const selectedBankRef = useRef<string | null>(null);
+  const selectedBankRef = useRef<string>("");
+  const bankAccountRef = useRef<string>("");
+  const userFullName = useRef<string>("");
+
 
   const selectedMethodRef = useRef<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<string | undefined>(
@@ -88,16 +90,93 @@ const Wallet: React.FC = () => {
   };
 
   const handleConfirmCashOut = async () => {
-    alert("Cash out feature is not implemented yet.");
-    // Implement cash out logic here
-    modalRef.current?.dismiss();
+    const amount = cashOutAmountRef.current;
+    const bankCode = selectedBankRef.current;
+    const accountNumber = bankAccountRef.current;
+    const fullname = userFullName.current;
+
+    // ---------------- VALIDATION ----------------
+    if (!amount || amount < 100) {
+      presentAlert({
+        header: "Invalid Amount",
+        message: "Minimum cash out amount is 100.",
+        buttons: ["OK"],
+      });
+      return;
+    }
+
+    if (!bankCode) {
+      presentAlert({
+        header: "Missing Bank",
+        message: "Please select a bank.",
+        buttons: ["OK"],
+      });
+      return;
+    }
+
+    if (!accountNumber) {
+      presentAlert({
+        header: "Missing Account Number",
+        message: "Please enter your bank account number.",
+        buttons: ["OK"],
+      });
+      return;
+    }
+
+    // ---------------- PAYLOAD ----------------
+    const payload = {
+      beneficiaryName: fullname,
+      amount: Number(amount),
+      beneficiaryBankCode: bankCode,
+      beneficiaryType: "BANK",
+      beneficiaryTypeValue: accountNumber,
+      preferredSofProfile: "GIP",
+      userDefined1: userId?.toString() ?? "",
+    };
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}/payouts`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Payout failed:", result);
+        throw new Error(result?.responseMessage || "Cash out failed");
+      }
+
+      presentAlert({
+        header: "Cash Out Submitted",
+        message:
+          "Your cash out request has been submitted and is being processed.",
+        buttons: ["OK"],
+      });
+
+      modalRef.current?.dismiss();
+      history.push("/");
+    } catch (error) {
+      console.error("Cash out error:", error);
+
+      presentAlert({
+        header: "Cash Out Error",
+        message:
+          "Failed to submit cash out request. Please try again later.",
+        buttons: ["OK"],
+      });
+    }
   };
 
   const handleConfirmCashIn = async () => {
     const amount = cashInAmountRef.current;
     const method = selectedMethodRef.current;
 
-    if (!amount || amount < 100) {
+    if (!amount) {
       presentAlert({
         header: "Invalid Amount",
         message: "Please enter a valid amount of at least 100.",
@@ -221,7 +300,7 @@ const Wallet: React.FC = () => {
           </IonButton>
 
           {/* TODO: Not implemented yet */}
-          {/* <IonButton
+          <IonButton
             slot="end"
             fill="solid"
             color="danger"
@@ -232,7 +311,7 @@ const Wallet: React.FC = () => {
             }}
           >
             Withdraw
-          </IonButton> */}
+          </IonButton>
         </IonItem>
 
         <IonList>
@@ -329,7 +408,7 @@ const Wallet: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonContent className="ion-padding" fullscreen>
+        <IonContent className="ion-padding" fullscreen scrollY={false}>
           {transferMethod === "cashin" && (
             <>
               <IonList>
@@ -443,6 +522,16 @@ const Wallet: React.FC = () => {
                 </IonItem>
 
                 <IonItem>
+                  <IonLabel position="stacked">Full name</IonLabel>
+                  <IonInput
+                    placeholder="Enter fullname"
+                    onIonChange={(e) =>
+                      (userFullName.current = e.detail.value || "")
+                    }
+                  />
+                </IonItem>
+
+                <IonItem>
                   <IonLabel position="stacked">Withdraw Amount</IonLabel>
                   <IonInput
                     type="number"
@@ -468,7 +557,7 @@ const Wallet: React.FC = () => {
           )}
         </IonContent>
       </IonModal>
-    </IonPage>
+    </IonPage >
   );
 };
 
