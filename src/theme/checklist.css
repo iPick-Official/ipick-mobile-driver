@@ -1,0 +1,68 @@
+/* checklist.css */
+
+.header {
+  --background: #ffffff;
+  border-bottom: 1px solid #eee;
+}
+
+.toolbar {
+  padding: 12px 16px;
+}
+
+.content {
+  --background: #f7f7f7;
+}
+
+.top-section {
+  text-align: center;
+  padding: 24px 16px 10px;
+}
+
+.logo {
+  width: 120px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.app-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  color: #008000;
+  margin-top: 12px;
+}
+
+.welcome {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+  padding: 0 10px;
+}
+
+.card {
+  margin: 18px 14px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.card-title {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 14px;
+  color: #444;
+}
+
+.btn {
+  margin-top: 12px;
+  --background: #008000;
+  --border-radius: 12px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.btn.logout {
+  --background: #e53935;
+}

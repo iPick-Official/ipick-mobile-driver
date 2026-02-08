@@ -27,6 +27,7 @@ import BackButton from "../../components/BackButton";
 import { cloudUploadSharp } from "ionicons/icons";
 import { UploadService } from "../../services/uploadService";
 import Loading from "../../components/Loading";
+const token = localStorage.getItem("accessToken");
 
 const TransportReq: React.FC = () => {
   const [activeTab, setActiveTab] = useState("vehicle");
@@ -279,12 +280,13 @@ const TransportReq: React.FC = () => {
       };
 
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT_DRIVER
-        }/Drivers/updateTransportRequirements/${userId}`,
+        `${import.meta.env.VITE_API_ENDPOINT}/drivers/${userId}/transport-requirements`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify(payload),
         }
       );
@@ -297,7 +299,7 @@ const TransportReq: React.FC = () => {
       let result: any = {};
       try {
         result = await response.json();
-      } catch (_) {}
+      } catch (_) { }
 
       originalUserRef.current = {
         ...originalUserRef.current,
@@ -318,13 +320,11 @@ const TransportReq: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT_DRIVER
-        }/Drivers/getTransportRequirements/${userId}`,
+        `${import.meta.env.VITE_API_ENDPOINT}/drivers/${userId}/transport-requirements`,
         {
           method: "GET",
           headers: {
-            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }

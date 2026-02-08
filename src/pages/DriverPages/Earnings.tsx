@@ -464,6 +464,13 @@ const Earnings: React.FC = () => {
                           bookingDetails.Computations.costPerMin).toFixed(2)}`,
                         color: "dark",
                       },
+
+                      {
+                        label: "Discount",
+                        total: `₱${(bookingDetails.Discount ?? 0).toFixed(2)}`,
+                        value: "20%",
+                        color: "dark",
+                      },
                       {
                         label: "Service Fee",
                         total: `₱${bookingDetails.Computations.serviceFee.toFixed(2)}`,

@@ -11,6 +11,7 @@ import {
   IonHeader,
   IonToolbar,
   IonIcon,
+  IonFooter,
 } from "@ionic/react";
 import { useLocationContext } from "../../contexts/LocationContext";
 import { eyeOffOutline, eyeOutline } from "ionicons/icons";
@@ -26,7 +27,6 @@ const Login: React.FC = () => {
   const history = useHistory();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const mobileRef = useRef<HTMLIonInputElement>(null);
@@ -49,7 +49,7 @@ const Login: React.FC = () => {
     localStorage.setItem("mobileNumber", lastTenDigits);
 
     if (!/^\d{10}$/.test(lastTenDigits)) {
-      setError("Enter a valid 11-digit mobile number");
+      setError("Enter a valid mobile number");
       return;
     }
 
@@ -162,23 +162,41 @@ const Login: React.FC = () => {
           >
             Driver's App
           </div>
+          <IonLabel
+            style={{
+              display: "block",
+              textAlign: "center",
+              fontSize: "0.9rem",
+              color: "#1b1b1b",
+              margin: "2rem",
+            }}
+          >
+            This app is intended exclusively for iPick drivers.
+          </IonLabel>
         </div>
 
         {/* Mobile Input */}
-        <IonItem lines="none" className="input-field">
-          <IonInput
-            ref={mobileRef}
-            color="dark"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            placeholder="09xxxxxxxxx"
-            label="Mobile Number"
-            labelPlacement="floating"
-            type="tel"
-            maxlength={11}
-            className="floating-label-dark"
-          />
-        </IonItem>
+        <div className="phone-row">
+          <IonItem lines="none" className="prefix-item">
+            <img src="/assets/philippines.png" alt="PH Flag" className="flag" />
+            <span className="code">+63</span>
+          </IonItem>
+
+          <IonItem lines="none" className="input-item">
+            <IonInput
+              ref={mobileRef}
+              color="dark"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="9xxxxxxxxx"
+              label="Mobile Number"
+              labelPlacement="stacked"
+              type="tel"
+              maxlength={10}
+              className="floating-label-dark"
+            />
+          </IonItem>
+        </div>
 
         <IonItem lines="none" className="input-field">
           <IonInput
@@ -200,8 +218,7 @@ const Login: React.FC = () => {
 
         <IonButton
           className="custom-button"
-          expand="full"
-          shape="round"
+          expand="block"
           size="large"
           onClick={handleLogin}
         >
@@ -225,7 +242,6 @@ const Login: React.FC = () => {
             onClick={() =>
               history.push("/phone-auth", { mode: "login" })
             }
-            disabled={isDisabled}
           >
             Forgot Password?
           </IonButton>

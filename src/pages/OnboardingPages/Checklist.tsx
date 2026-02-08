@@ -1,89 +1,91 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   IonButton,
   IonContent,
-  IonFooter,
   IonHeader,
   IonImg,
-  IonItem,
   IonPage,
   IonText,
   IonToolbar,
+  IonCard,
+  IonCardContent,
+  IonIcon,
+  IonTitle,
 } from "@ionic/react";
-import "@theme/variables.css";
+import { personCircle, documentText, carSport, logOut } from "ionicons/icons";
+import "@theme/checklist.css";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Checklist: React.FC = () => {
   const history = useHistory();
   const { logout } = useAuth();
-  const userName = localStorage.getItem("name");
+  const userName = localStorage.getItem("firstName");
 
   return (
     <IonPage>
-      <IonHeader collapse="fade" className="ion-no-border">
-        <IonToolbar />
+      <IonHeader className="header ion-no-border" collapse="fade">
+        <IonToolbar className="toolbar">
+          <IonTitle>Driver Checklist</IonTitle>
+        </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding" fullscreen>
-        <div className="ion-text-center" style={{ marginTop: "40px" }}>
-          <IonImg src="/assets/logo-word.png" className="logo-image" />
-        </div>
-        {/* App Name */}
-        <div
-          style={{
-            color: "#008000",
-            textAlign: "center",
-            marginBottom: "30px",
-            fontWeight: 600,
-            fontSize: "1.3rem",
-          }}
-        >
-          Driver's App
-        </div>
-        <IonItem lines="none">
-          <IonText className="ion-text-center">
-            Hello {userName}! Please submit all the requirements to continue
-            driving with iPick.
+
+      <IonContent className="content" fullscreen>
+        <div className="top-section">
+          <IonImg src="/assets/logo-word.png" className="logo" />
+          <IonText className="app-title">Driver's App</IonText>
+          <IonText className="welcome">
+            Hello <b>{userName}</b>, submit all requirements to continue driving.
           </IonText>
-        </IonItem>
-        <IonButton
-          className="custom-button"
-          expand="full"
-          shape="round"
-          size="large"
-          onClick={() => history.push("/personal-info")}
-        >
-          Personal Information
-        </IonButton>
-        <IonButton
-          className="custom-button"
-          expand="full"
-          shape="round"
-          size="large"
-          onClick={() => history.push("/personal-req")}
-        >
-          Personal Requirements
-        </IonButton>
-        <IonButton
-          className="custom-button"
-          expand="full"
-          shape="round"
-          size="large"
-          onClick={() => history.push("/transport-req")}
-        >
-          Transport Requirements
-        </IonButton>
-        <IonButton
-          className="custom-button"
-          expand="full"
-          shape="round"
-          size="large"
-          onClick={() => {
-            logout();
-          }}
-        >
-          Sign Out
-        </IonButton>
+        </div>
+
+        <IonCard className="card">
+          <IonCardContent>
+            <IonText className="card-title">
+              <b>Required Documents</b>
+            </IonText>
+
+            <IonButton
+              className="btn"
+              expand="block"
+              fill="solid"
+              onClick={() => history.push("/personal-info")}
+            >
+              <IonIcon icon={personCircle} slot="start" />
+              Personal Information
+            </IonButton>
+
+            <IonButton
+              className="btn"
+              expand="block"
+              fill="solid"
+              onClick={() => history.push("/personal-req")}
+            >
+              <IonIcon icon={documentText} slot="start" />
+              Personal Requirements
+            </IonButton>
+
+            <IonButton
+              className="btn"
+              expand="block"
+              fill="solid"
+              onClick={() => history.push("/transport-req")}
+            >
+              <IonIcon icon={carSport} slot="start" />
+              Transport Requirements
+            </IonButton>
+
+            <IonButton
+              className="btn logout"
+              expand="block"
+              fill="solid"
+              onClick={() => logout()}
+            >
+              <IonIcon icon={logOut} slot="start" />
+              Sign Out
+            </IonButton>
+          </IonCardContent>
+        </IonCard>
       </IonContent>
     </IonPage>
   );

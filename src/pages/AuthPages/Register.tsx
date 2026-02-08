@@ -19,10 +19,10 @@ import { useHistory } from "react-router-dom";
 import { buildDriverPayload } from "../../utils/driverPayloadBuilder";
 import { InputModeType, TextFieldTypes } from "../../types/textField";
 import { capitalizeWords } from "../../utils/textUtils";
+import { IonInputPasswordToggle } from "@ionic/react";
 
 import BackButton from "../../components/BackButton";
 import Loading from "../../components/Loading";
-import bcrypt from "bcryptjs";
 import "@theme/variables.css";
 
 const Register: React.FC = () => {
@@ -38,6 +38,7 @@ const Register: React.FC = () => {
   const cityRef = useRef("");
   const provinceRef = useRef("");
   const zipCodeRef = useRef("");
+  const caseNumberRef = useRef("");
   const mobileNumberRef = useRef("");
   const passwordRef = useRef("");
   const confirmPasswordRef = useRef("");
@@ -51,6 +52,7 @@ const Register: React.FC = () => {
   const [province, setProvince] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [mobileNumber, setMobileNumber] = useState(mobnum);
+  const [caseNumber, setSetCaseNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -58,29 +60,52 @@ const Register: React.FC = () => {
 
 
   const handleRegister = async () => {
-    const mobile = mobileNumberRef?.current?.slice(-10);
-    const pass = passwordRef?.current;
-
     setLoading(true);
     setError("");
 
-    try {
+    const fields = [
+      { ref: carTypeRef, msg: "Vehicle Type is required." },
+      { ref: caseNumberRef, msg: "LTFRB Case Number is required." },
+      { ref: firstNameRef, msg: "First Name is required." },
+      { ref: surNameRef, msg: "Last Name is required." },
+      { ref: emailRef, msg: "Email is required." },
+      { ref: addressRef, msg: "Address is required." },
+      { ref: cityRef, msg: "City is required." },
+      { ref: provinceRef, msg: "Province is required." },
+      { ref: zipCodeRef, msg: "Zip Code is required." },
+      { ref: passwordRef, msg: "Password is required." },
+      { ref: confirmPasswordRef, msg: "Confirm Password is required." },
+    ];
 
-      const hashedPassword = await bcrypt.hash(pass, 10);
+    const missing = fields.find((f) => !f.ref.current);
+    if (missing) {
+      setError(missing.msg);
+      setLoading(false);
+      return;
+    }
+
+    if (passwordRef.current !== confirmPasswordRef.current) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
+    try {
       const payload = buildDriverPayload({
-        carType: carTypeRef?.current,
-        firstName: firstNameRef?.current,
-        surName: surNameRef?.current,
-        email: emailRef?.current,
+        carType: carTypeRef.current,
+        firstName: firstNameRef.current,
+        surName: surNameRef.current,
+        email: emailRef.current,
         lastTenDigits: mobnum,
-        address: addressRef?.current,
-        city: cityRef?.current,
-        province: provinceRef?.current,
-        zipCode: zipCodeRef?.current,
-        hashedPassword,
+        address: addressRef.current,
+        city: cityRef.current,
+        province: provinceRef.current,
+        zipCode: zipCodeRef.current,
+        caseNum: caseNumberRef.current,
+        password: passwordRef.current,
       });
 
-      const endpoint = `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/Drivers`;
+      const endpoint = `${import.meta.env.VITE_API_ENDPOINT}/drivers`;
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,17 +113,14 @@ const Register: React.FC = () => {
       });
 
       if (!response.ok) {
-        let errorMsg = "Registration failed.";
-        try {
-          const err = await response.json();
-          errorMsg = err?.message || errorMsg;
-        } catch { }
-        setError(errorMsg);
+        const err = await response.json().catch(() => ({}));
+        setError(err?.message || "Registration failed.");
         return;
       }
+
       alert("Please sign-in to continue onboarding!");
       history.push("/");
-    } catch (err) {
+    } catch {
       setError("Network error, please try again later.");
     } finally {
       setLoading(false);
@@ -139,6 +161,7 @@ const Register: React.FC = () => {
 
         {/* Auto-generated Inputs */}
         {[
+          { label: "LTFRB Case Number", value: caseNumber, setter: setSetCaseNumber, ref: caseNumberRef, capitalize: true },
           { label: "First Name", value: firstName, setter: setFirstName, ref: firstNameRef, capitalize: true },
           { label: "Last Name", value: surName, setter: setSurName, ref: surNameRef, capitalize: true },
           { label: "Mobile Number", value: mobileNumber, setter: setMobileNumber, ref: mobileNumberRef, type: "tel", inputMode: "numeric", maxLength: 11, placeholder: "09xxxxxxxxx", disable: true },
@@ -147,8 +170,8 @@ const Register: React.FC = () => {
           { label: "City", value: city, setter: setCity, ref: cityRef, capitalize: true },
           { label: "Province", value: province, setter: setProvince, ref: provinceRef, capitalize: true },
           { label: "Zip Code", value: zipCode, setter: setZipCode, ref: zipCodeRef, type: "text", inputMode: "numeric" },
-          { label: "Password", value: password, setter: setPassword, ref: passwordRef, type: "password" },
-          { label: "Confirm Password", value: confirmPassword, setter: setConfirmPassword, ref: confirmPasswordRef, type: "password" }
+          { label: "Password", value: password, setter: setPassword, ref: passwordRef, type: "password", passwordToggle: true },
+          { label: "Confirm Password", value: confirmPassword, setter: setConfirmPassword, ref: confirmPasswordRef, type: "password", passwordToggle: true }
         ].map((field, idx) => (
           <IonItem key={idx} lines="none" className="input-field">
             <IonInput
@@ -157,18 +180,22 @@ const Register: React.FC = () => {
               labelPlacement="floating"
               placeholder={field.placeholder || field.label}
               value={field.value}
-              type={field.type as TextFieldTypes || "text" as TextFieldTypes}
-              inputMode={field.inputMode as InputModeType || "text" as InputModeType}
+              type={field.type as TextFieldTypes || "text"}
+              inputMode={field.inputMode as InputModeType || "text"}
               maxlength={field.maxLength}
-              className="floating-label-dark"
+              // className="floating-label-dark"
+              disabled={field.disable}
               onIonChange={(e) => {
                 let v = e.detail.value || "";
                 if (field.capitalize) v = capitalizeWords(v);
                 field.setter(v);
                 field.ref.current = v;
               }}
-              disabled={field.disable}
-            />
+            >
+              {field.passwordToggle && (
+                <IonInputPasswordToggle slot="end" />
+              )}
+            </IonInput>
           </IonItem>
         ))}
 
@@ -188,7 +215,6 @@ const Register: React.FC = () => {
           <IonButton
             className="custom-button"
             expand="full"
-            shape="round"
             size="large"
             onClick={handleRegister}
             disabled={loading}

@@ -33,7 +33,7 @@ import { Capacitor } from "@capacitor/core";
 import { Browser } from '@capacitor/browser';
 
 const Wallet: React.FC = () => {
-  const userId = localStorage.getItem("id");
+  const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType");
   const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
   const history = useHistory();

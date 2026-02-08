@@ -40,7 +40,7 @@ const PhoneAuth: React.FC = () => {
         const lastTenDigits = normalizedMobile.replace(/\D/g, "").slice(-10);
 
         if (lastTenDigits.length !== 10) {
-            setToastMsg("Please enter a valid 11-digit mobile number");
+            setToastMsg("Please enter a valid mobile number");
             setShowToast(true);
             return;
         }
@@ -226,26 +226,36 @@ const PhoneAuth: React.FC = () => {
                             <p style={{ textAlign: "center", marginLeft: "2rem", marginRight: "2rem" }}>
                                 {mode === "login"
                                     ? "Enter your phone number to reset your password."
-                                    : "Enter your phone number for verification."}
+                                    : "Are you ready to become an iPick driver? Please provide your phone number for verification."}
                             </p>
                         </IonText>
-                        <IonItem lines="none" className="input-field">
-                            <IonInput
-                                ref={mobileRef}
-                                type="tel"
-                                inputMode="numeric"
-                                minlength={11}
-                                maxlength={11}
-                                placeholder="09xxxxxxxxx"
-                                label="Mobile Number"
-                                labelPlacement="floating"
-                            />
-                        </IonItem>
+
+                        {/* Mobile Input */}
+                        <div className="phone-row">
+                            <IonItem lines="none" className="prefix-item">
+                                <img src="/assets/philippines.png" alt="PH Flag" className="flag" />
+                                <span className="code">+63</span>
+                            </IonItem>
+
+                            <IonItem lines="none" className="input-item">
+                                <IonInput
+                                    ref={mobileRef}
+                                    color="dark"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="9xxxxxxxxx"
+                                    label="Mobile Number"
+                                    labelPlacement="stacked"
+                                    type="tel"
+                                    maxlength={10}
+                                    className="floating-label-dark"
+                                />
+                            </IonItem>
+                        </div>
 
                         <IonButton
                             className="custom-button"
-                            expand="full"
-                            shape="round"
+                            expand="block"
                             size="large"
                             onClick={sendOtp}
                         >
@@ -305,8 +315,7 @@ const PhoneAuth: React.FC = () => {
 
                         <IonButton
                             className="custom-button"
-                            expand="full"
-                            shape="round"
+                            expand="block"
                             size="large"
                             onClick={verifyOtp}
                         >

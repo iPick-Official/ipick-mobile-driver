@@ -102,6 +102,7 @@ const PersonlaReq: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const userId = localStorage.getItem("id");
   const status = localStorage.getItem("status") === "approved";
+  const token = localStorage.getItem("accessToken");
 
   const uploadService = new UploadService(
     import.meta.env.VITE_AWS_ACCESS_KEY,
@@ -206,11 +207,12 @@ const PersonlaReq: React.FC = () => {
       };
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT_DRIVER
-        }/Drivers/updatePersonalRequirements/${userId}`,
+        `${import.meta.env.VITE_API_ENDPOINT}/drivers/${userId}/personal-requirements`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -244,12 +246,11 @@ const PersonlaReq: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT_DRIVER
-        }/Drivers/getPersonalRequirements/${userId}`,
+        `${import.meta.env.VITE_API_ENDPOINT}/drivers/${userId}/personal-requirements`,
         {
           method: "GET",
           headers: {
-            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }

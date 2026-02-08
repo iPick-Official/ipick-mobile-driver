@@ -15,7 +15,7 @@ export class UploadService {
     awsAccessKey: string,
     awsSecretKey: string,
     region: string,
-    bucket: string
+    bucket: string,
   ) {
     this.bucket = bucket;
     this.region = region;

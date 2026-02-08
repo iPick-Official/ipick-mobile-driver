@@ -69,7 +69,8 @@ interface DriverPayload {
   surName: string;
   name: string;
   email: string;
-  mobileNumber: string;
+  mobnum: string;
+  caseNum: string;
   address: string;
   city: string;
   province: string;
@@ -80,7 +81,7 @@ interface DriverPayload {
   referralCode: string;
   carType: string;
   zone: string;
-  driversId: string;
+  id: string;
   personalRequirements: PersonalRequirements;
   transportRequirements: TransportRequirements;
 }
@@ -89,7 +90,7 @@ const generateAlphaNumeric = (): string => {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   return Array.from({ length: 10 }, () =>
-    chars.charAt(Math.floor(Math.random() * chars.length))
+    chars.charAt(Math.floor(Math.random() * chars.length)),
   ).join("");
 };
 
@@ -103,7 +104,8 @@ interface BuildDriverPayloadParams {
   city: string;
   province: string;
   zipCode: string;
-  hashedPassword: string;
+  password: string;
+  caseNum: string;
 }
 
 export function buildDriverPayload({
@@ -116,25 +118,27 @@ export function buildDriverPayload({
   city,
   province,
   zipCode,
-  hashedPassword,
+  password,
+  caseNum,
 }: BuildDriverPayloadParams): DriverPayload {
   return {
     firstName,
     surName,
     name: `${firstName} ${surName}`,
     email,
-    mobileNumber: lastTenDigits,
+    mobnum: lastTenDigits,
+    caseNum,
     address,
     city,
     province,
     zipCode,
-    password: hashedPassword,
+    password: password,
     type: "driver",
     status: "pending",
     referralCode: "",
     carType,
     zone: "",
-    driversId: generateAlphaNumeric(),
+    id: generateAlphaNumeric(),
     personalRequirements: {
       profilePicture: { name: "", url: "" },
       nationality: "",

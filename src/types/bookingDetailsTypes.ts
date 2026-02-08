@@ -20,6 +20,7 @@ export interface BookingDetail {
   PaymentType: string;
   Computations: BookingComputations;
   PickupFare: number;
+  Discount: number;
 }
 
 export interface Trip {

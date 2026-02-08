@@ -37,10 +37,10 @@
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>We use your location to track trips and provide accurate pickup/drop-off
 			information, even if the app is running in the background.</string>
-		<!-- <key>UIBackgroundModes</key>
+		<key>UIBackgroundModes</key>
 		<array>
 			<string>location</string>
-		</array> -->
+		</array>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>We need access to your microphone to record audio.</string>
 		<key>UILaunchStoryboardName</key>

@@ -1,0 +1,72 @@
+/* Make segment buttons wrap text */
+ion-segment-button ion-label {
+  white-space: normal; /* allow wrap */
+  text-align: center; /* center align */
+  font-size: 14px; /* default */
+  line-height: 1.1;
+}
+
+/* Reduce font size on small screens */
+@media (max-width: 420px) {
+  ion-segment-button ion-label {
+    font-size: 12px;
+  }
+}
+
+/* Optional: ensure segment buttons share width equally */
+ion-segment-button {
+  flex: 1;
+  min-width: 0; /* prevent overflow */
+}
+
+/* ===== Modern Tab Container ===== */
+.tab-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  margin: 10px;
+}
+
+/* ===== Modern Input Style ===== */
+.ion-item {
+  --background: #f8f9fb;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.ion-item ion-label {
+  font-weight: 700;
+  color: #333;
+}
+
+.ion-input,
+.ion-textarea {
+  font-weight: 600;
+}
+
+/* ===== Modern Upload Button ===== */
+.upload-btn {
+  width: 100%;
+  border-radius: 12px;
+  --background: #008000;
+  --color: #fff;
+  margin: 10px;
+}
+
+.upload-btn:hover {
+  --background: #006600;
+}
+
+/* ===== Modern Checkbox Style ===== */
+.agreement-item {
+  --background: transparent;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e6e6e6;
+}
+
+.agreement-item ion-label {
+  font-weight: 700;
+}

@@ -50,8 +50,16 @@ export interface TransportRequirements {
 export interface Driver {
   _id: string;
   id: string;
+  firstName?: string;
+  surName?: string;
   name: string;
-  mobnum: number;
+  email?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  zipCode?: string;
+  mobnum?: string;
+  caseNum?: string;
   status: string;
   type: string;
   carType: string;
