@@ -1,6 +1,6 @@
 export interface FileData {
   name: string;
-  url: string | null;
+  url?: string;
 }
 
 export interface PersonalRequirements {
