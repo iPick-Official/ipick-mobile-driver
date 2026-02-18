@@ -1,9 +1,10 @@
 import React, { useRef } from "react";
 import { IonAvatar, IonImg, IonIcon } from "@ionic/react";
 import { cameraOutline } from "ionicons/icons";
+import { FileData } from "../../types/driverTypes";
 
 interface ProfileUploadProps {
-    profilePic: string | null;
+    profilePic: FileData | null;
     onFileChange: (file: File) => void;
 }
 
@@ -23,7 +24,7 @@ const ProfileUpload: React.FC<ProfileUploadProps> = ({ profilePic, onFileChange 
     return (
         <div className="profile-upload-container" onClick={handleClick}>
             <IonAvatar className="profile-avatar">
-                <IonImg src={profilePic || "/favicon.png"} alt="Profile" />
+                <IonImg src={profilePic?.url || "/favicon.png"} alt="Profile" />
             </IonAvatar>
 
             <div className="upload-text-container">

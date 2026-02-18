@@ -18,7 +18,6 @@ import {
 } from "@ionic/react";
 import React, { useEffect, useState } from "react";
 import BackButton from "../../components/BackButton";
-import { UploadService } from "../../services/uploadService";
 import { useHistory } from "react-router-dom";
 import { fetchMyRatings } from "../../services/apiService";
 import { useLocationContext } from "../../contexts/LocationContext";
@@ -33,14 +32,7 @@ import {
   phonePortraitOutline,
   starSharp,
 } from "ionicons/icons";
-
-
-const uploadService = new UploadService(
-  import.meta.env.VITE_AWS_ACCESS_KEY,
-  import.meta.env.VITE_AWS_SECRET_KEY,
-  import.meta.env.VITE_REGION,
-  import.meta.env.VITE_BUCKET
-);
+import { getFileUrlIfAvailable } from "../../utils/fileUrl";
 
 const MyProfile: React.FC = () => {
   const {
@@ -52,13 +44,9 @@ const MyProfile: React.FC = () => {
     carColor,
   } = useLocationContext();
   const history = useHistory();
-  const rawProfile = profilePicture;
-  const profile = rawProfile ?? undefined;
   const [profilePic, setProfilePic] = useState("");
   const [myRating, setMyRating] = useState(0);
-
   const user = JSON.parse(localStorage.getItem("driverData") || "{}");
-
   const joinedRaw = user?.createdAt || "";
   const joinedDate = new Date(joinedRaw);
   const joinedFormatted = joinedDate.toLocaleString("en-US", {
@@ -82,14 +70,7 @@ const MyProfile: React.FC = () => {
     };
 
     loadProfilePicture();
-  }, [profile]);
-
-  const getFileUrlIfAvailable = async (
-    fileObj: { name?: string; url?: string } | string | undefined
-  ): Promise<string> => {
-    const key = typeof fileObj === "string" ? fileObj : fileObj?.url || "";
-    return key ? await uploadService.getFileUrl(key) : "/favicon.png";
-  };
+  }, [profilePic]);
 
   const profileInfo = [
     { label: "Mobile Number", value: "+63" + user?.mobnum, icon: callOutline },

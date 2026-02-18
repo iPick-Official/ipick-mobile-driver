@@ -1,3 +1,5 @@
+import { FileData } from "../types/driverTypes";
+
 type FieldType = "text" | "select" | "date" | "file" | "checkbox" | "textarea";
 
 // --- Base Props ---
@@ -7,7 +9,7 @@ export interface BaseProps<T = string> {
   value: T;
   onChange: (value: T) => void;
   placeholder?: string;
-  refObj?: React.MutableRefObject<T | null>;
+  refObj?: React.RefObject<T | null>;
   className?: string;
   maxLength?: string;
   required?: boolean;
@@ -56,15 +58,15 @@ export interface SelectFieldProps<T = string> extends BaseProps<T> {
   justify?: "start" | "end" | "space-between";
 }
 
-// --- File Field Props ---
-export interface FileFieldPropsSingle extends BaseProps<File | null> {
+// --- FileData Field Props ---
+export interface FileFieldPropsSingle extends BaseProps<FileData | null> {
   fieldType: "file";
   multiple?: false;
   accept?: string;
   captureBackCamera?: boolean;
 }
 
-export interface FileFieldPropsMultiple extends BaseProps<File[]> {
+export interface FileFieldPropsMultiple extends BaseProps<FileData[]> {
   fieldType: "file";
   multiple: true;
   accept?: string;

@@ -1,6 +1,8 @@
 import { IonItem, IonLabel, IonInput, IonSelect, IonSelectOption, IonTextarea } from "@ionic/react";
 import { FormFieldProps, DateFieldProps, SelectFieldProps, FileFieldProps, CheckboxFieldProps, TextFieldProps, TextAreaFieldProps } from "../../interfaces/FormField";
 import "../../styles/Onboarding.scss";
+import { FileData } from "../../types/driverTypes";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 const FormField = <T extends string | number>({
     fieldType,
@@ -104,27 +106,72 @@ const FormField = <T extends string | number>({
     // --- FILE FIELD ---
     if (fieldType === "file") {
         const { accept, multiple = false, captureBackCamera = false } = rest as FileFieldProps;
+        const [previews, setPreviews] = useState<string[]>([]);
+        const inputRef = useRef<HTMLInputElement>(null);
+
+        const valueArray = useMemo(() => {
+            if (multiple) return (value as any[]) || [];
+            return value ? [(value as any)] : [];
+        }, [value, multiple]);
+
+        useEffect(() => {
+            const urls = valueArray.map((file) => {
+                if (file instanceof File) return URL.createObjectURL(file);
+                return (file as { key: string; name?: string }).key
+                    ? `${import.meta.env.VITE_API_ENDPOINT}/files/url?key=${file.key}`
+                    : "";
+            });
+
+            setPreviews(urls);
+
+            return () => urls.forEach((url) => url.startsWith("blob:") && URL.revokeObjectURL(url));
+        }, [valueArray]);
+
+        const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (!e.target.files) return;
+
+            if (multiple) {
+                const filesArray = Array.from(e.target.files);
+                (onChange as (v: (File | { key: string; name?: string })[]) => void)(filesArray);
+                if (refObj) refObj.current = filesArray;
+            } else {
+                const file = e.target.files[0];
+                (onChange as (v: File | { key: string; name?: string } | null) => void)(file || null);
+                if (refObj) refObj.current = file || null;
+            }
+        };
 
         return (
             <div className="file-upload-wrapper">
                 <IonLabel position="stacked">{label}</IonLabel>
+
+                {previews.length > 0 && (
+                    <div className="image-preview-container">
+                        {previews.map((src, idx) => (
+                            <img
+                                key={idx}
+                                src={src}
+                                alt={`preview-${idx}`}
+                                className="uploaded-image-preview"
+                                style={{ maxWidth: "100%", marginBottom: "0.5rem", borderRadius: "8px" }}
+                            />
+                        ))}
+                    </div>
+                )}
+
                 <input
                     type="file"
                     accept={accept}
                     multiple={multiple}
-                    capture={captureBackCamera ? "environment" : undefined} // <-- back camera
-                    onChange={(e) => {
-                        if (multiple) {
-                            const filesArray = e.target.files ? Array.from(e.target.files) : [];
-                            (onChange as (v: File[]) => void)(filesArray);
-                            if (refObj) refObj.current = filesArray;
-                        } else {
-                            const file = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
-                            (onChange as (v: File | null) => void)(file);
-                            if (refObj) refObj.current = file;
-                        }
-                    }}
+                    capture={captureBackCamera ? "environment" : undefined}
+                    style={{ display: "none" }}
+                    ref={inputRef}
+                    onChange={handleFileChange}
                 />
+
+                <button type="button" onClick={() => inputRef.current?.click()} className="upload-btn">
+                    {previews.length > 0 ? "Change File" : "Upload File"}
+                </button>
             </div>
         );
     }

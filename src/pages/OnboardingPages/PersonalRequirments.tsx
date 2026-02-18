@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   IonContent,
   IonPage,
@@ -10,6 +10,8 @@ import ProfileUpload from "../../components/ui/ProfileUpload";
 import { createDriverFileFields } from "../../config/driverFileFields";
 import { fullText } from "../../utils/covid";
 import ActionFooterButton from "../../components/ui/ActionFooterButton";
+import { getFileUrlIfAvailable } from "../../utils/fileUrl";
+import { Driver, FileData } from "../../types/driverTypes";
 
 const PersonlaReq: React.FC = () => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -42,38 +44,16 @@ const PersonlaReq: React.FC = () => {
   const [privacyNotice, setPrivacyNotice] = useState<boolean>(false);
   const [termsOfService, setTermsOfService] = useState<boolean>(false);
   const [codeOfConduct, setCodeOfConduct] = useState<boolean>(false);
-  const [declarations, setDdeclarations] = useState<boolean>(false);
+  const [declarations, setDeclarations] = useState<boolean>(false);
 
-  const createInputRef = () =>
-    useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-
-  const profilePicRef = createInputRef();
-  const licenseFrontRef = createInputRef();
-  const licenseBackRef = createInputRef();
-  const pwdIdRef = createInputRef();
-  const covidImgRef = createInputRef();
-  const documentImgRef = createInputRef();
-
-  const [profilePic, setProfilePic] = useState("");
-  const [licenseFront, setLicenseFront] = useState<File | null>(null);
-  const [licenseBack, setLicenseBack] = useState<File | null>(null);
-  const [pwdId, setPwdId] = useState<File | null>(null);
-  const [covidVaxImg, setCovidVaxImg] = useState<File | null>(null);
-  const [documentImg, setDocumentImg] = useState<File | null>(null);
+  const [profilePicture, setProfilePicture] = useState<FileData | null>(null);
+  const [licenseFront, setLicenseFront] = useState<FileData | null>(null);
+  const [licenseBack, setLicenseBack] = useState<FileData | null>(null);
+  const [pwdId, setPwdId] = useState<FileData | null>(null);
+  const [covidVaxImg, setCovidVaxImg] = useState<FileData | null>(null);
+  const [documentImg, setDocumentImg] = useState<FileData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const userId = localStorage.getItem("id");
-  const token = localStorage.getItem("accessToken");
-
-  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-
-      const reader = new FileReader();
-      reader.onload = () => setProfilePic(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
 
   const fileFields = createDriverFileFields(
     licenseFront,
@@ -81,6 +61,59 @@ const PersonlaReq: React.FC = () => {
     licenseBack,
     setLicenseBack
   );
+
+  useEffect(() => {
+    const loadData = async () => {
+      const parsed: Driver | null = JSON.parse(localStorage.getItem("driverData") || "null");
+      const req = parsed?.personalRequirements;
+      if (!req) return;
+
+      // Regular fields mapping
+      const stateMap: Record<string, Function> = {
+        driverLicenseNumber: setLicenseNumber,
+        driverLicenseExpDate: setLicenseExp,
+        nationality: setNationality,
+        emergencyContactName: setEmergencyPerson,
+        emergencyContactMobNum: setEmergencyMobile,
+        emergencyContactAddress: setEmergencyAddress,
+        emergencyRelationship: setEmergencyRelationship,
+        vaccinationCertificateConsent: setvaccinationCertificateConsent,
+        documentType: setDocumentType,
+        termsOfService: setTermsOfService,
+        codeOfConduct: setCodeOfConduct,
+        privacyNotice: setPrivacyNotice,
+        declarations: setDeclarations,
+      };
+
+      // Set non-file fields
+      Object.entries(stateMap).forEach(([key, setter]) => setter(req[key as keyof typeof req]));
+
+      // File fields mapping dynamically
+      const fileStateMap: Record<
+        string,
+        Function
+      > = {
+        profilePicture: setProfilePicture,
+        vaccinationCertificate: setCovidVaxImg,
+        driverLicenseFront: setLicenseFront,
+        driverLicenseBack: setLicenseBack,
+        pwdFile: setPwdId,
+        documentImg: setDocumentImg,
+      };
+
+      // Set file URLs dynamically
+      await Promise.all(
+        Object.entries(fileStateMap).map(async ([field, setter]) => {
+          const file = req[field as keyof typeof req] as { name?: string; url?: string } | undefined;
+          if (file && file.url) {
+            setter({ name: file.name || field, url: await getFileUrlIfAvailable(file) });
+          }
+        })
+      );
+    };
+
+    loadData();
+  }, []);
 
   return (
     <IonPage>
@@ -100,10 +133,13 @@ const PersonlaReq: React.FC = () => {
         {activeTab === "personal" && (
           <>
             <ProfileUpload
-              profilePic={profilePic}
-              onFileChange={(file: File) =>
-                handleFileInputChange({ target: { files: [file] } } as any)
-              }
+              profilePic={profilePicture}
+              onFileChange={(file: File) => {
+                setProfilePicture({
+                  name: file.name,
+                  url: URL.createObjectURL(file),
+                });
+              }}
             />
 
             <FormField
@@ -146,7 +182,7 @@ const PersonlaReq: React.FC = () => {
                 value={value}
                 onChange={setter}
                 accept="image/*"
-                // captureBackCamera
+              // captureBackCamera
               />
             ))}
           </>
@@ -193,6 +229,13 @@ const PersonlaReq: React.FC = () => {
               onChange={setEmergencyAddress}
               placeholder="123 Main St Cubao QC"
               rows={4}
+            />
+
+            <FormField
+              fieldType="file"
+              label="PWD ID (Optional)"
+              value={pwdId}
+              onChange={setPwdId}
             />
 
             <FormField
@@ -255,14 +298,14 @@ const PersonlaReq: React.FC = () => {
               label=""
               value={termsOfService}
               onChange={setTermsOfService}
-              refObj={refs.vaccinationCertificateConsent}
+              refObj={refs.termsOfService}
               text="I agree with the Terms of Service"
             />
             <FormField
               fieldType="checkbox"
               label=""
               value={declarations}
-              onChange={setDdeclarations}
+              onChange={setDeclarations}
               refObj={refs.declarations}
               text="I agree with the Declarations"
             />

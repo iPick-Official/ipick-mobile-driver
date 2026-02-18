@@ -4,22 +4,21 @@ export interface FileData {
 }
 
 export interface PersonalRequirements {
-  profilePicture: FileData;
+  profilePicture?: FileData | null;
   nationality: string;
-  pwd: number;
-  pwdFile: FileData;
-  vaccinationCertificate: FileData;
+  pwdFile?: FileData | null;
+  vaccinationCertificate?: FileData | null;
   vaccinationCertificateConsent: boolean;
   emergencyContactName: string;
   emergencyContactAddress: string;
   emergencyContactMobNum: string;
   emergencyRelationship: string;
-  driverLicenseFront: FileData;
-  driverLicenseBack: FileData;
+  driverLicenseFront?: FileData | null;
+  driverLicenseBack?: FileData | null;
   driverLicenseNumber: string;
   driverLicenseExpDate: string;
   documentType: string;
-  documentImg: FileData;
+  documentImg?: FileData | null;
   privacyNotice: boolean;
   codeOfConduct: boolean;
   termsOfService: boolean;

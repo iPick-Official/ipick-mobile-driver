@@ -16,3 +16,12 @@ export const getFileUrlIfAvailable = async (
 
   return await UploadService.getFileUrl(key);
 };
+
+export const getNameOrDefault = (
+  fileObj: { name?: string; url?: string } | string | undefined,
+  fallback: string,
+): string => {
+  if (!fileObj) return fallback;
+  if (typeof fileObj === "string") return fileObj || fallback;
+  return fileObj.name || fallback;
+};

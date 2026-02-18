@@ -1,74 +1,56 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+const API = import.meta.env.VITE_API_ENDPOINT;
 
 export class UploadService {
-  private s3Client: S3Client;
-  private bucket: string;
-  private region: string;
-  private fileUrlBase: string;
+  /**
+   * Get a downloadable file URL from backend
+   */
+  static async getFileUrl(filename: string): Promise<string> {
+    const res = await fetch(`${API}/files/url?filename=${filename}`);
 
-  constructor(
-    awsAccessKey: string,
-    awsSecretKey: string,
-    region: string,
-    bucket: string,
-  ) {
-    this.bucket = bucket;
-    this.region = region;
-    this.fileUrlBase = `https://${bucket}.s3.${region}.amazonaws.com/`;
+    if (!res.ok) {
+      throw new Error("Failed to get file URL");
+    }
 
-    this.s3Client = new S3Client({
-      region: region,
-      credentials: {
-        accessKeyId: awsAccessKey,
-        secretAccessKey: awsSecretKey,
+    const data = await res.json();
+    return data.url;
+  }
+
+  /**
+   * Upload file using backend-generated presigned URL
+   */
+  static async uploadFile(file: File): Promise<string> {
+    // Ask backend for presigned upload URL
+    const res = await fetch(`${API}/files/upload-url`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type,
+      }),
     });
-  }
 
-  async getFileUrl(key: string): Promise<string> {
-    try {
-      // Option: Presigned URL (private file access)
-      const command = new GetObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-      });
-
-      const url = await getSignedUrl(this.s3Client, command, {
-        expiresIn: 3600,
-      });
-      return url;
-
-      // Option: Public URL (if the file is public)
-      // return this.fileUrlBase + key;
-    } catch (err) {
-      console.error("Error retrieving file URL:", err);
-      throw err;
+    if (!res.ok) {
+      throw new Error("Failed to get upload URL");
     }
-  }
 
-  async uploadFile(file: File): Promise<void> {
-    try {
-      // Convert file to Uint8Array (safe for both Node and Browser environments)
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+    const { uploadUrl, key } = await res.json();
 
-      const command = new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: file.name,
-        Body: uint8Array,
-        ContentType: file.type || "application/octet-stream",
-      });
+    // Upload directly to S3
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+      },
+      body: file,
+    });
 
-      await this.s3Client.send(command);
-      console.log(`Successfully uploaded '${file.name}' to S3.`);
-    } catch (err) {
-      console.error("Error uploading file to S3:", err);
-      throw err;
+    if (!uploadRes.ok) {
+      throw new Error("Failed to upload file");
     }
+
+    // Return stored key (save this in DB)
+    return key;
   }
 }

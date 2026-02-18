@@ -14,8 +14,8 @@ import "../theme/Menu.css";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { UploadService } from "../services/uploadService";
 import { useLocationContext } from "../contexts/LocationContext";
+import { getFileUrlIfAvailable } from "../utils/fileUrl";
 
 const appPages = [
   {
@@ -39,13 +39,6 @@ const appPages = [
   { title: "Sign Out", icon: "assets/icons/png/logout.svg", action: "logout" },
 ];
 
-const uploadService = new UploadService(
-  import.meta.env.VITE_AWS_ACCESS_KEY,
-  import.meta.env.VITE_AWS_SECRET_KEY,
-  import.meta.env.VITE_REGION,
-  import.meta.env.VITE_BUCKET
-);
-
 const Menu: React.FC = () => {
   const {
     driverName,
@@ -64,13 +57,6 @@ const Menu: React.FC = () => {
     };
     loadProfilePicture();
   }, [profilePicture]);
-
-  const getFileUrlIfAvailable = async (
-    fileObj: { name?: string; url?: string } | string | undefined
-  ): Promise<string> => {
-    const key = typeof fileObj === "string" ? fileObj : fileObj?.url || "";
-    return key ? await uploadService.getFileUrl(key) : "/favicon.png";
-  };
 
   return (
     <IonMenu contentId="main" type="overlay">

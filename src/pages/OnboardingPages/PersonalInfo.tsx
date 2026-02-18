@@ -56,75 +56,51 @@ const PersonalInfo: React.FC = () => {
   const mobileNumberRef = useRef("");
   const caseNumberRef = useRef("");
 
+  // Define mapping once
+  const driverFields: {
+    key: keyof Driver;
+    setter: (val: any) => void;
+    ref: React.RefObject<any>;
+  }[] = [
+      { key: "carType", setter: setCarType, ref: carTypeRef },
+      { key: "firstName", setter: setFirstName, ref: firstNameRef },
+      { key: "surName", setter: setSurName, ref: surNameRef },
+      { key: "email", setter: setEmail, ref: emailRef },
+      { key: "address", setter: setAddress, ref: addressRef },
+      { key: "city", setter: setCity, ref: cityRef },
+      { key: "province", setter: setProvince, ref: provinceRef },
+      { key: "zipCode", setter: setZipCode, ref: zipCodeRef },
+      { key: "mobnum", setter: setMobileNumber, ref: mobileNumberRef },
+      { key: "caseNum", setter: setCaseNumber, ref: caseNumberRef },
+    ];
+
+  // ----- Initialize state & refs -----
   useEffect(() => {
     const stored = localStorage.getItem("driverData");
     if (!stored) return;
 
     const parsed: Driver = JSON.parse(stored);
-
     setDriverData(parsed);
     setOriginalDriverData(parsed);
-    setCarType(parsed.carType || "");
-    setFirstName(parsed.firstName || "");
-    setSurName(parsed.surName || "");
-    setEmail(parsed.email || "");
-    setAddress(parsed.address || "");
-    setCity(parsed.city || "");
-    setProvince(parsed.province || "");
-    setZipCode(parsed.zipCode || "");
-    setMobileNumber(parsed.mobnum || "");
-    setCaseNumber(parsed.caseNum || "");
-
-    carTypeRef.current = parsed.carType || "";
-    firstNameRef.current = parsed.firstName || "";
-    surNameRef.current = parsed.surName || "";
-    emailRef.current = parsed.email || "";
-    addressRef.current = parsed.address || "";
-    cityRef.current = parsed.city || "";
-    provinceRef.current = parsed.province || "";
-    zipCodeRef.current = parsed.zipCode || "";
-    mobileNumberRef.current = parsed.mobnum || "";
-    caseNumberRef.current = parsed.caseNum || "";
+    driverFields.forEach(({ key, setter, ref }) => {
+      const value = parsed[key] || "";
+      setter(value);
+      ref.current = value;
+    });
   }, []);
 
+  // ----- Handle update -----
   const handleUpdate = async () => {
     if (!driverData || !originalDriverData) return;
 
     setLoading(true);
     setError("");
 
-    // Build updates like in Register
     const updates: Partial<Driver> = {};
 
-    if (carTypeRef.current !== originalDriverData.carType)
-      updates.carType = carTypeRef.current;
-
-    if (firstNameRef.current !== originalDriverData.firstName)
-      updates.firstName = firstNameRef.current;
-
-    if (surNameRef.current !== originalDriverData.surName)
-      updates.surName = surNameRef.current;
-
-    if (emailRef.current !== originalDriverData.email)
-      updates.email = emailRef.current;
-
-    if (addressRef.current !== originalDriverData.address)
-      updates.address = addressRef.current;
-
-    if (cityRef.current !== originalDriverData.city)
-      updates.city = cityRef.current;
-
-    if (provinceRef.current !== originalDriverData.province)
-      updates.province = provinceRef.current;
-
-    if (zipCodeRef.current !== originalDriverData.zipCode)
-      updates.zipCode = zipCodeRef.current;
-
-    if (mobileNumberRef.current !== originalDriverData.mobnum)
-      updates.mobnum = mobileNumberRef.current;
-
-    if (caseNumberRef.current !== originalDriverData.caseNum)
-      updates.caseNum = caseNumberRef.current;
+    driverFields.forEach(({ key, ref }) => {
+      if (ref.current !== originalDriverData[key]) updates[key] = ref.current;
+    });
 
     if (Object.keys(updates).length === 0) {
       setLoading(false);
@@ -136,64 +112,24 @@ const PersonalInfo: React.FC = () => {
       const { data } = await axios.patch(
         `${import.meta.env.VITE_API_ENDPOINT}/drivers/${driverData._id}/basic-info`,
         updates,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
 
       localStorage.setItem("driverData", JSON.stringify(data));
       setDriverData(data);
       setOriginalDriverData(data);
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to update"
-      );
+      setError(err.response?.data?.message || err.message || "Failed to update");
     } finally {
       setLoading(false);
     }
   };
 
-  const refs = {
-    firstNameRef,
-    surNameRef,
-    mobileNumberRef,
-    emailRef,
-    addressRef,
-    cityRef,
-    provinceRef,
-    zipCodeRef,
-    caseNumberRef,
-  };
-
-  const setters = {
-    setFirstName,
-    setSurName,
-    setMobileNumber,
-    setEmail,
-    setAddress,
-    setCity,
-    setProvince,
-    setZipCode,
-    setCaseNumber,
-  };
-
+  const refs = { firstNameRef, surNameRef, mobileNumberRef, emailRef, addressRef, cityRef, provinceRef, zipCodeRef, caseNumberRef };
+  const setters = { setFirstName, setSurName, setMobileNumber, setEmail, setAddress, setCity, setProvince, setZipCode, setCaseNumber };
   const fields = personalInfoFields({
-    firstName,
-    surName,
-    mobileNumber,
-    email,
-    address,
-    city,
-    province,
-    zipCode,
-    caseNumber,
-    refs,
-    setters,
+    firstName, surName, mobileNumber, email, address, city, province, zipCode, caseNumber,
+    refs, setters
   });
 
   return (

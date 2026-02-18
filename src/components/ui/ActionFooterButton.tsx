@@ -17,8 +17,8 @@ const ActionFooterButton: React.FC<ActionFooterButtonProps> = ({
     text,
     onClick,
     disabled = false,
-    expand = "full", 
-    shape = "round",
+    expand = "block",
+    shape,
     size = "large",
     className = "",
 }) => {
