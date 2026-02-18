@@ -20,7 +20,6 @@ import React, { useEffect, useState } from "react";
 import BackButton from "../../components/BackButton";
 import { UploadService } from "../../services/uploadService";
 import { useHistory } from "react-router-dom";
-import "../../theme/Menu.css";
 import { fetchMyRatings } from "../../services/apiService";
 import { useLocationContext } from "../../contexts/LocationContext";
 import {
@@ -34,6 +33,7 @@ import {
   phonePortraitOutline,
   starSharp,
 } from "ionicons/icons";
+
 
 const uploadService = new UploadService(
   import.meta.env.VITE_AWS_ACCESS_KEY,

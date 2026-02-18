@@ -27,7 +27,7 @@ import UpdatePassword from "./pages/AuthPages/UpdatePassword";
 
 import Checklist from "./pages/OnboardingPages/Checklist";
 import PersonalInfo from "./pages/OnboardingPages/PersonalInfo";
-import PersonlaReq from "./pages/OnboardingPages/PersonalReq";
+import PersonlaReq from "./pages/OnboardingPages/PersonalRequirments";
 import TransportReq from "./pages/OnboardingPages/TransportReq";
 import Earnings from "./pages/DriverPages/Earnings";
 import Wallet from "./pages/DriverPages/Wallet";

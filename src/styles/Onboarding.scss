@@ -1,0 +1,152 @@
+/* ============================= */
+/* PROFILE UPLOAD CONTAINER */
+/* ============================= */
+
+.profile-upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    padding: 1rem;
+    margin: 1rem;
+
+    border: 2px dashed #ccc;
+    border-radius: 12px;
+    background-color: #f9f9f9;
+
+    transition: all 0.3s ease;
+
+    &:hover {
+        border-color: #3498db;
+        background-color: #f0f8ff;
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 0.75rem;
+
+        border: 3px solid #3498db;
+        border-radius: 50%;
+        overflow: hidden;
+
+        ion-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    .upload-text-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+
+        .upload-icon {
+            font-size: 1.5rem;
+            color: #3498db;
+        }
+
+        .upload-text {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #333;
+        }
+    }
+
+    .hidden-file-input {
+        display: none;
+    }
+}
+
+/* ============================= */
+/* FILE UPLOAD (FormField) */
+/* ============================= */
+
+/* Remove Ionic default inner line */
+ion-item.file-upload-item {
+    --inner-border-width: 0;
+}
+
+/* Upload wrapper */
+.file-upload-wrapper {
+    padding: 16px;
+    margin: 1rem;
+    border: 2px dashed #999;
+    border-radius: 8px;
+    text-align: center;
+    background: #fafafa;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #3498db;
+        background: #f0f8ff;
+    }
+
+    input[type="file"] {
+        margin-top: 8px;
+        width: 100%;
+    }
+}
+
+/* ============================= */
+/* STANDARD INPUT FIELD */
+/* ============================= */
+
+.input-field {
+    --border-radius: 12px;
+    --padding-start: 0.75rem;
+    --padding-end: 0.75rem;
+
+    margin: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+
+    &:focus-within {
+        border-color: #008000;
+        background-color: #f0f8ff;
+    }
+
+    ion-input {
+        color: #333;
+        font-weight: 500;
+
+        &.floating-label-dark {
+            --placeholder-color: #999;
+            --highlight-color-focused: #3498db;
+        }
+    }
+}
+
+.action-footer-button {
+    ion-toolbar {
+        --background: transparent;
+    }
+
+    ion-button {
+        --background: #008000;
+        --background-activated: #005600;
+        --background-focused: #005600;
+        --background-hover: #4c8dff;
+        --color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 1rem;
+        border-radius: 50px;
+        transition: all 0.2s ease-in-out;
+
+        &:disabled {
+            --background: #c0c4c9;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    }
+
+    ion-footer {
+        background: transparent;
+    }
+}

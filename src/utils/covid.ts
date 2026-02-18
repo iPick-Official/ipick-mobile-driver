@@ -1,0 +1,1 @@
+export const fullText = `Bilang iPick Driver-partner na may mataas na interaksyon sa publiko, ako ay boluntaryong sasailalim sa COVID-19 vaccination at nangangakong magsusumite ng proof of vaccination sa loob ng 30 araw mula sa aking activation. Naiintindihan kong may karapatan ang iPick na kumilos kung ako'y hindi sumunod.`;

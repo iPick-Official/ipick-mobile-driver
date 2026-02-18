@@ -1,4 +1,4 @@
-import { UploadService } from "../../services/uploadService";
+import { UploadService } from "../services/uploadService";
 
 const uploadService = new UploadService(
   import.meta.env.VITE_AWS_ACCESS_KEY,

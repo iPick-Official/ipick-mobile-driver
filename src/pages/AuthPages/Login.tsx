@@ -18,8 +18,8 @@ import { eyeOffOutline, eyeOutline } from "ionicons/icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useHistory } from "react-router-dom";
 import Loading from "../../components/Loading";
-
-import "@theme/variables.css";
+import FormField from "../../components/ui/FormField";
+import "../../styles/Onboarding.scss";
 
 
 const Login: React.FC = () => {

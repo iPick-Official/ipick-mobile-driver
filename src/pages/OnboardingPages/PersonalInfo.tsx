@@ -22,6 +22,8 @@ import Loading from "../../components/Loading";
 import { capitalizeWords } from "../../utils/textUtils";
 import { Driver } from "../../types/driverTypes";
 import { personalInfoFields } from "../../utils/personalInfoFields";
+import ActionFooterButton from "../../components/ui/ActionFooterButton";
+import FormField from "../../components/ui/FormField";
 
 const PersonalInfo: React.FC = () => {
   const [carType, setCarType] = useState("");
@@ -156,6 +158,30 @@ const PersonalInfo: React.FC = () => {
     }
   };
 
+  const refs = {
+    firstNameRef,
+    surNameRef,
+    mobileNumberRef,
+    emailRef,
+    addressRef,
+    cityRef,
+    provinceRef,
+    zipCodeRef,
+    caseNumberRef,
+  };
+
+  const setters = {
+    setFirstName,
+    setSurName,
+    setMobileNumber,
+    setEmail,
+    setAddress,
+    setCity,
+    setProvince,
+    setZipCode,
+    setCaseNumber,
+  };
+
   const fields = personalInfoFields({
     firstName,
     surName,
@@ -166,28 +192,8 @@ const PersonalInfo: React.FC = () => {
     province,
     zipCode,
     caseNumber,
-    refs: {
-      firstNameRef,
-      surNameRef,
-      mobileNumberRef,
-      emailRef,
-      addressRef,
-      cityRef,
-      provinceRef,
-      zipCodeRef,
-      caseNumberRef
-    },
-    setters: {
-      setFirstName,
-      setSurName,
-      setMobileNumber,
-      setEmail,
-      setAddress,
-      setCity,
-      setProvince,
-      setZipCode,
-      setCaseNumber,
-    },
+    refs,
+    setters,
   });
 
   return (
@@ -203,23 +209,18 @@ const PersonalInfo: React.FC = () => {
 
       <IonContent className="ion-padding auth-ion-content" fullscreen>
         {/* Vehicle Type */}
-        <IonItem lines="none" className="input-field">
-          <IonLabel>Vehicle Type</IonLabel>
-          <IonSelect
-            interface="action-sheet"
-            slot="end"
-            placeholder="Select Vehicle Type"
-            value={carType}
-            onIonChange={(e) => {
-              const v = e.detail.value;
-              setCarType(v);
-              carTypeRef.current = v;
-            }}
-          >
-            <IonSelectOption value="4-seater">4 Seaters</IonSelectOption>
-            <IonSelectOption value="6-seater">6 Seaters</IonSelectOption>
-          </IonSelect>
-        </IonItem>
+        <FormField
+          fieldType="select"
+          label="Nationality"
+          value={carType}
+          onChange={setCarType}
+          refObj={carTypeRef}
+          options={[
+            { value: "4-seater", label: "4 Seater" },
+            { value: "6-seater", label: "6 Seater" },
+          ]}
+          required
+        />
 
         {/* Auto-generated Inputs */}
         {fields.map((field, idx) => (
@@ -245,31 +246,21 @@ const PersonalInfo: React.FC = () => {
           </IonItem>
         ))}
       </IonContent>
-
       <Loading isOpen={loading} message="Waiting..." />
-
       <IonToast
         isOpen={!!error}
         message={error}
         duration={3000}
-        color="danger"
+        color="dark"
         position="top"
         onDidDismiss={() => setError("")}
       />
 
-      <IonFooter translucent className="ion-no-border ion-padding">
-        <IonToolbar>
-          <IonButton
-            className="custom-button"
-            expand="block"
-            size="large"
-            onClick={handleUpdate}
-            disabled={loading}
-          >
-            Save Changes
-          </IonButton>
-        </IonToolbar>
-      </IonFooter>
+      <ActionFooterButton
+        text="Submit"
+        onClick={handleUpdate}
+        disabled={loading}
+      />
     </IonPage>
   );
 };
