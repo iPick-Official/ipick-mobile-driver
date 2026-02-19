@@ -1,27 +1,38 @@
 import { UploadService } from "../services/uploadService";
+import { FileData } from "../types/driverTypes";
 
 export const getFileUrlIfAvailable = async (
-  fileObj: { name?: string; url?: string | null } | string | undefined,
+  fileObj:
+    | { name?: string; url?: string | null; key?: string }
+    | string
+    | undefined,
 ): Promise<string> => {
   if (!fileObj) return "";
 
+  // Determine the S3 key
   const key =
-    typeof fileObj === "string" ? fileObj : fileObj.url || fileObj.name || "";
+    typeof fileObj === "string"
+      ? fileObj
+      : fileObj.key || fileObj.url || fileObj.name || "";
 
   if (!key) return "";
 
-  if (key.startsWith("http")) {
-    return key;
-  }
+  // If key is already a full HTTP(S) URL and not expired, return it
+  if (key.startsWith("http")) return key;
 
+  // Otherwise, request a fresh pre-signed URL from your API
   return await UploadService.getFileUrl(key);
 };
 
-export const getNameOrDefault = (
-  fileObj: { name?: string; url?: string } | string | undefined,
-  fallback: string,
-): string => {
-  if (!fileObj) return fallback;
-  if (typeof fileObj === "string") return fileObj || fallback;
-  return fileObj.name || fallback;
+export const setFileIfExists = async (
+  file: FileData | undefined,
+  setter: (val: FileData | null) => void,
+) => {
+  if (!file) return;
+  const url = await getFileUrlIfAvailable(file);
+  setter({
+    name: file.name,
+    url,
+    key: file.key,
+  });
 };

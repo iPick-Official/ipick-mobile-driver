@@ -7,11 +7,13 @@ import "../../styles/Onboarding.scss";
 import HeaderWithTabs from "../../components/ui/TabHeader";
 import FormField from "../../components/ui/FormField";
 import ProfileUpload from "../../components/ui/ProfileUpload";
+import ActionFooterButton from "../../components/ui/ActionFooterButton";
 import { createDriverFileFields } from "../../config/driverFileFields";
 import { fullText } from "../../utils/covid";
-import ActionFooterButton from "../../components/ui/ActionFooterButton";
 import { getFileUrlIfAvailable } from "../../utils/fileUrl";
-import { Driver, FileData } from "../../types/driverTypes";
+import { Driver, FileData, PersonalRequirements } from "../../types/driverTypes";
+import { UploadService } from "../../services/uploadService";
+import Loading from "../../components/Loading";
 
 const PersonlaReq: React.FC = () => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -52,8 +54,12 @@ const PersonlaReq: React.FC = () => {
   const [pwdId, setPwdId] = useState<FileData | null>(null);
   const [covidVaxImg, setCovidVaxImg] = useState<FileData | null>(null);
   const [documentImg, setDocumentImg] = useState<FileData | null>(null);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [driverData, setDriverData] = useState<Driver | null>(null);
+  const [originalPersonalReq, setOriginalPersonalReq] = useState<any>(null);
+
+  const token = localStorage.getItem("accessToken");
 
   const fileFields = createDriverFileFields(
     licenseFront,
@@ -62,37 +68,65 @@ const PersonlaReq: React.FC = () => {
     setLicenseBack
   );
 
+  const isFormValid =
+    privacyNotice &&
+    termsOfService &&
+    codeOfConduct &&
+    declarations &&
+    vaccinationCertificateConsent;
+
   useEffect(() => {
-    const loadData = async () => {
-      const parsed: Driver | null = JSON.parse(localStorage.getItem("driverData") || "null");
-      const req = parsed?.personalRequirements;
+    const stored = localStorage.getItem("driverData");
+    if (!stored) return;
+
+    const parsed: Driver = JSON.parse(stored);
+    setDriverData(parsed);
+
+    const req = parsed.personalRequirements;
+    if (!req) return;
+
+    setOriginalPersonalReq(req);
+
+    // Regular fields mapping
+    const stateMap: {
+      [K in keyof PersonalRequirements]?: {
+        setter: (val: any) => void;
+        ref: React.RefObject<any>;
+      };
+    } = {
+      driverLicenseNumber: { setter: setLicenseNumber, ref: refs.licenseNumber },
+      driverLicenseExpDate: { setter: setLicenseExp, ref: refs.licenseExp },
+      nationality: { setter: setNationality, ref: refs.nationality },
+      emergencyContactName: { setter: setEmergencyPerson, ref: refs.emergencyPerson },
+      emergencyContactMobNum: { setter: setEmergencyMobile, ref: refs.emergencyMobile },
+      emergencyContactAddress: { setter: setEmergencyAddress, ref: refs.emergencyAddress },
+      emergencyRelationship: { setter: setEmergencyRelationship, ref: refs.emergencyRelationship },
+      vaccinationCertificateConsent: { setter: setvaccinationCertificateConsent, ref: refs.vaccinationCertificateConsent },
+      documentType: { setter: setDocumentType, ref: refs.documentType },
+      termsOfService: { setter: setTermsOfService, ref: refs.termsOfService },
+      codeOfConduct: { setter: setCodeOfConduct, ref: refs.codeOfConduct },
+      privacyNotice: { setter: setPrivacyNotice, ref: refs.privacyNotice },
+      declarations: { setter: setDeclarations, ref: refs.declarations },
+    };
+
+    Object.entries(stateMap).forEach(([key, config]) => {
+      if (!config) return;
+
+      const typedKey = key as keyof PersonalRequirements;
+      const value = req[typedKey];
+
+      config.setter(value ?? "");
+      config.ref.current = value ?? "";
+    });
+  }, []);
+
+  useEffect(() => {
+    const loadFiles = async () => {
+      if (!driverData) return;
+      const req = driverData.personalRequirements;
       if (!req) return;
 
-      // Regular fields mapping
-      const stateMap: Record<string, Function> = {
-        driverLicenseNumber: setLicenseNumber,
-        driverLicenseExpDate: setLicenseExp,
-        nationality: setNationality,
-        emergencyContactName: setEmergencyPerson,
-        emergencyContactMobNum: setEmergencyMobile,
-        emergencyContactAddress: setEmergencyAddress,
-        emergencyRelationship: setEmergencyRelationship,
-        vaccinationCertificateConsent: setvaccinationCertificateConsent,
-        documentType: setDocumentType,
-        termsOfService: setTermsOfService,
-        codeOfConduct: setCodeOfConduct,
-        privacyNotice: setPrivacyNotice,
-        declarations: setDeclarations,
-      };
-
-      // Set non-file fields
-      Object.entries(stateMap).forEach(([key, setter]) => setter(req[key as keyof typeof req]));
-
-      // File fields mapping dynamically
-      const fileStateMap: Record<
-        string,
-        Function
-      > = {
+      const fileStateMap: Record<string, React.Dispatch<React.SetStateAction<FileData | null>>> = {
         profilePicture: setProfilePicture,
         vaccinationCertificate: setCovidVaxImg,
         driverLicenseFront: setLicenseFront,
@@ -101,19 +135,124 @@ const PersonlaReq: React.FC = () => {
         documentImg: setDocumentImg,
       };
 
-      // Set file URLs dynamically
       await Promise.all(
         Object.entries(fileStateMap).map(async ([field, setter]) => {
-          const file = req[field as keyof typeof req] as { name?: string; url?: string } | undefined;
-          if (file && file.url) {
-            setter({ name: file.name || field, url: await getFileUrlIfAvailable(file) });
-          }
+          const file = req[field as keyof typeof req] as FileData | undefined;
+          if (!file) return;
+
+          // Always fetch a fresh URL from server
+          const url = await getFileUrlIfAvailable(file);
+          setter({ ...file, url }); // Keep original info, but update with fresh URL
         })
       );
     };
 
-    loadData();
-  }, []);
+    loadFiles();
+  }, [driverData]);
+
+  const handleUpdate = async () => {
+    if (!driverData || !originalPersonalReq) return;
+
+    setLoading(true);
+
+    try {
+      const updates: any = {};
+
+      // ---- Upload files if they have raw File ----
+      const fileFields = [
+        { state: profilePicture, key: "profilePicture", setter: setProfilePicture },
+        { state: licenseFront, key: "driverLicenseFront", setter: setLicenseFront },
+        { state: licenseBack, key: "driverLicenseBack", setter: setLicenseBack },
+        { state: pwdId, key: "pwdFile", setter: setPwdId },
+        { state: covidVaxImg, key: "vaccinationCertificate", setter: setCovidVaxImg },
+        { state: documentImg, key: "documentImg", setter: setDocumentImg },
+      ];
+
+      for (const field of fileFields) {
+        if (field.state?.file) {
+          const uploaded = await UploadService.uploadFile(field.state.file);
+
+          // Get proper downloadable URL
+          let url = uploaded.url;
+          try {
+            url = await UploadService.getFileUrl(uploaded.key);
+          } catch (err) {
+            console.error(`Failed to get URL for ${field.key}`, err);
+          }
+
+          updates[field.key] = { name: field.state.name, url };
+          // Update local state so preview works immediately
+          field.setter({ name: field.state.name, url, file: field.state.file });
+        }
+      }
+
+      // ---- Compare and add normal fields ----
+      const fieldMap: Record<string, any> = {
+        driverLicenseNumber: refs.licenseNumber.current,
+        driverLicenseExpDate: refs.licenseExp.current,
+        nationality: refs.nationality.current,
+        emergencyContactName: refs.emergencyPerson.current,
+        emergencyContactMobNum: refs.emergencyMobile.current,
+        emergencyContactAddress: refs.emergencyAddress.current,
+        emergencyRelationship: refs.emergencyRelationship.current,
+        vaccinationCertificateConsent: refs.vaccinationCertificateConsent.current,
+        documentType: refs.documentType.current,
+        termsOfService: refs.termsOfService.current,
+        codeOfConduct: refs.codeOfConduct.current,
+        privacyNotice: refs.privacyNotice.current,
+        declarations: refs.declarations.current,
+      };
+
+      Object.entries(fieldMap).forEach(([key, value]) => {
+        const originalValue = originalPersonalReq[key];
+        if (value !== originalValue) {
+          updates[key] = value;
+        }
+      });
+
+      if (Object.keys(updates).length === 0) {
+        alert("Please make changes.");
+        setLoading(false);
+        return;
+      }
+
+      // ---- Merge updates with original data to prevent clearing other fields ----
+      const mergedUpdates = {
+        ...originalPersonalReq,
+        ...updates,
+      };
+
+      // ---- Send PATCH ----
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}/drivers/${driverData._id}/personal-requirements`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(mergedUpdates),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || "Failed to update personal requirements");
+      }
+
+      const updatedDriver = await response.json();
+      localStorage.setItem("driverData", JSON.stringify(updatedDriver));
+      setDriverData(updatedDriver);
+      setOriginalPersonalReq(updatedDriver.personalRequirements);
+
+      alert("Personal requirements updated successfully!");
+
+    } catch (err: any) {
+      console.error("Update failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <IonPage>
@@ -138,6 +277,7 @@ const PersonlaReq: React.FC = () => {
                 setProfilePicture({
                   name: file.name,
                   url: URL.createObjectURL(file),
+                  file,
                 });
               }}
             />
@@ -179,8 +319,8 @@ const PersonlaReq: React.FC = () => {
                 key={label}
                 fieldType="file"
                 label={label}
-                value={value}
-                onChange={setter}
+                value={value} // FileData | null
+                onChange={(fileData: FileData | null) => setter(fileData)} // matches type
                 accept="image/*"
               // captureBackCamera
               />
@@ -250,7 +390,7 @@ const PersonlaReq: React.FC = () => {
               label=""
               value={vaccinationCertificateConsent}
               onChange={setvaccinationCertificateConsent}
-              refObj={refs.termsOfService}
+              refObj={refs.vaccinationCertificateConsent}
               text={fullText}
             />
           </>
@@ -312,11 +452,11 @@ const PersonlaReq: React.FC = () => {
           </>
         )}
       </IonContent>
-
+      <Loading isOpen={loading} message="Waiting..." />
       <ActionFooterButton
         text="Submit"
-      // onClick={handleSubmit}
-      // disabled={!profilePic || vaccinationConsent === false}
+        onClick={handleUpdate}
+        disabled={!isFormValid || loading}
       />
 
     </IonPage>

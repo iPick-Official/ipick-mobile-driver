@@ -147,7 +147,7 @@ const PersonalInfo: React.FC = () => {
         {/* Vehicle Type */}
         <FormField
           fieldType="select"
-          label="Nationality"
+          label="Car Type"
           value={carType}
           onChange={setCarType}
           refObj={carTypeRef}

@@ -3,6 +3,7 @@ import { FormFieldProps, DateFieldProps, SelectFieldProps, FileFieldProps, Check
 import "../../styles/Onboarding.scss";
 import { FileData } from "../../types/driverTypes";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { UploadService } from "../../services/uploadService";
 
 const FormField = <T extends string | number>({
     fieldType,
@@ -29,7 +30,7 @@ const FormField = <T extends string | number>({
                     inputMode={inputMode}
                     placeholder={placeholder}
                     label={label}
-                    labelPlacement="floating"
+                    labelPlacement="stacked"
                     max={maxLength}
                     value={stringValue}
                     required={required}
@@ -74,15 +75,18 @@ const FormField = <T extends string | number>({
 
     // --- SELECT FIELD ---
     if (fieldType === "select") {
-        const { options, interfaceType = "action-sheet", slot = "end", justify = "start" } =
-            rest as SelectFieldProps<T>;
+        const {
+            options,
+            interfaceType = "action-sheet",
+            justify = "start",
+        } = rest as SelectFieldProps<T>;
 
         return (
             <IonItem lines="none" className={`input-field ${className}`}>
-                <IonLabel>{label}</IonLabel>
                 <IonSelect
+                    label={label}
+                    labelPlacement="stacked"
                     interface={interfaceType}
-                    slot={slot}
                     placeholder={placeholder || "Select..."}
                     value={value}
                     onIonChange={(e) => {
@@ -109,35 +113,55 @@ const FormField = <T extends string | number>({
         const [previews, setPreviews] = useState<string[]>([]);
         const inputRef = useRef<HTMLInputElement>(null);
 
+        // Normalize value into array for consistent preview handling
         const valueArray = useMemo(() => {
-            if (multiple) return (value as any[]) || [];
-            return value ? [(value as any)] : [];
+            if (multiple) return (value as FileData[]) || [];
+            return value ? [(value as FileData)] : [];
         }, [value, multiple]);
 
+        // Generate preview URLs for both uploaded and new files
         useEffect(() => {
             const urls = valueArray.map((file) => {
-                if (file instanceof File) return URL.createObjectURL(file);
-                return (file as { key: string; name?: string }).key
-                    ? `${import.meta.env.VITE_API_ENDPOINT}/files/url?key=${file.key}`
-                    : "";
+                if (file.file instanceof File) return URL.createObjectURL(file.file); // newly selected
+                return file.url || ""; // already uploaded
             });
 
             setPreviews(urls);
 
+            // Cleanup blob URLs on unmount
             return () => urls.forEach((url) => url.startsWith("blob:") && URL.revokeObjectURL(url));
         }, [valueArray]);
 
-        const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
             if (!e.target.files) return;
 
-            if (multiple) {
-                const filesArray = Array.from(e.target.files);
-                (onChange as (v: (File | { key: string; name?: string })[]) => void)(filesArray);
-                if (refObj) refObj.current = filesArray;
-            } else {
-                const file = e.target.files[0];
-                (onChange as (v: File | { key: string; name?: string } | null) => void)(file || null);
-                if (refObj) refObj.current = file || null;
+            try {
+                if (multiple) {
+                    const filesArray = Array.from(e.target.files);
+
+                    // Upload all files
+                    const uploadedFiles = await Promise.all(
+                        filesArray.map(async (f) => {
+                            const uploaded = await UploadService.uploadFile(f);
+                            return { name: f.name, url: uploaded.url, file: f, key: uploaded.key };
+                        })
+                    );
+
+                    (onChange as (v: FileData[]) => void)(uploadedFiles);
+                    if (refObj) refObj.current = uploadedFiles;
+                } else {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const uploaded = await UploadService.uploadFile(file);
+                    const fileData: FileData = { name: file.name, url: uploaded.url, file, key: uploaded.key };
+
+                    (onChange as (v: FileData | null) => void)(fileData);
+                    if (refObj) refObj.current = fileData;
+                }
+            } catch (err: any) {
+                console.error("File upload failed:", err);
+                alert(err.message || "Failed to upload file");
             }
         };
 
@@ -175,7 +199,6 @@ const FormField = <T extends string | number>({
             </div>
         );
     }
-
     // --- CHECKBOX FIELD ---
     if (fieldType === "checkbox") {
         const { text } = rest as CheckboxFieldProps;
@@ -210,7 +233,7 @@ const FormField = <T extends string | number>({
                     color="dark"
                     placeholder={placeholder}
                     label={label}
-                    labelPlacement="floating"
+                    labelPlacement="stacked"
                     value={stringValue}
                     rows={rows}
                     autoGrow={autoGrow}

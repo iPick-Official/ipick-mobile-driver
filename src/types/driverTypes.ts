@@ -1,6 +1,8 @@
 export interface FileData {
   name: string;
   url?: string;
+  file?: File;
+  key?: string;
 }
 
 export interface PersonalRequirements {
@@ -40,10 +42,30 @@ export interface VehicleOwnership {
 }
 
 export interface TransportRequirements {
+  vehicleOwnership: VehicleOwnership;
   plateNumber: string;
+  orNumber: string;
+  crNumber: string;
   carColor: string;
   carBrand: string;
   carModel: string;
+  ownerDocuments: FileData;
+  operatorsDocument: FileData;
+  vehicleOR: FileData;
+  vehicleCR: FileData;
+  vehicleSalesInvoice: FileData;
+  authorizationLetterPageOne: FileData;
+  authorizationLetterPageTwo: FileData;
+  sPAPageOne: FileData;
+  sPAPageTwo: FileData;
+  ltfrbDocType: string;
+  pAPageOne: FileData;
+  pAPageTwo: FileData;
+  cPCPageOne: FileData;
+  cPCPageTwo: FileData;
+  mEPAPageOne: FileData;
+  mEPAPageTwo: FileData;
+  pAMI: FileData;
 }
 
 export interface Driver {
