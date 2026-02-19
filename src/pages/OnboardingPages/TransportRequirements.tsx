@@ -120,11 +120,6 @@ const TransportReq: React.FC = () => {
     setOrNumber(req.orNumber || "");
     setCrNumber(req.crNumber || "");
     setLtfrbDocType(req.ltfrbDocType || "");
-
-    // =============================
-    // OPERATOR INFO
-    // =============================
-
     setOperatorsFullName(req.vehicleOwnership?.operatorsFullName || "");
     setOperatorsAddress(req.vehicleOwnership?.operatorsAddress || "");
     setOperatorsMobileNumber(req.vehicleOwnership?.operatorsMobileNumber || "");
@@ -154,6 +149,128 @@ const TransportReq: React.FC = () => {
       ]);
     })();
   }, []);
+
+  const handleUpdate = async () => {
+    if (!driverData || !driverData.transportRequirements) return;
+
+    setLoading(true);
+
+    try {
+      const updates: any = {};
+
+      // ---- File fields to upload ----
+      const fileFields = [
+        { state: ownerDocuments, key: "ownerDocuments", setter: setOwnerDocuments },
+        { state: operatorsDocument, key: "operatorsDocument", setter: setOperatorsDocument },
+        { state: vehicleOR, key: "vehicleOR", setter: setVehicleOR },
+        { state: vehicleCR, key: "vehicleCR", setter: setVehicleCR },
+        { state: vehicleSalesInvoice, key: "vehicleSalesInvoice", setter: setVehicleSalesInvoice },
+        { state: authorizationLetterPageOne, key: "authorizationLetterPageOne", setter: setAuthorizationLetterPageOne },
+        { state: authorizationLetterPageTwo, key: "authorizationLetterPageTwo", setter: setAuthorizationLetterPageTwo },
+        { state: sPAPageOne, key: "sPAPageOne", setter: setSPAPageOne },
+        { state: sPAPageTwo, key: "sPAPageTwo", setter: setSPAPageTwo },
+        { state: pAPageOne, key: "pAPageOne", setter: setPAPageOne },
+        { state: pAPageTwo, key: "pAPageTwo", setter: setPAPageTwo },
+        { state: cPCPageOne, key: "cPCPageOne", setter: setCPCPageOne },
+        { state: cPCPageTwo, key: "cPCPageTwo", setter: setCPCPageTwo },
+        { state: mEPAPageOne, key: "mEPAPageOne", setter: setMEPAPageOne },
+        { state: mEPAPageTwo, key: "mEPAPageTwo", setter: setMEPAPageTwo },
+        { state: pAMI, key: "pAMI", setter: setPAMI },
+      ];
+
+      for (const field of fileFields) {
+        if (field.state?.file) {
+          const uploaded = await UploadService.uploadFile(field.state.file);
+
+          let url = uploaded.url;
+          try {
+            url = await UploadService.getFileUrl(uploaded.key);
+          } catch (err) {
+            console.error(`Failed to get URL for ${field.key}`, err);
+          }
+
+          updates[field.key] = { name: field.state.name, url, file: field.state.file };
+          field.setter({ name: field.state.name, url, file: field.state.file });
+        }
+      }
+
+      // ---- Normal fields ----
+      const fieldMap: Record<string, any> = {
+        ownershipId,
+        plateNumber,
+        carBrand,
+        carColor,
+        carModel,
+        orNumber,
+        crNumber,
+        ltfrbDocType,
+        operatorsFullName,
+        operatorsAddress,
+        operatorsMobileNumber,
+      };
+
+      // Compare with existing transportRequirements to only send changed fields
+      Object.entries(fieldMap).forEach(([key, value]) => {
+        const originalValue = driverData.transportRequirements[key as keyof TransportRequirements];
+        if (value !== originalValue) {
+          updates[key] = value;
+        }
+      });
+
+      // If nothing changed
+      if (Object.keys(updates).length === 0) {
+        alert("Please make changes.");
+        setLoading(false);
+        return;
+      }
+
+      // ---- Merge with existing transportRequirements ----
+      const mergedUpdates = {
+        ...driverData.transportRequirements,
+        ...updates,
+        vehicleOwnership: {
+          ...driverData.transportRequirements.vehicleOwnership,
+          ownershipId,
+          description: ownershipOptions.find((o) => o.value === ownershipId)?.label || "",
+          operatorsFullName,
+          operatorsAddress,
+          operatorsMobileNumber,
+          operatorDocuments: operatorsDocument
+            ? { name: operatorsDocument.name, url: operatorsDocument.url || "" }
+            : driverData.transportRequirements.vehicleOwnership.operatorDocuments,
+        },
+      };
+
+      // ---- Send PATCH request ----
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}/drivers/${driverData._id}/transport-requirements`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(mergedUpdates),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || "Failed to update transport requirements");
+      }
+
+      const updatedDriver = await response.json();
+      localStorage.setItem("driverData", JSON.stringify(updatedDriver));
+      setDriverData(updatedDriver);
+
+      alert("Transport requirements updated successfully!");
+    } catch (err: any) {
+      console.error("Update failed:", err);
+      alert("Update failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <IonPage>
@@ -353,7 +470,7 @@ const TransportReq: React.FC = () => {
       <Loading isOpen={loading} message="Waiting..." />
       <ActionFooterButton
         text="Submit"
-      // onClick={handleUpdate}
+      onClick={handleUpdate}
       // disabled={!isFormValid}
       />
     </IonPage>
