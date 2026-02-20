@@ -7,6 +7,13 @@ export interface UploadResponse {
 }
 
 export class UploadService {
+  private static getAuthHeaders() {
+    const token = localStorage.getItem("accessToken");
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
   static async uploadFile(file: File): Promise<UploadResponse> {
     let fileToUpload = file;
 
@@ -20,9 +27,7 @@ export class UploadService {
     const res = await fetch(`${API}/files/upload`, {
       method: "POST",
       body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: this.getAuthHeaders(),
     });
 
     if (!res.ok) {
@@ -30,22 +35,21 @@ export class UploadService {
       throw new Error(err || "Failed to upload file");
     }
 
-    const data: UploadResponse = await res.json();
-
-    return data;
+    return await res.json();
   }
 
   static async getFileUrl(key: string): Promise<string> {
     if (!key) return "";
+
     const res = await fetch(
       `${API}/files/url?filename=${encodeURIComponent(key)}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      { headers: this.getAuthHeaders() },
     );
+
     if (!res.ok) {
       throw new Error(`Failed to get file URL: ${await res.text()}`);
     }
+
     const data = await res.json();
     return data.url;
   }
