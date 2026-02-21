@@ -32,19 +32,18 @@ import {
   phonePortraitOutline,
   starSharp,
 } from "ionicons/icons";
-import { getFileUrlIfAvailable } from "../../utils/fileUrl";
+import { useProfilePicture } from "../../hooks/useProfilePicture";
 
 const MyProfile: React.FC = () => {
   const {
     driverName,
-    profilePicture,
     plateNum,
     carBrand,
     carModel,
     carColor,
   } = useLocationContext();
+  const { profilePictureUrl } = useProfilePicture();
   const history = useHistory();
-  const [profilePic, setProfilePic] = useState("");
   const [myRating, setMyRating] = useState(0);
   const user = JSON.parse(localStorage.getItem("driverData") || "{}");
   const joinedRaw = user?.createdAt || "";
@@ -62,15 +61,6 @@ const MyProfile: React.FC = () => {
 
     loadRating();
   }, []);
-
-  useEffect(() => {
-    const loadProfilePicture = async () => {
-      const url = await getFileUrlIfAvailable(profilePicture);
-      setProfilePic(url);
-    };
-
-    loadProfilePicture();
-  }, [profilePic]);
 
   const profileInfo = [
     { label: "Mobile Number", value: "+63" + user?.mobnum, icon: callOutline },
@@ -106,7 +96,7 @@ const MyProfile: React.FC = () => {
       <IonContent className="ion-padding" fullscreen>
         <IonItem lines="none" className="profile-item">
           <IonAvatar className="profile-avatar">
-            <IonImg src={profilePic} alt="Profile" />
+            <IonImg src={profilePictureUrl} alt="Profile" />
           </IonAvatar>
           <div className="profile-details">
             <span className="profile-name">

@@ -11,11 +11,10 @@ import {
   IonText,
 } from "@ionic/react";
 import "../theme/Menu.css";
-import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocationContext } from "../contexts/LocationContext";
-import { getFileUrlIfAvailable } from "../utils/fileUrl";
+import { useProfilePicture } from "../hooks/useProfilePicture";
 
 const appPages = [
   {
@@ -42,21 +41,12 @@ const appPages = [
 const Menu: React.FC = () => {
   const {
     driverName,
-    profilePicture,
     plateNum
   } = useLocationContext();
 
   const location = useLocation();
   const { logout } = useAuth();
-  const [profilePic, setProfilePic] = useState("");
-
-  useEffect(() => {
-    const loadProfilePicture = async () => {
-      const url = await getFileUrlIfAvailable(profilePicture);
-      setProfilePic(url);
-    };
-    loadProfilePicture();
-  }, [profilePicture]);
+  const { profilePictureUrl } = useProfilePicture();
 
   return (
     <IonMenu contentId="main" type="overlay">
@@ -64,7 +54,7 @@ const Menu: React.FC = () => {
         <IonList>
           <IonItem lines="none" className="profile-item">
             <IonAvatar className="profile-avatar">
-              <IonImg src={profilePic} alt="Profile" />
+              <IonImg src={profilePictureUrl} alt="Profile" />
             </IonAvatar>
 
             <div className="profile-details">

@@ -47,7 +47,6 @@ const PersonlaReq: React.FC = () => {
   const [termsOfService, setTermsOfService] = useState<boolean>(false);
   const [codeOfConduct, setCodeOfConduct] = useState<boolean>(false);
   const [declarations, setDeclarations] = useState<boolean>(false);
-
   const [profilePicture, setProfilePicture] = useState<FileData | null>(null);
   const [licenseFront, setLicenseFront] = useState<FileData | null>(null);
   const [licenseBack, setLicenseBack] = useState<FileData | null>(null);
@@ -55,10 +54,8 @@ const PersonlaReq: React.FC = () => {
   const [covidVaxImg, setCovidVaxImg] = useState<FileData | null>(null);
   const [documentImg, setDocumentImg] = useState<FileData | null>(null);
   const [loading, setLoading] = useState(false);
-
   const [driverData, setDriverData] = useState<Driver | null>(null);
   const [originalPersonalReq, setOriginalPersonalReq] = useState<any>(null);
-
   const token = localStorage.getItem("accessToken");
 
   const fileFields = createDriverFileFields(
@@ -111,21 +108,14 @@ const PersonlaReq: React.FC = () => {
 
     Object.entries(stateMap).forEach(([key, config]) => {
       if (!config) return;
-
       const typedKey = key as keyof PersonalRequirements;
       const value = req[typedKey];
-
       config.setter(value ?? "");
-      config.ref.current = value ?? "";
+      if (config.ref.current !== undefined) config.ref.current = value ?? "";
     });
-  }, []);
 
-  useEffect(() => {
+    // Load file URLs
     const loadFiles = async () => {
-      if (!driverData) return;
-      const req = driverData.personalRequirements;
-      if (!req) return;
-
       const fileStateMap: Record<string, React.Dispatch<React.SetStateAction<FileData | null>>> = {
         profilePicture: setProfilePicture,
         vaccinationCertificate: setCovidVaxImg,
@@ -139,16 +129,14 @@ const PersonlaReq: React.FC = () => {
         Object.entries(fileStateMap).map(async ([field, setter]) => {
           const file = req[field as keyof typeof req] as FileData | undefined;
           if (!file) return;
-
-          // Always fetch a fresh URL from server
           const url = await getFileUrlIfAvailable(file);
-          setter({ ...file, url }); // Keep original info, but update with fresh URL
+          setter({ ...file, url });
         })
       );
     };
 
     loadFiles();
-  }, [driverData]);
+  }, []);
 
   const handleUpdate = async () => {
     if (!driverData || !originalPersonalReq) return;

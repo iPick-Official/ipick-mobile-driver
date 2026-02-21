@@ -1,6 +1,4 @@
 const API = import.meta.env.VITE_API_ENDPOINT;
-const token = localStorage.getItem("accessToken");
-
 export interface UploadResponse {
   url: string;
   key: string;

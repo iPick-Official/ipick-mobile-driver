@@ -13,14 +13,16 @@ import {
   IonTitle,
 } from "@ionic/react";
 import { personCircle, documentText, carSport, logOut } from "ionicons/icons";
-import "@theme/checklist.css";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import "@theme/checklist.css";
+import { useLocationContext } from "../../contexts/LocationContext";
 
 const Checklist: React.FC = () => {
   const history = useHistory();
   const { logout } = useAuth();
-  const userName = localStorage.getItem("firstName");
+  const {
+    driverName, setDriverName, } = useLocationContext();
 
   return (
     <IonPage>
@@ -35,7 +37,7 @@ const Checklist: React.FC = () => {
           <IonImg src="/assets/logo-word.png" className="logo" />
           <IonText className="app-title">Driver's App</IonText>
           <IonText className="welcome">
-            Hello <b>{userName}</b>, submit all requirements to continue driving.
+            Hello <b>{driverName}</b>, submit all requirements to continue driving.
           </IonText>
         </div>
 
