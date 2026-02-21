@@ -1,38 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  IonButtons,
   IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
   IonPage,
-  IonSelect,
-  IonSelectOption,
-  IonSegment,
-  IonSegmentButton,
-  IonToolbar,
-  IonInput,
-  IonButton,
-  IonCol,
-  IonGrid,
-  IonRow,
-  IonFooter,
-  IonTextarea,
-  IonToast,
-  IonText,
 } from "@ionic/react";
-import { capitalizeWords } from "../../utils/textUtils";
-import BackButton from "../../components/BackButton";
-import { cloudUploadSharp } from "ionicons/icons";
 import { UploadService } from "../../services/uploadService";
 import Loading from "../../components/Loading";
 import HeaderWithTabs from "../../components/ui/TabHeader";
 import FormField from "../../components/ui/FormField";
 import ActionFooterButton from "../../components/ui/ActionFooterButton";
 import { ltfrbDocsOptions, ownershipOptions } from "../../utils/transportSelect";
-import { Driver, FileData, TransportRequirements } from "../../types/driverTypes";
-import { getFileUrlIfAvailable, setFileIfExists } from "../../utils/fileUrl";
+import { Driver, FileData } from "../../types/driverTypes";
+import { setFileIfExists } from "../../utils/fileUrl";
 const token = localStorage.getItem("accessToken");
 
 const TransportReq: React.FC = () => {
@@ -83,7 +61,8 @@ const TransportReq: React.FC = () => {
   const [vehicleSalesInvoice, setVehicleSalesInvoice] = useState<FileData | null>(null);
   const [loading, setLoading] = useState(false);
   const [driverData, setDriverData] = useState<Driver | null>(null);
-  const [originalPersonalReq, setOriginalPersonalReq] = useState<any>(null);
+  const [originalTransportReq, setOriginalTransportReq] = useState<any>(null);
+  const [confirm, setConfirm] = useState<boolean>(false);
 
   const token = localStorage.getItem("accessToken");
 
@@ -98,6 +77,29 @@ const TransportReq: React.FC = () => {
     { value: "documents", label: "LTFRB Documents" },
   ];
 
+  const fileFields: {
+    key: string;
+    state: any;
+    setter: any;
+  }[] = [
+      { key: "ownerDocuments", state: ownerDocuments, setter: setOwnerDocuments },
+      { key: "operatorsDocument", state: operatorsDocument, setter: setOperatorsDocument },
+      { key: "vehicleOR", state: vehicleOR, setter: setVehicleOR },
+      { key: "vehicleCR", state: vehicleCR, setter: setVehicleCR },
+      { key: "vehicleSalesInvoice", state: vehicleSalesInvoice, setter: setVehicleSalesInvoice },
+      { key: "authorizationLetterPageOne", state: authorizationLetterPageOne, setter: setAuthorizationLetterPageOne },
+      { key: "authorizationLetterPageTwo", state: authorizationLetterPageTwo, setter: setAuthorizationLetterPageTwo },
+      { key: "sPAPageOne", state: sPAPageOne, setter: setSPAPageOne },
+      { key: "sPAPageTwo", state: sPAPageTwo, setter: setSPAPageTwo },
+      { key: "pAPageOne", state: pAPageOne, setter: setPAPageOne },
+      { key: "pAPageTwo", state: pAPageTwo, setter: setPAPageTwo },
+      { key: "cPCPageOne", state: cPCPageOne, setter: setCPCPageOne },
+      { key: "cPCPageTwo", state: cPCPageTwo, setter: setCPCPageTwo },
+      { key: "mEPAPageOne", state: mEPAPageOne, setter: setMEPAPageOne },
+      { key: "mEPAPageTwo", state: mEPAPageTwo, setter: setMEPAPageTwo },
+      { key: "pAMI", state: pAMI, setter: setPAMI },
+    ];
+
   useEffect(() => {
     const stored = localStorage.getItem("driverData");
     if (!stored) return;
@@ -106,12 +108,10 @@ const TransportReq: React.FC = () => {
     setDriverData(parsed);
 
     const req = parsed.transportRequirements;
+    setOriginalTransportReq(req);
     if (!req) return;
 
-    // =============================
     // BASIC VEHICLE INFO
-    // =============================
-
     setOwnershipId(req.vehicleOwnership?.ownershipId || "");
     setPlateNumber(req.plateNumber || "");
     setCarBrand(req.carBrand || "");
@@ -124,29 +124,11 @@ const TransportReq: React.FC = () => {
     setOperatorsAddress(req.vehicleOwnership?.operatorsAddress || "");
     setOperatorsMobileNumber(req.vehicleOwnership?.operatorsMobileNumber || "");
 
-    // =============================
-    // LOAD FILES
-    // =============================
-
+    // LOAD FILES DYNAMICALLY
     (async () => {
-      await Promise.all([
-        setFileIfExists(req.ownerDocuments, setOwnerDocuments),
-        setFileIfExists(req.operatorsDocument, setOperatorsDocument),
-        setFileIfExists(req.vehicleOR, setVehicleOR),
-        setFileIfExists(req.vehicleCR, setVehicleCR),
-        setFileIfExists(req.vehicleSalesInvoice, setVehicleSalesInvoice),
-        setFileIfExists(req.authorizationLetterPageOne, setAuthorizationLetterPageOne),
-        setFileIfExists(req.authorizationLetterPageTwo, setAuthorizationLetterPageTwo),
-        setFileIfExists(req.sPAPageOne, setSPAPageOne),
-        setFileIfExists(req.sPAPageTwo, setSPAPageTwo),
-        setFileIfExists(req.pAPageOne, setPAPageOne),
-        setFileIfExists(req.pAPageTwo, setPAPageTwo),
-        setFileIfExists(req.cPCPageOne, setCPCPageOne),
-        setFileIfExists(req.cPCPageTwo, setCPCPageTwo),
-        setFileIfExists(req.mEPAPageOne, setMEPAPageOne),
-        setFileIfExists(req.mEPAPageTwo, setMEPAPageTwo),
-        setFileIfExists(req.pAMI, setPAMI),
-      ]);
+      await Promise.all(
+        fileFields.map(({ key, setter }) => setFileIfExists(req[key], setter))
+      );
     })();
   }, []);
 
@@ -157,44 +139,10 @@ const TransportReq: React.FC = () => {
 
     try {
       const updates: any = {};
+      const vo = driverData.transportRequirements.vehicleOwnership || {};
+      const vehicleOwnershipUpdates: any = {};
 
-      // ---- File fields to upload ----
-      const fileFields = [
-        { state: ownerDocuments, key: "ownerDocuments", setter: setOwnerDocuments },
-        { state: operatorsDocument, key: "operatorsDocument", setter: setOperatorsDocument },
-        { state: vehicleOR, key: "vehicleOR", setter: setVehicleOR },
-        { state: vehicleCR, key: "vehicleCR", setter: setVehicleCR },
-        { state: vehicleSalesInvoice, key: "vehicleSalesInvoice", setter: setVehicleSalesInvoice },
-        { state: authorizationLetterPageOne, key: "authorizationLetterPageOne", setter: setAuthorizationLetterPageOne },
-        { state: authorizationLetterPageTwo, key: "authorizationLetterPageTwo", setter: setAuthorizationLetterPageTwo },
-        { state: sPAPageOne, key: "sPAPageOne", setter: setSPAPageOne },
-        { state: sPAPageTwo, key: "sPAPageTwo", setter: setSPAPageTwo },
-        { state: pAPageOne, key: "pAPageOne", setter: setPAPageOne },
-        { state: pAPageTwo, key: "pAPageTwo", setter: setPAPageTwo },
-        { state: cPCPageOne, key: "cPCPageOne", setter: setCPCPageOne },
-        { state: cPCPageTwo, key: "cPCPageTwo", setter: setCPCPageTwo },
-        { state: mEPAPageOne, key: "mEPAPageOne", setter: setMEPAPageOne },
-        { state: mEPAPageTwo, key: "mEPAPageTwo", setter: setMEPAPageTwo },
-        { state: pAMI, key: "pAMI", setter: setPAMI },
-      ];
-
-      for (const field of fileFields) {
-        if (field.state?.file) {
-          const uploaded = await UploadService.uploadFile(field.state.file);
-
-          let url = uploaded.url;
-          try {
-            url = await UploadService.getFileUrl(uploaded.key);
-          } catch (err) {
-            console.error(`Failed to get URL for ${field.key}`, err);
-          }
-
-          updates[field.key] = { name: field.state.name, url, file: field.state.file };
-          field.setter({ name: field.state.name, url, file: field.state.file });
-        }
-      }
-
-      // ---- Normal fields ----
+      // ---- NORMAL FIELDS ----
       const fieldMap: Record<string, any> = {
         ownershipId,
         plateNumber,
@@ -209,39 +157,80 @@ const TransportReq: React.FC = () => {
         operatorsMobileNumber,
       };
 
-      // Compare with existing transportRequirements to only send changed fields
       Object.entries(fieldMap).forEach(([key, value]) => {
-        const originalValue = driverData.transportRequirements[key as keyof TransportRequirements];
-        if (value !== originalValue) {
+        const originalValue = originalTransportReq?.[key] ?? "";
+        if ((value ?? "") !== (originalValue ?? "")) {
           updates[key] = value;
         }
       });
 
-      // If nothing changed
-      if (Object.keys(updates).length === 0) {
-        alert("Please make changes.");
+      // ---- VEHICLE OWNERSHIP FIELDS ----
+      if ((ownershipId ?? "") !== (vo.ownershipId ?? "")) {
+        vehicleOwnershipUpdates.ownershipId = ownershipId;
+        vehicleOwnershipUpdates.description =
+          ownershipOptions.find((o) => o.value === ownershipId)?.label || "";
+      }
+      if ((operatorsFullName ?? "") !== (vo.operatorsFullName ?? "")) {
+        vehicleOwnershipUpdates.operatorsFullName = operatorsFullName;
+      }
+      if ((operatorsAddress ?? "") !== (vo.operatorsAddress ?? "")) {
+        vehicleOwnershipUpdates.operatorsAddress = operatorsAddress;
+      }
+      if ((operatorsMobileNumber ?? "") !== (vo.operatorsMobileNumber ?? "")) {
+        vehicleOwnershipUpdates.operatorsMobileNumber = operatorsMobileNumber;
+      }
+
+      // ---- FILES ----
+      for (const { key, state, setter } of fileFields) {
+        const originalFile = originalTransportReq?.[key];
+        const hasFileChanged = state
+          ? !originalFile || originalFile.url !== state.url
+          : false;
+
+        if (hasFileChanged && state?.file) {
+          // only upload if truly changed
+          const uploaded = await UploadService.uploadFile(state.file);
+          const uploadedKey = uploaded.key;
+
+          // Only update if URL really changed
+          if (!originalFile || originalFile.url !== uploadedKey) {
+            updates[key] = { name: state.name, url: uploadedKey };
+            setter({ name: state.name, url: uploadedKey, file: state.file });
+          }
+        }
+      }
+
+      // ---- OPERATOR DOCUMENT ----
+      if (
+        operatorsDocument &&
+        (!vo.operatorDocuments || vo.operatorDocuments.url !== operatorsDocument.url)
+      ) {
+        vehicleOwnershipUpdates.operatorDocuments = {
+          name: operatorsDocument.name,
+          url: operatorsDocument.url,
+        };
+      }
+
+      // ---- CHECK IF ANY CHANGE ----
+      const hasUpdates =
+        Object.keys(updates).length > 0 || Object.keys(vehicleOwnershipUpdates).length > 0;
+
+      if (!hasUpdates) {
+        alert("No changes detected.");
         setLoading(false);
         return;
       }
 
-      // ---- Merge with existing transportRequirements ----
+      // ---- MERGE AND PATCH ----
       const mergedUpdates = {
         ...driverData.transportRequirements,
         ...updates,
         vehicleOwnership: {
-          ...driverData.transportRequirements.vehicleOwnership,
-          ownershipId,
-          description: ownershipOptions.find((o) => o.value === ownershipId)?.label || "",
-          operatorsFullName,
-          operatorsAddress,
-          operatorsMobileNumber,
-          operatorDocuments: operatorsDocument
-            ? { name: operatorsDocument.name, url: operatorsDocument.url || "" }
-            : driverData.transportRequirements.vehicleOwnership.operatorDocuments,
+          ...vo,
+          ...vehicleOwnershipUpdates,
         },
       };
 
-      // ---- Send PATCH request ----
       const response = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT}/drivers/${driverData._id}/transport-requirements`,
         {
@@ -262,6 +251,7 @@ const TransportReq: React.FC = () => {
       const updatedDriver = await response.json();
       localStorage.setItem("driverData", JSON.stringify(updatedDriver));
       setDriverData(updatedDriver);
+      setOriginalTransportReq(updatedDriver.transportRequirements);
 
       alert("Transport requirements updated successfully!");
     } catch (err: any) {
@@ -464,14 +454,21 @@ const TransportReq: React.FC = () => {
               value={pAMI}
               onChange={setPAMI}
             />
+            <FormField
+              fieldType="checkbox"
+              label=""
+              value={confirm}
+              onChange={setConfirm}
+              text="I confirm that all the provided information is accurate and complete."
+            />
           </>
         )}
       </IonContent>
       <Loading isOpen={loading} message="Waiting..." />
       <ActionFooterButton
         text="Submit"
-      onClick={handleUpdate}
-      // disabled={!isFormValid}
+        onClick={handleUpdate}
+        disabled={!confirm}
       />
     </IonPage>
   );

@@ -108,14 +108,21 @@ const PersonlaReq: React.FC = () => {
 
     Object.entries(stateMap).forEach(([key, config]) => {
       if (!config) return;
+
       const typedKey = key as keyof PersonalRequirements;
       const value = req[typedKey];
-      config.setter(value ?? "");
-      if (config.ref.current !== undefined) config.ref.current = value ?? "";
-    });
 
-    // Load file URLs
+      config.setter(value ?? "");
+      config.ref.current = value ?? "";
+    });
+  }, []);
+
+  useEffect(() => {
     const loadFiles = async () => {
+      if (!driverData) return;
+      const req = driverData.personalRequirements;
+      if (!req) return;
+
       const fileStateMap: Record<string, React.Dispatch<React.SetStateAction<FileData | null>>> = {
         profilePicture: setProfilePicture,
         vaccinationCertificate: setCovidVaxImg,
@@ -129,14 +136,16 @@ const PersonlaReq: React.FC = () => {
         Object.entries(fileStateMap).map(async ([field, setter]) => {
           const file = req[field as keyof typeof req] as FileData | undefined;
           if (!file) return;
+
+          // Always fetch a fresh URL from server
           const url = await getFileUrlIfAvailable(file);
-          setter({ ...file, url });
+          setter({ ...file, url }); // Keep original info, but update with fresh URL
         })
       );
     };
 
     loadFiles();
-  }, []);
+  }, [driverData]);
 
   const handleUpdate = async () => {
     if (!driverData || !originalPersonalReq) return;
@@ -160,17 +169,12 @@ const PersonlaReq: React.FC = () => {
         if (field.state?.file) {
           const uploaded = await UploadService.uploadFile(field.state.file);
 
-          // Get proper downloadable URL
-          let url = uploaded.url;
-          try {
-            url = await UploadService.getFileUrl(uploaded.key);
-          } catch (err) {
-            console.error(`Failed to get URL for ${field.key}`, err);
-          }
+          // Only save the key, not full URL
+          const fileKey = uploaded.key;
+          updates[field.key] = { name: field.state.name, url: fileKey };
 
-          updates[field.key] = { name: field.state.name, url };
           // Update local state so preview works immediately
-          field.setter({ name: field.state.name, url, file: field.state.file });
+          field.setter({ name: field.state.name, url: fileKey, file: field.state.file });
         }
       }
 
@@ -234,7 +238,6 @@ const PersonlaReq: React.FC = () => {
       setOriginalPersonalReq(updatedDriver.personalRequirements);
 
       alert("Personal requirements updated successfully!");
-
     } catch (err: any) {
       console.error("Update failed:", err);
     } finally {

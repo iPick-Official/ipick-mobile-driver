@@ -42,6 +42,7 @@ export interface VehicleOwnership {
 }
 
 export interface TransportRequirements {
+  [key: string]: any;
   vehicleOwnership: VehicleOwnership;
   plateNumber: string;
   orNumber: string;
