@@ -33,7 +33,7 @@ import { Capacitor } from "@capacitor/core";
 import { Browser } from '@capacitor/browser';
 
 const Wallet: React.FC = () => {
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem("id");
   const userType = localStorage.getItem("userType");
   const driverData = JSON.parse(localStorage.getItem("driverData") || "{}");
   const history = useHistory();
@@ -479,7 +479,7 @@ const Wallet: React.FC = () => {
                 shape="round"
                 size="large"
                 onClick={handleConfirmCashIn}
-                disabled={cashInAmountRef.current <= 100 && !selectedMethod}
+                disabled={cashInAmountRef.current <= 0.01 && !selectedMethod}
               >
                 Confirm
               </IonButton>

@@ -3,7 +3,7 @@
 <plist version="1.0">
   <dict>
     <key>NSPrivacyTracking</key>
-    <false/>
+    <false />
     <key>NSPrivacyAccessedAPITypes</key>
     <array>
       <dict>
@@ -18,10 +18,12 @@
         <key>NSPrivacyAccessedAPIType</key>
         <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
         <key>NSPrivacyAccessedAPITypeReasons</key>
-        <array/>
+        <array>
+          <string>C617.1</string>
+        </array>
       </dict>
     </array>
     <key>NSPrivacyCollectedDataTypes</key>
-    <array/>
+    <array />
   </dict>
 </plist>

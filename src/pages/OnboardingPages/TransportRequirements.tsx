@@ -3,7 +3,6 @@ import {
   IonContent,
   IonPage,
 } from "@ionic/react";
-import { UploadService } from "../../services/uploadService";
 import Loading from "../../components/Loading";
 import HeaderWithTabs from "../../components/ui/TabHeader";
 import FormField from "../../components/ui/FormField";
@@ -11,7 +10,7 @@ import ActionFooterButton from "../../components/ui/ActionFooterButton";
 import { ltfrbDocsOptions, ownershipOptions } from "../../utils/transportSelect";
 import { Driver, FileData } from "../../types/driverTypes";
 import { setFileIfExists } from "../../utils/fileUrl";
-const token = localStorage.getItem("accessToken");
+import { UploadService } from "../../services/uploadService";
 
 const TransportReq: React.FC = () => {
   const [activeTab, setActiveTab] = useState("vehicle");

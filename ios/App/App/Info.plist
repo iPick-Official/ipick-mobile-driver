@@ -26,17 +26,19 @@
 		<string>We use your camera to allow you to take a photo of your profile picture or required
 			documents during registration.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>We access your photo library so you can upload a profile picture or documents from
-			your device during registration.</string>
+		<string>We access your photo library so you can upload delivery documents or profile photos.</string>
+
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>We save a copy of your profile picture or uploaded documents to your photo library
 			for your records.</string>
+		<!-- Location Permission (While Using the App) -->
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>We use your location to show nearby drivers and set accurate pickup points while you
-			use the app.</string>
+		<string>We use your location to assign deliveries and provide real-time navigation during
+			active jobs.</string>
+
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>We use your location to track trips and provide accurate pickup/drop-off
-			information, even if the app is running in the background.</string>
+		<string>We use your location in the background to update delivery status and ensure accurate
+			tracking while you are on a job.</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>location</string>
