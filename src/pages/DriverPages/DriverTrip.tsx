@@ -203,13 +203,13 @@ const DriverTrip: React.FC = () => {
           await postTransaction(fare, bookingId, userId!, "driver", `₱${fare.toFixed(2)} earnings credited (Ref: ${bookingRef}).`);
           await postTransaction(-systemShareValue, bookingId, userId!, "driver", `Deduction of ₱${systemShareValue.toFixed(2)} system earnings (Ref: ${bookingRef}).`);
           await postTransaction(-fare, bookingId, bookingData?.riderData._id, "rider", `₱${fare.toFixed(2)} payments to driver (Ref: ${bookingRef}).`);
-          await updateWallet(newRiderWallet, "rider", bookingData?.riderData._id);
+          // await updateWallet(newRiderWallet, "rider", bookingData?.riderData._id);
         }
 
         // Incentive
         newWallet += incentive;
         await postTransaction(incentive, bookingId, userId!, "driver", `An incentive of ₱${incentive.toFixed(2)} has been credited (Ref: ${bookingRef}).`);
-        await updateWallet(newWallet, "driver", userId!);
+        await updateWallet(userId!, newWallet);
         setIsRatingsOpen(true);
       } catch (error) {
         console.error("Failed to complete end trip process:", error);

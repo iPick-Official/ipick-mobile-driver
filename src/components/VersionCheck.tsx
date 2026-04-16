@@ -11,7 +11,7 @@ const VersionCheck: React.FC = () => {
     try {
       console.log("Checking for updates...");
       const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/api/AppVersion`
+        `${import.meta.env.VITE_API_ENDPOINT}/api/AppVersion`
       );
       if (!response.ok) throw new Error("Failed to fetch version info");
 

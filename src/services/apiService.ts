@@ -15,7 +15,7 @@ export const fetchActiveJobs = async (logout: () => void) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const data = await response.json();
@@ -39,7 +39,7 @@ export const fetchActiveJobs = async (logout: () => void) => {
 
 export const bookAcceptedService = async (
   riderId: string,
-  bookingId: string
+  bookingId: string,
 ) => {
   const reqBody = {
     id: riderId,
@@ -60,7 +60,7 @@ export const bookAcceptedService = async (
           "Content-Type": "application/json",
         },
         body: JSON.stringify(reqBody),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -79,7 +79,7 @@ export const bookAcceptedService = async (
 import { watchLocation } from "../utils/locationHelpers";
 
 export const fetchBookingDetails = async (
-  bookingId: string
+  bookingId: string,
 ): Promise<any | null> => {
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("accessToken");
@@ -94,7 +94,7 @@ export const fetchBookingDetails = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const data = await response.json();
@@ -124,7 +124,7 @@ export const fetchRideHistory = async () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const data = await response.json();
@@ -161,7 +161,7 @@ export const fetchMyRatings = async () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -223,14 +223,14 @@ export const postDriverLocation = async (bookingId: string) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(reqBody),
-          }
+          },
         );
 
         if (!response.ok) {
           const error = await response.json().catch(() => ({}));
           console.error(
             "Failed to send location:",
-            error || response.statusText
+            error || response.statusText,
           );
         } else {
           const result = await response.json();
@@ -240,7 +240,7 @@ export const postDriverLocation = async (bookingId: string) => {
       } catch (err) {
         console.error("Error sending driver location:", err);
       }
-    }
+    },
   );
 
   return watchId;
@@ -257,7 +257,7 @@ export const fetchRiderDetails = async (riderId: any) => {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -277,7 +277,7 @@ export const sendMsg = async (
   bookingId: string,
   driverId: string,
   msg: string,
-  sender: string
+  sender: string,
 ) => {
   if (msg === "") return;
   const token = localStorage.getItem("accessToken");
@@ -297,7 +297,7 @@ export const sendMsg = async (
           msg,
           sender,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -319,7 +319,7 @@ export const fetchMsgs = async (riderId: string, driverId: string) => {
   const url = new URL(
     `${
       import.meta.env.VITE_API_ENDPOINT
-    }/ride-hail/userMessages/${riderId}/${driverId}`
+    }/ride-hail/userMessages/${riderId}/${driverId}`,
   );
 
   try {
@@ -361,7 +361,7 @@ export const fetchWallet = async (userId: string, userType: string) => {
           id: userId,
           type: userType,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -395,7 +395,7 @@ export const fetchDriverTransactions = async () => {
           id: userId,
           type: "driver",
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -415,12 +415,12 @@ export const postTransaction = async (
   bookingId: string,
   userId: string,
   userType: string,
-  description: string
+  description: string,
 ) => {
   try {
     const timestamp = new Date().toISOString();
     const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT_DRIVER}/api/Wallet`,
+      `${import.meta.env.VITE_API_ENDPOINT}/transactions`,
       {
         method: "POST",
         headers: {
@@ -428,14 +428,12 @@ export const postTransaction = async (
         },
         body: JSON.stringify({
           amount,
-          createdAt: timestamp,
-          updatedAt: timestamp,
           bookingId,
           userId: userId,
           userType: userType,
           description: description,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -451,35 +449,32 @@ export const postTransaction = async (
   }
 };
 
-export const updateWallet = async (
-  amount: number,
-  type: string,
-  userId: string
-) => {
+export const updateWallet = async (userId: string, walletBalance: number) => {
   const token = localStorage.getItem("accessToken");
+
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT}/mobile/UpdateUserWallet`,
+      `${import.meta.env.VITE_API_ENDPOINT}/wallet/${userId}`,
       {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: userId,
-          type: type,
-          amount: amount,
+          walletBalance,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message || `HTTP error! Status: ${response.status}`,
+      );
     }
 
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Error updating wallet:", error);
     throw error;
