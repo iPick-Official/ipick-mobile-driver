@@ -3,46 +3,36 @@ import { IonAlert, IonContent, IonPage, isPlatform } from "@ionic/react";
 
 const VersionCheck: React.FC = () => {
   const [latestVersion, setLatestVersion] = useState<string>("");
-  const [isUpdateRequired, setIsUpdateRequired] = useState<boolean>(false);
   const [showAlert, setShowAlert] = useState<boolean>(false);
-
   const currentVersion = import.meta.env.VITE_CURRENT_VERSION;
+  const token = localStorage.getItem("accessToken");
   const checkForUpdates = async () => {
     try {
-      console.log("Checking for updates...");
-      const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}/api/AppVersion`
+      const res = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}/versions`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
       );
-      if (!response.ok) throw new Error("Failed to fetch version info");
+      const data = await res.json();
 
-      const data = await response.json();
+      const item = data.find((v: any) => v._id === "684551b4740e9657a42cabe0");
+      if (!item) return;
 
-      // Find the driver version only
-      const driverData = data.find(
-        (item: { Description: string }) =>
-          item.Description.toLowerCase() === "driver"
-      );
-
-      if (!driverData) {
-        console.warn("No driver version data found.");
-        return;
-      }
-
-      const serverVersion = driverData.LatestVersion;
+      const serverVersion = item.latestVersion;
       setLatestVersion(serverVersion);
 
       if (
-        currentVersion &&
-        serverVersion &&
-        serverVersion.localeCompare(currentVersion, undefined, {
-          numeric: true,
-        }) > 0
+        serverVersion?.localeCompare(currentVersion, undefined, { numeric: true }) > 0
       ) {
-        setIsUpdateRequired(true);
         setShowAlert(true);
       }
-    } catch (error) {
-      console.error("Error checking version:", error);
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -53,12 +43,12 @@ const VersionCheck: React.FC = () => {
   const handleUpdateNow = () => {
     if (isPlatform("android")) {
       window.open(
-        "https://play.google.com/store/apps/details?id=ipick.driver.com&pcampaignid=web_share",
+        "https://play.google.com/store/apps/details?id=com.ipick.starter&pcampaignid=web_share",
         "_blank"
       );
     } else if (isPlatform("ios")) {
       window.open(
-        "https://apps.apple.com/ph/app/ipick-driver/id6747301801",
+        "https://apps.apple.com/ph/app/ipick-booking-services/id6738897138",
         "_blank"
       );
     } else {
